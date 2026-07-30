@@ -38,7 +38,7 @@ export default function LoginPage() {
             <Flame className="h-8 w-8" />
           </div>
           <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Khalid ERP
+            Lakshmi Candles ERP
           </h1>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Cloud Manufacturing & Enterprise System

@@ -70,7 +70,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               animate={{ opacity: 1 }}
               className="text-lg font-bold text-gray-900 dark:text-white"
             >
-              Khalid ERP
+              Lakshmi Candles
             </motion.span>
           )}
         </Link>

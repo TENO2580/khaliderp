@@ -8,7 +8,7 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('company');
 
   const [companyForm, setCompanyForm] = useState({
-    companyName: 'Khalid Candle Manufacturing Company',
+    companyName: 'Lakshmi Candles Manufacturing Company',
     gstNumber: '33AABCT0000A1ZA',
     address: '124 Industrial Estate, Guindy, Chennai',
     state: 'Tamil Nadu',
