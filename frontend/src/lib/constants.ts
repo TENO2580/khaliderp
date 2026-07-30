@@ -104,6 +104,7 @@ export const NAV_ITEMS: NavItem[] = [
 
 // Role display names
 export const ROLE_LABELS: Record<string, string> = {
+  SUPER_ADMIN: 'Super Admin',
   ADMIN: 'Administrator',
   PRODUCTION_MANAGER: 'Production Manager',
   SALES_EXECUTIVE: 'Sales Executive',
@@ -114,6 +115,7 @@ export const ROLE_LABELS: Record<string, string> = {
 
 // Permissions map (same as backend)
 export const PERMISSIONS: Record<string, string[]> = {
+  SUPER_ADMIN: ['*'],
   ADMIN: ['*'],
   PRODUCTION_MANAGER: ['dashboard:read', 'production:*', 'batch:*', 'inventory:read', 'inventory:update', 'raw_materials:*', 'employees:read', 'reports:production', 'reports:batch', 'reports:inventory'],
   SALES_EXECUTIVE: ['dashboard:read', 'customers:*', 'sales:*', 'invoices:*', 'payments:*', 'products:read', 'batch:read', 'inventory:read', 'reports:sales', 'reports:customer'],

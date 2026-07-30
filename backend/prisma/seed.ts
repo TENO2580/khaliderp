@@ -6,43 +6,44 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Seeding database...');
 
-  // ─── Admin User ───────────────────────────────────
+  // ─── Initial Authorized Users ──────────────────────
   const hashedPassword = await bcrypt.hash('Admin@123', 12);
-  const admin = await prisma.user.upsert({
-    where: { email: 'admin@khaliderp.com' },
-    update: { password: hashedPassword, isActive: true },
-    create: {
-      email: 'admin@khaliderp.com',
-      password: hashedPassword,
-      name: 'Admin',
-      role: 'ADMIN',
+
+  const initialUsers = [
+    {
+      email: 'tenogte@gmail.com',
+      name: 'Tenogte',
+      role: 'SUPER_ADMIN' as const,
       isActive: true,
     },
-  });
-  console.log('✅ Admin user created:', admin.email);
-
-  // Create sample users for each role
-  const roles = [
-    { email: 'production@khaliderp.com', name: 'Production Manager', role: 'PRODUCTION_MANAGER' as const },
-    { email: 'sales@khaliderp.com', name: 'Sales Executive', role: 'SALES_EXECUTIVE' as const },
-    { email: 'warehouse@khaliderp.com', name: 'Warehouse Manager', role: 'WAREHOUSE' as const },
-    { email: 'accounts@khaliderp.com', name: 'Accountant', role: 'ACCOUNTANT' as const },
+    {
+      email: 'khalidshantp@gmail.com',
+      name: 'Khalid',
+      role: 'ADMIN' as const,
+      isActive: true,
+    },
+    {
+      email: 'admin@khaliderp.com',
+      name: 'Admin',
+      role: 'SUPER_ADMIN' as const,
+      isActive: true,
+    },
   ];
 
-  for (const role of roles) {
+  for (const u of initialUsers) {
     await prisma.user.upsert({
-      where: { email: role.email },
-      update: { password: hashedPassword, isActive: true },
+      where: { email: u.email },
+      update: { role: u.role, isActive: true },
       create: {
-        email: role.email,
+        email: u.email,
         password: hashedPassword,
-        name: role.name,
-        role: role.role,
+        name: u.name,
+        role: u.role,
         isActive: true,
       },
     });
   }
-  console.log('✅ Sample users created');
+  console.log('✅ Initial authorized users created (tenogte@gmail.com & khalidshantp@gmail.com)');
 
   // ─── Expense Categories ────────────────────────────
   const categories = [

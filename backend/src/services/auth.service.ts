@@ -86,6 +86,72 @@ export class AuthService {
   }
 
   /**
+   * Supabase / Google OAuth Login Verification & Authorization Guard
+   * Whitelisted Initial Authorized Users:
+   * - Tenogte@gmail.com (Super Admin)
+   * - Khalidshantp@gmail.com (Admin)
+   */
+  async loginWithGoogle(data: { email: string; googleId: string; name?: string; avatar?: string }) {
+    const normalizedEmail = data.email.trim().toLowerCase();
+
+    // Search case-insensitively for pre-authorized user in database
+    const user = await prisma.user.findFirst({
+      where: {
+        email: { equals: normalizedEmail }
+      }
+    });
+
+    // Rejection rule: If email is NOT pre-authorized (Tenogte@gmail.com or Khalidshantp@gmail.com)
+    if (!user) {
+      throw new AppError(
+        'Your Google account is not authorized to access Tripidio ERP. Please contact the system administrator.',
+        403
+      );
+    }
+
+    if (!user.isActive) {
+      throw new AppError('Account is deactivated. Contact system administrator.', 403);
+    }
+
+    // First successful login: update Google ID, profile pic, display name, and last login timestamp
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        googleId: data.googleId || user.googleId,
+        avatar: data.avatar || user.avatar,
+        name: user.name || data.name || user.email.split('@')[0],
+        lastLoginAt: new Date(),
+      },
+    });
+
+    const payload: TokenPayload = {
+      userId: updatedUser.id,
+      email: updatedUser.email,
+      role: updatedUser.role,
+    };
+
+    const accessToken = signAccessToken(payload);
+    const refreshToken = signRefreshToken(payload);
+
+    await prisma.user.update({
+      where: { id: updatedUser.id },
+      data: { refreshToken },
+    });
+
+    return {
+      user: {
+        id: updatedUser.id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        avatar: updatedUser.avatar,
+      },
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  /**
    * Refresh access token using a valid refresh token
    */
   async refreshToken(token: string) {

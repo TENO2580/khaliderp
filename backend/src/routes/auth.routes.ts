@@ -9,6 +9,7 @@ const router = Router();
 
 // Public routes
 router.post('/login', validate(loginSchema), authController.login);
+router.post('/google', authController.googleLogin);
 router.post('/refresh', validate(refreshTokenSchema), authController.refresh);
 
 // Protected routes

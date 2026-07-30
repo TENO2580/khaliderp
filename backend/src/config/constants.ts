@@ -3,6 +3,7 @@
 // ============================================
 
 export const ROLES = {
+  SUPER_ADMIN: 'SUPER_ADMIN',
   ADMIN: 'ADMIN',
   PRODUCTION_MANAGER: 'PRODUCTION_MANAGER',
   SALES_EXECUTIVE: 'SALES_EXECUTIVE',
@@ -13,6 +14,7 @@ export const ROLES = {
 
 // Role hierarchy — higher index = more permissions
 export const ROLE_HIERARCHY: Record<string, number> = {
+  SUPER_ADMIN: 1000,
   ADMIN: 100,
   PRODUCTION_MANAGER: 80,
   ACCOUNTANT: 70,
@@ -23,7 +25,8 @@ export const ROLE_HIERARCHY: Record<string, number> = {
 
 // Module-level permissions per role
 export const PERMISSIONS: Record<string, string[]> = {
-  ADMIN: ['*'], // Full access
+  SUPER_ADMIN: ['*'], // Full access
+  ADMIN: ['*'], // Full operational access
   PRODUCTION_MANAGER: [
     'dashboard:read',
     'production:*',

@@ -28,6 +28,18 @@ export class AuthController {
   }
 
   /**
+   * POST /api/auth/google
+   */
+  async googleLogin(req: Request, res: Response) {
+    try {
+      const result = await authService.loginWithGoogle(req.body);
+      successResponse(res, result, 'Google authentication successful');
+    } catch (error: any) {
+      errorResponse(res, error.message, error.statusCode || 500);
+    }
+  }
+
+  /**
    * POST /api/auth/refresh
    */
   async refresh(req: Request, res: Response) {
