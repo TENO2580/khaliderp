@@ -33,7 +33,10 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     return hasPermission(user.role, item.permission);
   });
 
-  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
+  const isActive = (href: string) => {
+    if (href === '/dashboard') return pathname === '/dashboard';
+    return pathname === href || pathname.startsWith(href + '/');
+  };
 
   return (
     <aside
