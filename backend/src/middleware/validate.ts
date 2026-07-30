@@ -5,22 +5,21 @@ import { errorResponse } from '../utils/response';
 /**
  * Validation middleware using Zod schemas
  * Validates request body, query params, or route params
- *
- * Usage:
- *   validate(createCustomerSchema)
- *   validate(querySchema, 'query')
- *   validate(paramsSchema, 'params')
  */
 export function validate(schema: ZodSchema, source: 'body' | 'query' | 'params' = 'body') {
   return (req: Request, res: Response, next: NextFunction): void => {
     try {
       const data = schema.parse(req[source]);
-      // Replace with validated/transformed data
-      req[source] = data;
+      if (source === 'body') {
+        req.body = data;
+      } else if (source === 'params') {
+        req.params = data;
+      } else if (source === 'query') {
+        Object.assign(req.query, data);
+      }
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        console.error('❌ Validation error on', req.originalUrl, error.errors);
         const formattedErrors = error.errors.map((err) => ({
           field: err.path.join('.'),
           message: err.message,
@@ -30,7 +29,6 @@ export function validate(schema: ZodSchema, source: 'body' | 'query' | 'params' 
         return;
       }
 
-      console.error('❌ Unknown error on', req.originalUrl, error);
       errorResponse(res, 'Validation error', 400);
     }
   };
