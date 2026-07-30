@@ -34,14 +34,14 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-6">
         {/* Header */}
         <div className="text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-xl shadow-blue-500/25">
-            <Flame className="h-8 w-8" />
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-black shadow-xl shadow-blue-500/10 p-2">
+            <img src="/tripidio-logo.png" alt="Tripidio ERP Logo" className="h-full w-full object-contain" />
           </div>
-          <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Lakshmi Candles ERP
+          <h1 className="mt-4 text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+            Tripidio <span className="text-blue-600 dark:text-blue-400">ERP</span>
           </h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Cloud Manufacturing & Enterprise System
+          <p className="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">
+            Cloud Enterprise ERP System for Lakshmi Candles
           </p>
         </div>
 

@@ -6,8 +6,8 @@ import { Providers } from './providers';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'Khalid ERP — Candle Manufacturing System',
-  description: 'Enterprise Cloud ERP for Candle Manufacturing Companies',
+  title: 'Tripidio ERP — Cloud Manufacturing & Enterprise System',
+  description: 'Enterprise Cloud ERP System for Lakshmi Candles',
 };
 
 export default function RootLayout({

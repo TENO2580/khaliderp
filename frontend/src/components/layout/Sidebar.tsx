@@ -61,16 +61,18 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       {/* Logo */}
       <div className="flex h-16 items-center justify-between border-b border-gray-200 px-4 dark:border-gray-800">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white">
-            <Flame className="h-5 w-5" />
-          </div>
+          <img
+            src="/tripidio-logo.png"
+            alt="Tripidio ERP"
+            className="h-9 w-auto rounded-lg object-contain bg-black p-1"
+          />
           {!collapsed && (
             <motion.span
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-lg font-bold text-gray-900 dark:text-white"
+              className="text-lg font-bold tracking-wide text-gray-900 dark:text-white"
             >
-              Lakshmi Candles
+              Tripidio <span className="text-xs font-semibold uppercase text-blue-600 dark:text-blue-400 ml-1">ERP</span>
             </motion.span>
           )}
         </Link>
