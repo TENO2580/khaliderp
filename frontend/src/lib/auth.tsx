@@ -23,8 +23,27 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Initialize state synchronously from localStorage to prevent navigation lag
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('user');
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch {
+          return null;
+        }
+      }
+    }
+    return null;
+  });
+
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return !localStorage.getItem('accessToken');
+    }
+    return false;
+  });
 
   const checkAuth = useCallback(async () => {
     try {
@@ -35,7 +54,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const response = await api.get('/auth/me');
-      setUser(response.data.data);
+      const freshUser = response.data.data;
+      setUser(freshUser);
+      localStorage.setItem('user', JSON.stringify(freshUser));
     } catch {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
@@ -58,6 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('refreshToken', refreshToken);
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
+    setIsLoading(false);
   };
 
   const logout = async () => {
@@ -70,6 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
       setUser(null);
+      setIsLoading(false);
     }
   };
 
