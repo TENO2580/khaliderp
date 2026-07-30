@@ -32,14 +32,14 @@ export const createFollowupSchema = z.object({
 });
 
 export const customerQuerySchema = z.object({
-  page: z.string().optional(),
-  limit: z.string().optional(),
-  search: z.string().optional(),
-  status: z.string().optional(),
-  type: z.string().optional(),
-  state: z.string().optional(),
-  sortBy: z.string().optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional(),
+  page: z.string().optional().or(z.literal('')),
+  limit: z.string().optional().or(z.literal('')),
+  search: z.string().optional().or(z.literal('')),
+  status: z.string().optional().or(z.literal('')),
+  type: z.string().optional().or(z.literal('')),
+  state: z.string().optional().or(z.literal('')),
+  sortBy: z.string().optional().or(z.literal('')),
+  sortOrder: z.enum(['asc', 'desc']).optional().or(z.literal('')),
 });
 
 export type CreateCustomerInput = z.infer<typeof createCustomerSchema>;

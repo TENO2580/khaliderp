@@ -20,6 +20,7 @@ export function validate(schema: ZodSchema, source: 'body' | 'query' | 'params' 
       next();
     } catch (error) {
       if (error instanceof ZodError) {
+        console.error('❌ Validation error on', req.originalUrl, error.errors);
         const formattedErrors = error.errors.map((err) => ({
           field: err.path.join('.'),
           message: err.message,
@@ -29,6 +30,7 @@ export function validate(schema: ZodSchema, source: 'body' | 'query' | 'params' 
         return;
       }
 
+      console.error('❌ Unknown error on', req.originalUrl, error);
       errorResponse(res, 'Validation error', 400);
     }
   };
