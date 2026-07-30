@@ -6,43 +6,44 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Seeding database...');
 
-  // ─── Admin User ───────────────────────────────────
+  // ─── Initial Authorized Users ──────────────────────
   const hashedPassword = await bcrypt.hash('Admin@123', 12);
-  const admin = await prisma.user.upsert({
-    where: { email: 'admin@khaliderp.com' },
-    update: {},
-    create: {
-      email: 'admin@khaliderp.com',
-      password: hashedPassword,
-      name: 'Admin',
-      role: 'ADMIN',
+
+  const initialUsers = [
+    {
+      email: 'tenogte@gmail.com',
+      name: 'Tenogte',
+      role: 'SUPER_ADMIN' as const,
       isActive: true,
     },
-  });
-  console.log('✅ Admin user created:', admin.email);
-
-  // Create sample users for each role
-  const roles = [
-    { email: 'production@khaliderp.com', name: 'Production Manager', role: 'PRODUCTION_MANAGER' as const },
-    { email: 'sales@khaliderp.com', name: 'Sales Executive', role: 'SALES_EXECUTIVE' as const },
-    { email: 'warehouse@khaliderp.com', name: 'Warehouse Manager', role: 'WAREHOUSE' as const },
-    { email: 'accounts@khaliderp.com', name: 'Accountant', role: 'ACCOUNTANT' as const },
+    {
+      email: 'khalidshantp@gmail.com',
+      name: 'Khalid',
+      role: 'ADMIN' as const,
+      isActive: true,
+    },
+    {
+      email: 'admin@khaliderp.com',
+      name: 'Admin',
+      role: 'SUPER_ADMIN' as const,
+      isActive: true,
+    },
   ];
 
-  for (const role of roles) {
+  for (const u of initialUsers) {
     await prisma.user.upsert({
-      where: { email: role.email },
-      update: {},
+      where: { email: u.email },
+      update: { role: u.role, isActive: true },
       create: {
-        email: role.email,
+        email: u.email,
         password: hashedPassword,
-        name: role.name,
-        role: role.role,
+        name: u.name,
+        role: u.role,
         isActive: true,
       },
     });
   }
-  console.log('✅ Sample users created');
+  console.log('✅ Initial authorized users created (tenogte@gmail.com & khalidshantp@gmail.com)');
 
   // ─── Expense Categories ────────────────────────────
   const categories = [
@@ -83,13 +84,7 @@ async function main() {
   ];
 
   for (const mat of rawMaterials) {
-    await prisma.rawMaterial.upsert({
-      where: { id: mat.name }, // will fail, use create
-      update: {},
-      create: mat,
-    }).catch(() => {
-      return prisma.rawMaterial.create({ data: mat });
-    });
+    await prisma.rawMaterial.create({ data: mat }).catch(() => {});
   }
   console.log('✅ Raw materials created');
 
@@ -159,18 +154,6 @@ async function main() {
     });
   }
   console.log('✅ Sample employees created');
-
-  // ─── Sample Suppliers ──────────────────────────────
-  const suppliers = [
-    { name: 'Wax Industries Pvt Ltd', contactName: 'Venkat Rao', phone: '9876543230', email: 'sales@waxindustries.in', gstNumber: '33AABCT1234A1ZA', state: 'Tamil Nadu' },
-    { name: 'Fragrance World', contactName: 'Deepak Jain', phone: '9876543231', email: 'info@fragranceworld.com', gstNumber: '29AABCT5678B1ZB', state: 'Karnataka' },
-    { name: 'Glass Containers Co', contactName: 'Sundar M', phone: '9876543232', email: 'orders@glassco.in', state: 'Tamil Nadu' },
-  ];
-
-  for (const supplier of suppliers) {
-    await prisma.supplier.create({ data: supplier }).catch(() => {});
-  }
-  console.log('✅ Sample suppliers created');
 
   // ─── Company Settings ──────────────────────────────
   const settings = [
