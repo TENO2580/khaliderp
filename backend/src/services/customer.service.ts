@@ -20,17 +20,17 @@ export class CustomerService {
 
     if (filters.search) {
       where.OR = [
-        { name: { contains: filters.search, mode: 'insensitive' } },
-        { ownerName: { contains: filters.search, mode: 'insensitive' } },
+        { name: { contains: filters.search } },
+        { ownerName: { contains: filters.search } },
         { phone: { contains: filters.search } },
-        { customerId: { contains: filters.search, mode: 'insensitive' } },
-        { email: { contains: filters.search, mode: 'insensitive' } },
+        { customerId: { contains: filters.search } },
+        { email: { contains: filters.search } },
       ];
     }
 
     if (filters.status) where.status = filters.status;
     if (filters.type) where.type = filters.type;
-    if (filters.state) where.state = { contains: filters.state, mode: 'insensitive' };
+    if (filters.state) where.state = { contains: filters.state };
 
     const orderBy: any = {};
     if (filters.sortBy) {

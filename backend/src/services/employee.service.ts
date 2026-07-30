@@ -8,8 +8,8 @@ export class EmployeeService {
     const where: any = {};
     if (filters.search) {
       where.OR = [
-        { name: { contains: filters.search, mode: 'insensitive' } },
-        { employeeId: { contains: filters.search, mode: 'insensitive' } },
+        { name: { contains: filters.search } },
+        { employeeId: { contains: filters.search } },
         { phone: { contains: filters.search } },
       ];
     }

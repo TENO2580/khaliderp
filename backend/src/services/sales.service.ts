@@ -20,8 +20,8 @@ export class SalesService {
 
     if (filters.search) {
       where.OR = [
-        { orderNumber: { contains: filters.search, mode: 'insensitive' } },
-        { customer: { name: { contains: filters.search, mode: 'insensitive' } } },
+        { orderNumber: { contains: filters.search } },
+        { customer: { name: { contains: filters.search } } },
       ];
     }
     if (filters.status) where.status = filters.status;

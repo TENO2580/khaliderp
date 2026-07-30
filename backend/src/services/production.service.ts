@@ -20,8 +20,8 @@ export class ProductionService {
 
     if (filters.search) {
       where.OR = [
-        { productionNumber: { contains: filters.search, mode: 'insensitive' } },
-        { batch: { batchNumber: { contains: filters.search, mode: 'insensitive' } } },
+        { productionNumber: { contains: filters.search } },
+        { batch: { batchNumber: { contains: filters.search } } },
       ];
     }
     if (filters.batchId) where.batchId = filters.batchId;

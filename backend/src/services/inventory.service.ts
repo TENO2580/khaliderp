@@ -37,7 +37,7 @@ export class InventoryService {
   async getRawMaterials(params: PaginationParams, filters: { search?: string; category?: string }) {
     const where: any = {};
     if (filters.search) {
-      where.name = { contains: filters.search, mode: 'insensitive' };
+      where.name = { contains: filters.search };
     }
     if (filters.category) where.category = filters.category;
 

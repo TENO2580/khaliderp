@@ -12,7 +12,7 @@ export class ExpenseService {
   }) {
     const where: any = {};
     if (filters.search) {
-      where.description = { contains: filters.search, mode: 'insensitive' };
+      where.description = { contains: filters.search };
     }
     if (filters.categoryId) where.categoryId = filters.categoryId;
     if (filters.status) where.status = filters.status;
