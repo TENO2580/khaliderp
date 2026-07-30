@@ -42,7 +42,10 @@ export class AuthService {
    * Returns access + refresh tokens
    */
   async login(data: LoginInput) {
-    const user = await prisma.user.findUnique({ where: { email: data.email } });
+    const normalizedEmail = data.email.trim().toLowerCase();
+    const user = await prisma.user.findFirst({
+      where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
+    });
 
     if (!user) {
       throw new AppError('Invalid email or password', 401);
