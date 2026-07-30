@@ -15,7 +15,7 @@ Production-ready enterprise ERP system replacing Google Sheets workflows for can
 - **Notifications**: Sonner
 
 ### Backend
-- **Runtime**: Node.js + Express 5
+- **Runtime**: Node.js (Next.js API Routes)
 - **Language**: TypeScript
 - **Database & ORM**: PostgreSQL + Prisma ORM
 - **Security & Auth**: JWT + Refresh Token Rotation, Bcrypt (12 rounds), Helmet, Rate Limiting, CORS
