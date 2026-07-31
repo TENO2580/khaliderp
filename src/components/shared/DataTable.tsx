@@ -29,6 +29,7 @@ interface DataTableProps<T> {
   page?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
+  onExportClick?: () => void;
   isLoading?: boolean;
 }
 
@@ -43,6 +44,7 @@ export default function DataTable<T extends { id?: string }>({
   page = 1,
   totalPages = 1,
   onPageChange,
+  onExportClick,
   isLoading = false,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState('');
@@ -69,6 +71,15 @@ export default function DataTable<T extends { id?: string }>({
         </div>
 
         <div className="flex items-center gap-3">
+          {onExportClick && (
+            <button
+              onClick={onExportClick}
+              className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition-colors dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+            >
+              <Download className="h-4 w-4" />
+              <span>Export</span>
+            </button>
+          )}
           {onAddClick && (
             <button
               onClick={onAddClick}

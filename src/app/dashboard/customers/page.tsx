@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, customerTypeLabels } from '@/lib/utils';
-import { MessageCircle, MapPin, Phone, Mail, Plus, Filter, Download } from 'lucide-react';
+import { MessageCircle, MapPin, Phone, Mail, Plus, Filter, Download, Pencil } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -18,6 +18,8 @@ export default function CustomersPage() {
 
   // Modal states
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEdit, setIsEdit] = useState(false);
+  const [editId, setEditId] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     ownerName: '',
@@ -55,13 +57,66 @@ export default function CustomersPage() {
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('/customers', formData);
-      toast.success('Customer created successfully!');
+      if (isEdit) {
+        await api.put(`/customers/${editId}`, formData);
+        toast.success('Customer updated successfully!');
+      } else {
+        await api.post('/customers', formData);
+        toast.success('Customer created successfully!');
+      }
       setIsCreateOpen(false);
       fetchCustomers();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error creating customer');
+      toast.error(err.response?.data?.message || (isEdit ? 'Error updating customer' : 'Error creating customer'));
     }
+  };
+
+  const handleEditClick = (customer: any) => {
+    setFormData({
+      name: customer.name || '',
+      ownerName: customer.ownerName || '',
+      phone: customer.phone || '',
+      whatsapp: customer.whatsapp || '',
+      email: customer.email || '',
+      gstNumber: customer.gstNumber || '',
+      address: customer.address || '',
+      district: customer.district || '',
+      state: customer.state || 'Tamil Nadu',
+      pincode: customer.pincode || '',
+      type: customer.type || 'RETAILER',
+      creditLimit: customer.creditLimit || 50000,
+      status: customer.status || 'ACTIVE',
+    });
+    setEditId(customer.id);
+    setIsEdit(true);
+    setIsCreateOpen(true);
+  };
+
+  const handleExport = () => {
+    const csvContent = [
+      ['Sl No.', 'Name', 'Location', 'Phone', 'Last Order', 'Next Follow-Up', 'Current Status', 'Notes', 'Last Selling Cost', 'Category'],
+      ...customers.map(c => [
+        c.customerId,
+        `"${c.name || ''}"`,
+        `"${[c.district, c.state].filter(Boolean).join(', ') || c.address || 'N/A'}"`,
+        c.phone || 'N/A',
+        c.lastPurchaseDate ? new Date(c.lastPurchaseDate).toLocaleDateString('en-IN') : 'N/A',
+        c.nextFollowupDate ? new Date(c.nextFollowupDate).toLocaleDateString('en-IN') : 'N/A',
+        c.status,
+        `"${c.notes || ''}"`,
+        c.sellingPrice || 0,
+        customerTypeLabels[c.type] || c.type
+      ])
+    ].map(e => e.join(",")).join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'customers.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const columns: Column<any>[] = [
@@ -133,6 +188,18 @@ export default function CustomersPage() {
         </span>
       ),
     },
+    {
+      header: 'Actions',
+      cell: (c) => (
+        <button
+          onClick={() => handleEditClick(c)}
+          className="rounded-lg p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/50"
+          title="Edit Customer"
+        >
+          <Pencil className="h-4 w-4" />
+        </button>
+      ),
+    },
   ];
 
   return (
@@ -152,8 +219,17 @@ export default function CustomersPage() {
           setSearch(q);
           setPage(1);
         }}
-        onAddClick={() => setIsCreateOpen(true)}
+        onAddClick={() => {
+          setFormData({
+            name: '', ownerName: '', phone: '', whatsapp: '', email: '', gstNumber: '',
+            address: '', district: '', state: 'Tamil Nadu', pincode: '', type: 'RETAILER',
+            creditLimit: 50000, status: 'ACTIVE',
+          });
+          setIsEdit(false);
+          setIsCreateOpen(true);
+        }}
         addButtonLabel="Add Customer"
+        onExportClick={handleExport}
         page={page}
         totalPages={totalPages}
         totalItems={totalItems}
@@ -165,7 +241,9 @@ export default function CustomersPage() {
       {isCreateOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
           <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Add New Customer</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+              {isEdit ? 'Edit Customer' : 'Add New Customer'}
+            </h2>
             <form onSubmit={handleCreateSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -257,7 +335,7 @@ export default function CustomersPage() {
                   type="submit"
                   className="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700"
                 >
-                  Save Customer
+                  {isEdit ? 'Update Customer' : 'Save Customer'}
                 </button>
               </div>
             </form>
