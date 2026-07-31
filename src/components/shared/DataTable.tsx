@@ -91,19 +91,25 @@ export default function DataTable<T extends { id?: string }>({
         <div className="flex flex-wrap items-center gap-3">
           {onStartDateChange && (
             <input
-              type="date"
+              type={startDate ? 'date' : 'text'}
+              placeholder="Start Date"
+              onFocus={(e) => (e.target.type = 'date')}
+              onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
               value={startDate || ''}
               onChange={(e) => onStartDateChange(e.target.value)}
-              className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:[color-scheme:dark]"
+              className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:[color-scheme:dark] min-w-[130px] flex-1 sm:flex-none"
               title="Start Date"
             />
           )}
           {onEndDateChange && (
             <input
-              type="date"
+              type={endDate ? 'date' : 'text'}
+              placeholder="End Date"
+              onFocus={(e) => (e.target.type = 'date')}
+              onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
               value={endDate || ''}
               onChange={(e) => onEndDateChange(e.target.value)}
-              className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:[color-scheme:dark]"
+              className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:[color-scheme:dark] min-w-[130px] flex-1 sm:flex-none"
               title="End Date"
             />
           )}
