@@ -7,193 +7,267 @@ export async function GET(req: NextRequest) {
   if (error) return error;
 
   try {
-    const today = new Date();
-    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const now = new Date();
 
-    // 1. Fetch KPI Data
+    // ── Date boundaries ──
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayEnd = new Date(todayStart);
+    todayEnd.setDate(todayEnd.getDate() + 1);
+
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const firstDayOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+    // ── KPIs: parallel queries ──
     const [
-      salesMonth,
-      productionMonth,
-      expensesMonth,
+      todaySalesAgg,
+      monthlySalesAgg,
+      monthlyExpensesAgg,
+      monthlyProductionCostAgg,
+      ordersPending,
+      ordersDelivered,
       totalCustomers,
       activeCustomers,
+      outstandingCreditAgg,
       waxStockAgg,
-      candleStockAgg,
+      finishedGoodsAgg,
+      inventoryValueAgg,
+      productionTodayAgg,
+      productionMonthAgg,
+      employeeAttendanceToday,
     ] = await Promise.all([
-      prisma.salesOrder.aggregate({ where: { orderDate: { gte: firstDayOfMonth } }, _sum: { totalAmount: true } }),
-      prisma.production.aggregate({ where: { date: { gte: firstDayOfMonth } }, _sum: { totalCost: true } }),
-      prisma.expense.aggregate({ where: { date: { gte: firstDayOfMonth } }, _sum: { amount: true } }),
+      // Today's sales
+      prisma.salesOrder.aggregate({
+        where: { orderDate: { gte: todayStart, lt: todayEnd } },
+        _sum: { totalAmount: true },
+      }),
+      // Monthly sales
+      prisma.salesOrder.aggregate({
+        where: { orderDate: { gte: firstDayOfMonth, lt: firstDayOfNextMonth } },
+        _sum: { totalAmount: true },
+      }),
+      // Monthly expenses
+      prisma.expense.aggregate({
+        where: { date: { gte: firstDayOfMonth, lt: firstDayOfNextMonth } },
+        _sum: { amount: true },
+      }),
+      // Monthly production cost
+      prisma.production.aggregate({
+        where: { date: { gte: firstDayOfMonth, lt: firstDayOfNextMonth } },
+        _sum: { totalCost: true },
+      }),
+      // Orders pending
+      prisma.salesOrder.count({
+        where: { status: { in: ['PENDING', 'CONFIRMED', 'IN_PRODUCTION', 'READY'] } },
+      }),
+      // Orders delivered
+      prisma.salesOrder.count({
+        where: {
+          status: 'DELIVERED',
+          orderDate: { gte: firstDayOfMonth, lt: firstDayOfNextMonth },
+        },
+      }),
+      // Total customers
       prisma.customer.count(),
+      // Active customers
       prisma.customer.count({ where: { status: 'ACTIVE' } }),
-      prisma.rawMaterial.aggregate({ where: { category: 'WAX' }, _sum: { currentStock: true } }),
+      // Outstanding credit (sum of outstanding across all sales orders)
+      prisma.salesOrder.aggregate({
+        where: { outstanding: { gt: 0 } },
+        _sum: { outstanding: true },
+      }),
+      // Current wax stock
+      prisma.rawMaterial.aggregate({
+        where: { category: 'WAX' },
+        _sum: { currentStock: true },
+      }),
+      // Finished goods stock
       prisma.inventory.aggregate({ _sum: { currentStock: true } }),
+      // Inventory value
+      prisma.inventory.aggregate({ _sum: { value: true } }),
+      // Production today (quantity)
+      prisma.production.aggregate({
+        where: { date: { gte: todayStart, lt: todayEnd } },
+        _sum: { quantityProduced: true },
+      }),
+      // Production this month (quantity)
+      prisma.production.aggregate({
+        where: { date: { gte: firstDayOfMonth, lt: firstDayOfNextMonth } },
+        _sum: { quantityProduced: true },
+      }),
+      // Employee attendance today
+      prisma.attendance.count({
+        where: {
+          date: { gte: todayStart, lt: todayEnd },
+          status: { in: ['PRESENT', 'LATE'] },
+        },
+      }),
     ]);
 
-    const monthlySales = salesMonth._sum.totalAmount || 0;
-    const monthlyProductionCost = productionMonth._sum.totalCost || 0;
-    const monthlyExpenses = expensesMonth._sum.amount || 0;
-    
+    const todaysSales = todaySalesAgg._sum.totalAmount || 0;
+    const monthlySales = monthlySalesAgg._sum.totalAmount || 0;
+    const monthlyExpenses = monthlyExpensesAgg._sum.amount || 0;
+    const monthlyProductionCost = monthlyProductionCostAgg._sum.totalCost || 0;
     const monthlyProfit = monthlySales - (monthlyProductionCost + monthlyExpenses);
-    const avgMarginPercent = monthlySales > 0 ? (monthlyProfit / monthlySales) * 100 : 0;
+    const grossMargin = monthlySales > 0 ? Math.round((monthlyProfit / monthlySales) * 100 * 10) / 10 : 0;
     const waxStock = waxStockAgg._sum.currentStock || 0;
-    const candleStock = candleStockAgg._sum.currentStock || 0;
+    const finishedGoodsStock = finishedGoodsAgg._sum.currentStock || 0;
+    const inventoryValue = inventoryValueAgg._sum.value || 0;
+    const outstandingCredit = outstandingCreditAgg._sum.outstanding || 0;
+    const productionToday = productionTodayAgg._sum.quantityProduced || 0;
+    const productionThisMonth = productionMonthAgg._sum.quantityProduced || 0;
 
-    // 2. Fetch Chart Data
+    // Today's profit (proportional estimate from monthly margin)
+    const todaysProfit = monthlySales > 0 ? Math.round(todaysSales * (monthlyProfit / monthlySales)) : 0;
 
-    // Customer Order History
+    // ── Previous month for % change calculations ──
+    const firstDayPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const [prevMonthlySalesAgg, prevMonthlyExpensesAgg] = await Promise.all([
+      prisma.salesOrder.aggregate({
+        where: { orderDate: { gte: firstDayPrevMonth, lt: firstDayOfMonth } },
+        _sum: { totalAmount: true },
+      }),
+      prisma.expense.aggregate({
+        where: { date: { gte: firstDayPrevMonth, lt: firstDayOfMonth } },
+        _sum: { amount: true },
+      }),
+    ]);
+    const prevMonthlySales = prevMonthlySalesAgg._sum.totalAmount || 0;
+    const prevMonthlyExpenses = prevMonthlyExpensesAgg._sum.amount || 0;
+
+    const salesChange = prevMonthlySales > 0 ? Math.round(((monthlySales - prevMonthlySales) / prevMonthlySales) * 100 * 10) / 10 : 0;
+    const expenseChange = prevMonthlyExpenses > 0 ? Math.round(((monthlyExpenses - prevMonthlyExpenses) / prevMonthlyExpenses) * 100 * 10) / 10 : 0;
+
+    // ── Charts ──
+
+    // 1) 6-month sales trend
+    const salesTrend = [];
+    for (let i = 5; i >= 0; i--) {
+      const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+      const agg = await prisma.salesOrder.aggregate({
+        where: { orderDate: { gte: monthStart, lt: monthEnd } },
+        _sum: { totalAmount: true },
+      });
+      salesTrend.push({
+        month: monthStart.toLocaleString('en-IN', { month: 'short' }),
+        sales: agg._sum.totalAmount || 0,
+      });
+    }
+
+    // 2) Top 10 customers by revenue
     const customersWithSales = await prisma.customer.findMany({
       include: { salesOrders: { select: { totalAmount: true } } },
     });
-    const customerOrders = customersWithSales
+    const topCustomers = customersWithSales
       .map(c => ({
         name: c.name,
-        TotalSales: c.salesOrders.reduce((sum, order) => sum + order.totalAmount, 0)
+        TotalSales: c.salesOrders.reduce((sum, o) => sum + o.totalAmount, 0),
       }))
       .filter(c => c.TotalSales > 0)
       .sort((a, b) => b.TotalSales - a.TotalSales)
       .slice(0, 10);
 
-    // Sales Trend
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(today.getDate() - 6);
-    
+    // 3) Expense breakdown by category
+    const expenseByCat = await prisma.expense.groupBy({
+      by: ['categoryId'],
+      _sum: { amount: true },
+      where: { date: { gte: firstDayOfMonth, lt: firstDayOfNextMonth } },
+      orderBy: { _sum: { amount: 'desc' } },
+    });
+    const catIds = expenseByCat.map(e => e.categoryId);
+    const categories = catIds.length > 0
+      ? await prisma.expenseCategory.findMany({ where: { id: { in: catIds } } })
+      : [];
+    const catMap = new Map(categories.map(c => [c.id, c.name]));
+    const expenseBreakdown = expenseByCat.map(e => ({
+      category: catMap.get(e.categoryId) || 'Other',
+      amount: e._sum.amount || 0,
+    }));
+
+    // 4) 7-day sales trend
+    const sevenDaysAgo = new Date(todayStart);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
     const recentSales = await prisma.salesOrder.groupBy({
       by: ['orderDate'],
       _sum: { totalAmount: true },
       where: { orderDate: { gte: sevenDaysAgo } },
-      orderBy: { orderDate: 'asc' }
+      orderBy: { orderDate: 'asc' },
     });
-    
-    // Map existing dates
-    const salesTrendMap = new Map();
+    const salesDayMap = new Map<string, number>();
     recentSales.forEach(s => {
-      salesTrendMap.set(s.orderDate.toISOString().split('T')[0], s._sum.totalAmount || 0);
+      salesDayMap.set(s.orderDate.toISOString().split('T')[0], s._sum.totalAmount || 0);
     });
-
-    // Fill in blanks for 7 days
-    const salesTrend = [];
-    for(let i=0; i<7; i++) {
-        const d = new Date(sevenDaysAgo);
-        d.setDate(sevenDaysAgo.getDate() + i);
-        const dateStr = d.toISOString().split('T')[0];
-        salesTrend.push({
-            date: dateStr,
-            TotalSales: salesTrendMap.get(dateStr) || 0
-        });
+    const dailySalesTrend = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(sevenDaysAgo);
+      d.setDate(sevenDaysAgo.getDate() + i);
+      const dateStr = d.toISOString().split('T')[0];
+      dailySalesTrend.push({ date: dateStr, TotalSales: salesDayMap.get(dateStr) || 0 });
     }
 
+    // 5) Production vs Sales by batch
     const recentBatches = await prisma.batch.findMany({
       take: 5,
       orderBy: { productionDate: 'desc' },
-      include: {
-        productions: { select: { quantityProduced: true } },
-      }
     });
+    const productionVsSales = recentBatches
+      .map(b => ({
+        batchName: b.batchNumber,
+        Produced: b.producedQty,
+        Sold: b.soldQty,
+      }))
+      .reverse();
 
-    const productionVsSales = recentBatches.map((batch) => {
-      const produced = batch.productions.reduce((sum, p) => sum + p.quantityProduced, 0);
-      return {
-        batchName: batch.batchNumber,
-        Produced: produced,
-        Sold: Math.floor(produced * 0.8), // Mocked for comparison
-      };
-    });
-    productionVsSales.reverse();
+    // 6) Inventory health (raw materials + finished goods)
+    const inventoryHealth = [
+      { name: 'Wax Stock', amount: Math.round(waxStock) },
+      { name: 'Finished Goods', amount: Math.round(finishedGoodsStock) },
+    ];
 
-    // Check for empty state to provide demo data
-    const isEmpty = totalCustomers === 0 && monthlySales === 0;
-
-    const finalKpis = isEmpty ? {
-      todaysSales: 45000,
-      todaysProfit: 18500,
-      monthlySales: 850000,
-      monthlyProfit: 340000,
-      monthlyExpenses: 120000,
-      grossMargin: 40.0,
-      currentWaxStock: 700,
-      finishedGoodsStock: 1450,
-      ordersPending: 4,
-      ordersDelivered: 28,
-      totalCustomers: 124,
-      activeCustomers: 98,
-      outstandingCredit: 215000,
-      inventoryValue: 420000,
-      productionToday: 350,
-      productionThisMonth: 8200,
-      employeeAttendance: 14,
-    } : {
-      todaysSales: Math.round(monthlySales / 30),
-      todaysProfit: Math.round(monthlyProfit / 30),
-      monthlySales,
-      monthlyProfit,
-      monthlyExpenses,
-      grossMargin: avgMarginPercent,
-      currentWaxStock: waxStock,
-      finishedGoodsStock: candleStock,
-      ordersPending: 0,
-      ordersDelivered: 0,
-      totalCustomers,
-      activeCustomers,
-      outstandingCredit: 0,
-      inventoryValue: candleStock * 150, // mock price
-      productionToday: 0,
-      productionThisMonth: 0,
-      employeeAttendance: 0,
-    };
-
-    const finalCharts = isEmpty ? {
-      monthlyFinancials: [
-        { name: 'Sales', amount: 850000 },
-        { name: 'Profit', amount: 340000 },
-        { name: 'Expenses', amount: 120000 }
-      ],
-      customerOrders: [
-        { name: 'Aroma House', TotalSales: 240000 },
-        { name: 'Gift Gallery', TotalSales: 190000 },
-        { name: 'Candle World', TotalSales: 150000 },
-        { name: 'Festival Lights', TotalSales: 110000 },
-        { name: 'Home Decor Plus', TotalSales: 85000 },
-      ],
-      inventoryHealth: [
-        { name: 'Wax Stock', amount: 700 },
-        { name: 'Candle Stock', amount: 1450 }
-      ],
-      salesTrend: [
-        { date: '2026-07-25', TotalSales: 20000 },
-        { date: '2026-07-26', TotalSales: 19000 },
-        { date: '2026-07-27', TotalSales: 2800 },
-        { date: '2026-07-28', TotalSales: 22000 },
-        { date: '2026-07-29', TotalSales: 24000 },
-        { date: '2026-07-30', TotalSales: 25000 },
-        { date: '2026-07-31', TotalSales: 21000 },
-      ],
-      productionVsSales: [
-        { batchName: 'BATCH-001', Produced: 250, Sold: 250 },
-        { batchName: 'BATCH-002', Produced: 400, Sold: 370 },
-        { batchName: 'BATCH-003', Produced: 200, Sold: 10 },
-      ]
-    } : {
-      monthlyFinancials: [
-        { name: 'Sales', amount: monthlySales },
-        { name: 'Profit', amount: monthlyProfit > 0 ? monthlyProfit : 0 },
-        { name: 'Expenses', amount: monthlyExpenses }
-      ],
-      customerOrders,
-      inventoryHealth: [
-        { name: 'Wax Stock', amount: waxStock },
-        { name: 'Candle Stock', amount: candleStock }
-      ],
-      salesTrend,
-      productionVsSales
-    };
+    // 7) Monthly financials
+    const monthlyFinancials = [
+      { name: 'Sales', amount: Math.round(monthlySales) },
+      { name: 'Profit', amount: Math.round(monthlyProfit > 0 ? monthlyProfit : 0) },
+      { name: 'Expenses', amount: Math.round(monthlyExpenses) },
+    ];
 
     return jsonResponse({
       data: {
-        kpis: finalKpis,
-        charts: finalCharts
-      }
+        kpis: {
+          todaysSales: Math.round(todaysSales),
+          todaysProfit: Math.round(todaysProfit),
+          monthlySales: Math.round(monthlySales),
+          monthlyProfit: Math.round(monthlyProfit),
+          monthlyExpenses: Math.round(monthlyExpenses),
+          grossMargin,
+          currentWaxStock: Math.round(waxStock),
+          finishedGoodsStock: Math.round(finishedGoodsStock),
+          ordersPending,
+          ordersDelivered,
+          totalCustomers,
+          activeCustomers,
+          outstandingCredit: Math.round(outstandingCredit),
+          inventoryValue: Math.round(inventoryValue),
+          productionToday: Math.round(productionToday),
+          productionThisMonth: Math.round(productionThisMonth),
+          employeeAttendance: employeeAttendanceToday,
+          // % changes
+          salesChange,
+          expenseChange,
+        },
+        charts: {
+          monthlyFinancials,
+          customerOrders: topCustomers,
+          inventoryHealth,
+          salesTrend: dailySalesTrend,
+          productionVsSales,
+          expenseBreakdown,
+          monthlySalesTrend: salesTrend,
+        },
+      },
     });
   } catch (err: any) {
+    console.error('Dashboard stats error:', err);
     return errorResponse(err.message || 'Failed to fetch dashboard stats', 500);
   }
 }

@@ -42,56 +42,11 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [kRes, cRes] = await Promise.all([
-          api.get('/dashboard/kpis'),
-          api.get('/dashboard/charts'),
-        ]);
-        setKpis(kRes.data.data);
-        setCharts(cRes.data.data);
+        const res = await api.get('/dashboard/stats');
+        setKpis(res.data.data.kpis);
+        setCharts(res.data.data.charts);
       } catch {
-        // Fallback mock values for instant rendering if backend is starting
-        setKpis({
-          todaysSales: 45000,
-          todaysProfit: 18500,
-          monthlySales: 850000,
-          monthlyProfit: 340000,
-          monthlyExpenses: 120000,
-          grossMargin: 40.0,
-          currentWaxStock: 700,
-          finishedGoodsStock: 1450,
-          ordersPending: 4,
-          ordersDelivered: 28,
-          totalCustomers: 124,
-          activeCustomers: 98,
-          outstandingCredit: 215000,
-          inventoryValue: 420000,
-          productionToday: 350,
-          productionThisMonth: 8200,
-          employeeAttendance: 14,
-        });
-        setCharts({
-          salesTrend: [
-            { month: 'Feb', sales: 620000 },
-            { month: 'Mar', sales: 710000 },
-            { month: 'Apr', sales: 680000 },
-            { month: 'May', sales: 790000 },
-            { month: 'Jun', sales: 810000 },
-            { month: 'Jul', sales: 850000 },
-          ],
-          topCustomers: [
-            { name: 'Aroma House', revenue: 240000 },
-            { name: 'Gift Gallery', revenue: 190000 },
-            { name: 'Candle World', revenue: 150000 },
-            { name: 'Festival Lights', revenue: 110000 },
-            { name: 'Home Decor Plus', revenue: 85000 },
-          ],
-          expenseBreakdown: [
-            { category: 'Raw Materials', amount: 65000 },
-            { category: 'Salary', amount: 35000 },
-            { category: 'Electricity', amount: 12000 },
-            { category: 'Fuel', amount: 8000 },
-          ],
-        });
+        console.error('Failed to load dashboard data');
       } finally {
         setIsLoading(false);
       }
@@ -100,6 +55,29 @@ export default function DashboardPage() {
   }, []);
 
   const COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+  const PIE_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
+
+  const salesChange = kpis?.salesChange ?? 0;
+  const expenseChange = kpis?.expenseChange ?? 0;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">ERP Dashboard</h1>
+          <p className="text-sm text-gray-500">Loading real-time data…</p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 16 }).map((_, i) => (
+            <div key={i} className="animate-pulse rounded-2xl border border-gray-200/80 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+              <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-3/4 mb-3"></div>
+              <div className="h-8 bg-gray-200 dark:bg-gray-800 rounded w-1/2"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -114,32 +92,29 @@ export default function DashboardPage() {
         <KPICard
           title="Today's Sales"
           value={formatCurrency(kpis?.todaysSales || 0)}
-          change="+12.5%"
-          isPositive={true}
+          change={salesChange !== 0 ? `${salesChange > 0 ? '+' : ''}${salesChange}%` : undefined}
+          isPositive={salesChange >= 0}
           icon={DollarSign}
           color="blue"
         />
         <KPICard
           title="Today's Profit"
           value={formatCurrency(kpis?.todaysProfit || 0)}
-          change="+8.2%"
-          isPositive={true}
           icon={TrendingUp}
           color="emerald"
         />
         <KPICard
           title="Monthly Sales"
           value={formatCurrency(kpis?.monthlySales || 0)}
-          change="+15.4%"
-          isPositive={true}
+          change={salesChange !== 0 ? `${salesChange > 0 ? '+' : ''}${salesChange}%` : undefined}
+          isPositive={salesChange >= 0}
           icon={DollarSign}
           color="blue"
+          subtitle="vs. last month"
         />
         <KPICard
           title="Monthly Profit"
           value={formatCurrency(kpis?.monthlyProfit || 0)}
-          change="+11.0%"
-          isPositive={true}
           icon={TrendingUp}
           color="emerald"
         />
@@ -147,16 +122,15 @@ export default function DashboardPage() {
         <KPICard
           title="Monthly Expenses"
           value={formatCurrency(kpis?.monthlyExpenses || 0)}
-          change="-3.5%"
-          isPositive={true}
+          change={expenseChange !== 0 ? `${expenseChange > 0 ? '+' : ''}${expenseChange}%` : undefined}
+          isPositive={expenseChange <= 0}
           icon={CreditCard}
           color="rose"
+          subtitle="vs. last month"
         />
         <KPICard
           title="Gross Margin"
           value={`${kpis?.grossMargin || 0}%`}
-          change="+1.2%"
-          isPositive={true}
           icon={TrendingUp}
           color="purple"
         />
@@ -185,12 +159,14 @@ export default function DashboardPage() {
           value={kpis?.ordersDelivered || 0}
           icon={CheckCircle2}
           color="emerald"
+          subtitle="This month"
         />
         <KPICard
           title="Total Customers"
           value={kpis?.totalCustomers || 0}
           icon={Users}
           color="blue"
+          subtitle={`${kpis?.activeCustomers || 0} active`}
         />
         <KPICard
           title="Outstanding Credit"
@@ -223,6 +199,7 @@ export default function DashboardPage() {
           value={`${kpis?.employeeAttendance || 0} Present`}
           icon={Users}
           color="green"
+          subtitle="Today"
         />
       </div>
 
@@ -249,7 +226,7 @@ export default function DashboardPage() {
 
           {/* Customer Order History */}
           <div className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 md:col-span-2 flex flex-col">
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Customer Order History</h3>
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Top Customers by Revenue</h3>
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={charts?.customerOrders || []}>
@@ -264,6 +241,59 @@ export default function DashboardPage() {
             </div>
           </div>
 
+        </div>
+
+        {/* Charts Middle Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Expense Breakdown */}
+          <div className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 flex flex-col">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Expense Breakdown (This Month)</h3>
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={charts?.expenseBreakdown || []}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={90}
+                    paddingAngle={3}
+                    dataKey="amount"
+                    nameKey="category"
+                    label={({ category, percent }: any) => `${category} ${(percent * 100).toFixed(0)}%`}
+                    labelLine={true}
+                  >
+                    {(charts?.expenseBreakdown || []).map((_: any, index: number) => (
+                      <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(val: any) => formatCurrency(val)} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* 6-Month Sales Trend */}
+          <div className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 flex flex-col">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">6-Month Sales Trend</h3>
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={charts?.monthlySalesTrend || []}>
+                  <defs>
+                    <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                  <XAxis dataKey="month" tick={{fill: '#94A3B8', fontSize: 12}} axisLine={false} tickLine={false} />
+                  <YAxis tick={{fill: '#94A3B8', fontSize: 12}} tickFormatter={(val) => `₹${val}`} axisLine={false} tickLine={false} />
+                  <Tooltip formatter={(val: any) => formatCurrency(val)} />
+                  <Area type="monotone" dataKey="sales" stroke="#3B82F6" strokeWidth={2} fill="url(#salesGradient)" name="Sales" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </div>
 
         {/* Charts Bottom Row */}
@@ -286,9 +316,9 @@ export default function DashboardPage() {
             <div className="text-center text-xs text-gray-500 mt-2">Stock Type</div>
           </div>
 
-          {/* Sales Trend */}
+          {/* Sales Trend (7 Days) */}
           <div className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 flex flex-col">
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Sales Trend</h3>
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Sales Trend (7 Days)</h3>
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={charts?.salesTrend || []}>
