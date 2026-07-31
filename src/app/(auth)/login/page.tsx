@@ -45,12 +45,22 @@ export default function LoginPage() {
       {/* LEFT PANE - Information & Graphics (Hidden on mobile) */}
       <div className="hidden lg:flex w-1/2 flex-col justify-between bg-gradient-to-br from-[#f8fbff] to-[#eef5ff] dark:from-slate-900 dark:to-slate-950 relative overflow-hidden p-12 xl:p-16">
         
-        {/* Background decorative circles with animation */}
-        <div className="absolute top-0 right-0 -translate-y-1/3 translate-x-1/3 w-[800px] h-[800px] rounded-full border-[40px] border-blue-50/50 dark:border-blue-900/10 pointer-events-none animate-[pulse_6s_ease-in-out_infinite]" />
-        <div className="absolute top-10 right-10 w-[600px] h-[600px] rounded-full border-[20px] border-blue-50/30 dark:border-blue-900/5 pointer-events-none animate-[pulse_8s_ease-in-out_200ms_infinite]" />
-        
-        {/* Additional animated floating orb */}
-        <div className="absolute bottom-20 left-10 w-64 h-64 bg-blue-400/20 dark:bg-blue-600/10 blur-3xl rounded-full pointer-events-none animate-[pulse_10s_ease-in-out_infinite]" />
+        {/* Live Animated Background */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {/* Moving Gradient Mesh */}
+          <div className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] rounded-full bg-blue-400/20 dark:bg-blue-600/10 blur-3xl animate-drift mix-blend-multiply dark:mix-blend-screen" />
+          <div className="absolute top-[40%] -right-[10%] w-[60%] h-[60%] rounded-full bg-indigo-400/20 dark:bg-indigo-600/10 blur-3xl animate-float mix-blend-multiply dark:mix-blend-screen" style={{ animationDelay: '2s' }} />
+          <div className="absolute -bottom-[20%] left-[20%] w-[80%] h-[80%] rounded-full bg-sky-400/20 dark:bg-sky-600/10 blur-3xl animate-drift mix-blend-multiply dark:mix-blend-screen" style={{ animationDelay: '4s' }} />
+          
+          {/* Animated decorative rings */}
+          <div className="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 w-[800px] h-[800px] rounded-full border-[40px] border-blue-50/50 dark:border-blue-900/20 animate-pulse-slow" />
+          <div className="absolute top-10 right-10 w-[600px] h-[600px] rounded-full border-[20px] border-blue-50/30 dark:border-blue-900/10 animate-float" style={{ animationDelay: '1s' }} />
+          
+          {/* Floating Particles (Dots) */}
+          <div className="absolute top-[20%] left-[15%] w-3 h-3 rounded-full bg-blue-500/50 dark:bg-blue-400/50 animate-float" style={{ animationDuration: '8s' }} />
+          <div className="absolute top-[60%] right-[20%] w-4 h-4 rounded-full bg-indigo-500/50 dark:bg-indigo-400/50 animate-drift" style={{ animationDuration: '12s', animationDelay: '3s' }} />
+          <div className="absolute bottom-[30%] left-[30%] w-2 h-2 rounded-full bg-sky-500/50 dark:bg-sky-400/50 animate-float" style={{ animationDuration: '10s', animationDelay: '5s' }} />
+        </div>
 
         <div className="relative z-10">
           {/* Logo */}
@@ -94,7 +104,7 @@ export default function LoginPage() {
 
         {/* Floating Graphic & Footer */}
         <div className="relative z-10 mt-12 flex flex-col justify-end flex-1">
-          <div className="absolute right-0 bottom-10 w-96 opacity-90 mix-blend-multiply dark:mix-blend-screen pointer-events-none transform translate-x-12 translate-y-12">
+          <div className="absolute right-0 bottom-10 w-96 opacity-95 mix-blend-multiply dark:mix-blend-screen pointer-events-none transform translate-x-12 translate-y-12 animate-float" style={{ animationDuration: '12s' }}>
             <img src="/dashboard-3d.png" alt="3D Dashboard" className="w-full h-auto drop-shadow-2xl" />
           </div>
           

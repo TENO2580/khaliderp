@@ -1,5 +1,22 @@
 @import "tailwindcss";
 
+@theme {
+  --animate-float: float 15s ease-in-out infinite;
+  --animate-drift: drift 25s linear infinite;
+  --animate-pulse-slow: pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-40px) rotate(5deg); }
+  }
+  @keyframes drift {
+    0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+    33% { transform: translate(50px, -50px) rotate(10deg) scale(1.05); }
+    66% { transform: translate(-20px, 40px) rotate(-5deg) scale(0.95); }
+    100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  }
+}
+
 @variant dark (&:where(.dark, .dark *));
 
 :root {
