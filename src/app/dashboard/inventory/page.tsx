@@ -36,7 +36,7 @@ export default function InventoryPage() {
 
   useEffect(() => {
     fetchData();
-  }, [page, search]);
+  }, [page, search, limit]);
 
   const handleAdjustSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

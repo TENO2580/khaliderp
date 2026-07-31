@@ -24,7 +24,7 @@ export default function InvoicesPage() {
 
   useEffect(() => {
     fetchData();
-  }, [search]);
+  }, [search, limit]);
 
   const handlePrintTrigger = () => {
     window.print();

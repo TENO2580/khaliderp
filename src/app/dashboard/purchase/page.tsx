@@ -41,7 +41,7 @@ export default function PurchasePage() {
 
   useEffect(() => {
     fetchData();
-  }, [search]);
+  }, [search, limit]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

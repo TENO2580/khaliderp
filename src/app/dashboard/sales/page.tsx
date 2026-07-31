@@ -62,7 +62,7 @@ export default function SalesPage() {
 
   useEffect(() => {
     fetchData();
-  }, [page, search]);
+  }, [page, search, limit]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

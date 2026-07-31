@@ -40,7 +40,7 @@ export default function RawMaterialsPage() {
 
   useEffect(() => {
     fetchData();
-  }, [search]);
+  }, [search, limit]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

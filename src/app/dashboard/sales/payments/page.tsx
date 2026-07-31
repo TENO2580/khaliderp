@@ -22,7 +22,7 @@ export default function PaymentsPage() {
 
   useEffect(() => {
     fetchData();
-  }, [search]);
+  }, [search, limit]);
 
   const columns: Column<any>[] = [
     {

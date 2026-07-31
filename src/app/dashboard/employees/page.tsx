@@ -50,7 +50,7 @@ export default function EmployeesPage() {
 
   useEffect(() => {
     fetchData();
-  }, [search]);
+  }, [search, limit]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

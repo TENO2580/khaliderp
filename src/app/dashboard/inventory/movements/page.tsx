@@ -20,7 +20,7 @@ export default function StockMovementsPage() {
 
   useEffect(() => {
     fetchData();
-  }, [search]);
+  }, [search, limit]);
 
   const columns: Column<any>[] = [
     {
