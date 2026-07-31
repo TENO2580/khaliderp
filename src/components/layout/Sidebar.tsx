@@ -26,7 +26,12 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
-  const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
+  const [openSubmenu, setOpenSubmenu] = useState<string | null>(() => {
+    const activeItem = NAV_ITEMS.find(
+      (item) => item.children && (pathname === item.href || pathname.startsWith(item.href + '/'))
+    );
+    return activeItem ? activeItem.title : null;
+  });
 
   const filteredNavItems = NAV_ITEMS.filter((item) => {
     if (!item.permission || !user) return true;
@@ -38,13 +43,12 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     return pathname === href || pathname.startsWith(href + '/');
   };
 
-  // Auto expand submenu if current route belongs to it
+  // Auto expand submenu when route changes
   useEffect(() => {
-    filteredNavItems.forEach((item) => {
-      if (item.children && isActive(item.href)) {
-        setOpenSubmenu((prev) => (prev === null ? item.title : prev));
-      }
-    });
+    const activeItem = filteredNavItems.find((item) => item.children && isActive(item.href));
+    if (activeItem) {
+      setOpenSubmenu(activeItem.title);
+    }
   }, [pathname]);
 
   const toggleSubmenu = (title: string) => {
@@ -93,7 +97,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             const Icon = item.icon;
             const active = isActive(item.href);
             const hasChildren = item.children && item.children.length > 0;
-            const isOpen = openSubmenu === item.title || (active && openSubmenu === null);
+            const isOpen = openSubmenu === item.title;
 
             return (
               <li key={item.href}>
