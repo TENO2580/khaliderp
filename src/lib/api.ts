@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+// Force relative API paths for Next.js App Router (Serverless)
+const API_URL = '/api';
 
 // Create axios instance with defaults
 const api = axios.create({
