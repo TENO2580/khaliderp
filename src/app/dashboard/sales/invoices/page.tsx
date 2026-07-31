@@ -11,6 +11,9 @@ import { toast } from 'sonner';
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
   const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
 

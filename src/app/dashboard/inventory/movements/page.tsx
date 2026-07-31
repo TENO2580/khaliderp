@@ -10,6 +10,8 @@ export default function StockMovementsPage() {
   const [movements, setMovements] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
   const fetchData = async () => {
     setIsLoading(false);

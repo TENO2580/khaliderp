@@ -10,6 +10,9 @@ import { toast } from 'sonner';
 export default function RawMaterialsPage() {
   const [materials, setMaterials] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
 
   // Modal state

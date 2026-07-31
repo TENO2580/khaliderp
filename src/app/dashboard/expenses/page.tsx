@@ -14,6 +14,8 @@ export default function ExpensesPage() {
   const [stats, setStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
   // Add Expense Modal
   const [isCreateOpen, setIsCreateOpen] = useState(false);
