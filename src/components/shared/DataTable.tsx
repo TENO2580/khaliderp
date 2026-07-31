@@ -94,7 +94,7 @@ export default function DataTable<T extends { id?: string }>({
               type="date"
               value={startDate || ''}
               onChange={(e) => onStartDateChange(e.target.value)}
-              className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
+              className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:[color-scheme:dark]"
               title="Start Date"
             />
           )}
@@ -103,7 +103,7 @@ export default function DataTable<T extends { id?: string }>({
               type="date"
               value={endDate || ''}
               onChange={(e) => onEndDateChange(e.target.value)}
-              className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
+              className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:[color-scheme:dark]"
               title="End Date"
             />
           )}
