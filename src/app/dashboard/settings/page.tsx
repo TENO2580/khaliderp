@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Settings, Shield, Building, Database, Save, RotateCcw } from 'lucide-react';
+import { Settings, Shield, Building, Database, Save, RotateCcw, UserCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import api from '@/lib/api';
+import { formatDate } from '@/lib/utils';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('company');
@@ -26,6 +28,25 @@ export default function SettingsPage() {
   const handleBackup = () => {
     toast.success('Database backup initiated. Downloading SQL dump...');
   };
+
+  const [users, setUsers] = useState<any[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'permissions') {
+      setIsLoadingUsers(true);
+      api.get('/users')
+        .then((res) => {
+          setUsers(res.data.data);
+        })
+        .catch(() => {
+          toast.error('Failed to load users');
+        })
+        .finally(() => {
+          setIsLoadingUsers(false);
+        });
+    }
+  }, [activeTab]);
 
   return (
     <div className="space-y-6">
@@ -184,6 +205,60 @@ export default function SettingsPage() {
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          <div className="mt-8">
+            <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <UserCircle className="h-5 w-5 text-gray-500" /> System Users
+            </h3>
+            <p className="text-xs text-gray-500 mb-4">List of all users with access to the system</p>
+            
+            <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-gray-50 text-xs uppercase font-semibold text-gray-500 dark:bg-gray-950">
+                  <tr>
+                    <th className="p-3">Name</th>
+                    <th className="p-3">Email</th>
+                    <th className="p-3">Role</th>
+                    <th className="p-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-sm">
+                  {isLoadingUsers ? (
+                    <tr>
+                      <td colSpan={4} className="p-6 text-center text-gray-500">Loading users...</td>
+                    </tr>
+                  ) : users.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="p-6 text-center text-gray-500">No users found.</td>
+                    </tr>
+                  ) : (
+                    users.map((u) => (
+                      <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                        <td className="p-3 font-medium text-gray-900 dark:text-white">{u.name}</td>
+                        <td className="p-3 text-gray-500">{u.email}</td>
+                        <td className="p-3">
+                          <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${
+                            u.role === 'SUPER_ADMIN' || u.role === 'ADMIN' 
+                              ? 'bg-purple-50 text-purple-700 ring-purple-700/10 dark:bg-purple-900/20 dark:text-purple-400 dark:ring-purple-900/50'
+                              : 'bg-blue-50 text-blue-700 ring-blue-700/10 dark:bg-blue-900/20 dark:text-blue-400 dark:ring-blue-900/50'
+                          }`}>
+                            {u.role.replace('_', ' ')}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          {u.isActive ? (
+                            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Active</span>
+                          ) : (
+                            <span className="text-xs font-semibold text-red-600 dark:text-red-400">Inactive</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
