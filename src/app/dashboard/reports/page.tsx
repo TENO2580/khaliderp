@@ -200,7 +200,7 @@ export default function ReportsPage() {
           {rows.map((r: any, i: number) => (
             <tr key={i}>
               <td className="px-4 py-3 font-semibold text-gray-900 dark:text-white">{r.metric}</td>
-              <td className="px-4 py-3 font-bold">{r.metric.includes('%') ? `${r.value.toFixed(1)}%` : formatCurrency(r.value)}</td>
+              <td className="px-4 py-3 font-bold">{r.metric?.includes?.('%') ? `${(r.value || 0).toFixed(1)}%` : formatCurrency(r.value || 0)}</td>
             </tr>
           ))}
         </tbody>
@@ -428,7 +428,11 @@ export default function ReportsPage() {
         {reportTabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => {
+              setIsLoading(true);
+              setReportData(null);
+              setActiveTab(tab.id);
+            }}
             className={`rounded-xl px-4 py-2 text-xs font-semibold whitespace-nowrap transition-all ${
               activeTab === tab.id
                 ? 'bg-white text-blue-600 shadow-sm dark:bg-gray-800 dark:text-blue-400'
