@@ -11,6 +11,7 @@ import {
   Sun,
   Flame,
   X,
+  Moon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NAV_ITEMS, hasPermission, ROLE_LABELS } from '@/lib/constants';
