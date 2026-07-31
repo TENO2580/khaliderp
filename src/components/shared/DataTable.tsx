@@ -228,8 +228,10 @@ export default function DataTable<T extends { id?: string }>({
             <p className="text-xs text-gray-500 dark:text-gray-400">
               Page <span className="font-semibold text-gray-900 dark:text-white">{page}</span> of{' '}
               <span className="font-semibold text-gray-900 dark:text-white">{totalPages}</span>
-              {totalItems !== undefined && ` (${totalItems} total items)`}
             </p>
+            <div className="rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+              Total: {totalItems ?? data.length}
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
