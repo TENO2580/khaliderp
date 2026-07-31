@@ -176,15 +176,15 @@ export default function DataTable<T extends { id?: string }>({
 
           <div className="flex items-center gap-2">
             <button
-              disabled={page <= 1}
-              onClick={() => onPageChange(page - 1)}
+              disabled={!onPageChange || page <= 1}
+              onClick={() => onPageChange?.(page - 1)}
               className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-800 dark:hover:bg-gray-800"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
-              disabled={page >= totalPages}
-              onClick={() => onPageChange(page + 1)}
+              disabled={!onPageChange || page >= totalPages}
+              onClick={() => onPageChange?.(page + 1)}
               className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-800 dark:hover:bg-gray-800"
             >
               <ChevronRight className="h-4 w-4" />
