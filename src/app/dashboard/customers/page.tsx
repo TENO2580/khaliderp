@@ -66,72 +66,72 @@ export default function CustomersPage() {
 
   const columns: Column<any>[] = [
     {
-      header: 'Customer ID',
+      header: 'Sl No.',
       accessorKey: 'customerId',
-      cell: (c) => <span className="font-mono text-xs font-semibold text-blue-600 dark:text-blue-400">{c.customerId}</span>,
+      cell: (c) => <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{c.customerId}</span>,
     },
     {
       header: 'Name',
       cell: (c) => (
-        <div>
-          <p className="font-semibold text-gray-900 dark:text-white">{c.name}</p>
-          {c.ownerName && <p className="text-xs text-gray-500">Owner: {c.ownerName}</p>}
-        </div>
+        <span className="font-semibold text-gray-900 dark:text-white">{c.name}</span>
       ),
     },
     {
-      header: 'Contact',
+      header: 'Location',
       cell: (c) => (
-        <div className="flex items-center gap-2">
-          {c.phone && (
-            <a href={`tel:${c.phone}`} className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800">
-              <Phone className="h-4 w-4" />
-            </a>
-          )}
-          {c.whatsapp && (
-            <a
-              href={`https://wa.me/${c.whatsapp.replace(/\D/g, '')}`}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-lg p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-              title="Open WhatsApp"
-            >
-              <MessageCircle className="h-4 w-4" />
-            </a>
-          )}
-          {c.address && (
-            <a
-              href={`https://maps.google.com/?q=${encodeURIComponent(`${c.name} ${c.address} ${c.pincode}`)}`}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-lg p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40"
-              title="View on Google Maps"
-            >
-              <MapPin className="h-4 w-4" />
-            </a>
-          )}
-        </div>
+        <span className="text-sm text-gray-600 dark:text-gray-300">
+          {[c.district, c.state].filter(Boolean).join(', ') || c.address || 'N/A'}
+        </span>
       ),
     },
     {
-      header: 'Type',
+      header: 'Phone',
+      accessorKey: 'phone',
+      cell: (c) => <span className="text-sm text-gray-600 dark:text-gray-300">{c.phone || 'N/A'}</span>,
+    },
+    {
+      header: 'Last Order',
+      cell: (c) => (
+        <span className="text-sm text-gray-600 dark:text-gray-300">
+          {c.lastPurchaseDate ? new Date(c.lastPurchaseDate).toLocaleDateString('en-IN') : 'N/A'}
+        </span>
+      ),
+    },
+    {
+      header: 'Next Follow-Up',
+      cell: (c) => (
+        <span className="text-sm text-gray-600 dark:text-gray-300">
+          {c.nextFollowupDate ? new Date(c.nextFollowupDate).toLocaleDateString('en-IN') : 'N/A'}
+        </span>
+      ),
+    },
+    {
+      header: 'Current Status',
+      cell: (c) => <StatusBadge status={c.status} />,
+    },
+    {
+      header: 'Notes',
+      cell: (c) => (
+        <span className="text-sm text-gray-600 dark:text-gray-300 truncate max-w-[150px] inline-block" title={c.notes}>
+          {c.notes || '-'}
+        </span>
+      ),
+    },
+    {
+      header: 'Last Selling Cost',
+      cell: (c) => (
+        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+          {c.sellingPrice ? formatCurrency(c.sellingPrice) : '-'}
+        </span>
+      ),
+    },
+    {
+      header: 'Category',
       cell: (c) => (
         <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
           {customerTypeLabels[c.type] || c.type}
         </span>
       ),
-    },
-    {
-      header: 'Outstanding',
-      cell: (c) => (
-        <span className={c.outstanding > 0 ? 'font-semibold text-rose-600 dark:text-rose-400' : 'text-gray-500'}>
-          {formatCurrency(c.outstanding || 0)}
-        </span>
-      ),
-    },
-    {
-      header: 'Status',
-      cell: (c) => <StatusBadge status={c.status} />,
     },
   ];
 
