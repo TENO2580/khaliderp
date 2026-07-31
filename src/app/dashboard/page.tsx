@@ -255,7 +255,7 @@ export default function DashboardPage() {
                 <BarChart data={charts?.customerOrders || []}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                   <XAxis dataKey="name" tick={{fill: '#94A3B8', fontSize: 10}} angle={-45} textAnchor="end" height={60} axisLine={false} tickLine={false} />
-                  <YAxis tick={{fill: '#94A3B8', fontSize: 12}} axisLine={false} tickLine={false} />
+                  <YAxis tick={{fill: '#94A3B8', fontSize: 12}} tickFormatter={(val) => `₹${val}`} axisLine={false} tickLine={false} />
                   <Tooltip formatter={(val: any) => formatCurrency(val)} />
                   <Legend wrapperStyle={{fontSize: '12px'}} />
                   <Bar dataKey="TotalSales" fill="#3B82F6" name="Total Sales" radius={[4, 4, 0, 0]} />
@@ -294,7 +294,7 @@ export default function DashboardPage() {
                 <AreaChart data={charts?.salesTrend || []}>
                   <CartesianGrid strokeDasharray="3 3" vertical={true} stroke="#E2E8F0" />
                   <XAxis dataKey="date" tick={{fill: '#94A3B8', fontSize: 12}} axisLine={false} tickLine={false} />
-                  <YAxis tick={{fill: '#94A3B8', fontSize: 12}} axisLine={false} tickLine={false} />
+                  <YAxis tick={{fill: '#94A3B8', fontSize: 12}} tickFormatter={(val) => `₹${val}`} axisLine={false} tickLine={false} />
                   <Tooltip formatter={(val: any) => formatCurrency(val)} />
                   <Legend wrapperStyle={{fontSize: '12px'}} />
                   <Area type="monotone" dataKey="TotalSales" stroke="#3B82F6" strokeWidth={2} fill="transparent" name="Total Sales" />
