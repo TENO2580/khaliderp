@@ -26,29 +26,7 @@ export default function PurchasePage() {
 
   const fetchData = async () => {
     setIsLoading(false);
-    // Mock purchase orders for demonstration
-    setOrders([
-      {
-        id: '1',
-        poNumber: 'PO-2026-0001',
-        supplierName: 'Wax Industries Pvt Ltd',
-        orderDate: new Date().toISOString(),
-        material: 'Paraffin Wax (500 KG)',
-        totalAmount: 42500,
-        status: 'RECEIVED',
-        paymentStatus: 'PAID',
-      },
-      {
-        id: '2',
-        poNumber: 'PO-2026-0002',
-        supplierName: 'Fragrance World',
-        orderDate: new Date().toISOString(),
-        material: 'Lavender Oils (50 LTR)',
-        totalAmount: 20000,
-        status: 'ORDERED',
-        paymentStatus: 'UNPAID',
-      },
-    ]);
+    setOrders([]);
   };
 
   useEffect(() => {

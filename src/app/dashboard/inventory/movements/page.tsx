@@ -13,41 +13,7 @@ export default function StockMovementsPage() {
 
   const fetchData = async () => {
     setIsLoading(false);
-    setMovements([
-      {
-        id: '1',
-        date: new Date().toISOString(),
-        itemName: 'Paraffin Wax',
-        category: 'Raw Material',
-        type: 'PRODUCTION_OUT',
-        quantity: -100,
-        unit: 'KG',
-        reference: 'Production Run #PROD-2026-0001',
-        operator: 'Admin',
-      },
-      {
-        id: '2',
-        date: new Date().toISOString(),
-        itemName: 'Lavender Soy Candle 200g',
-        category: 'Finished Goods',
-        type: 'PRODUCTION_IN',
-        quantity: +100,
-        unit: 'PCS',
-        reference: 'Production Output #PROD-2026-0001',
-        operator: 'Admin',
-      },
-      {
-        id: '3',
-        date: new Date().toISOString(),
-        itemName: 'Lavender Soy Candle 200g',
-        category: 'Finished Goods',
-        type: 'SALES_OUT',
-        quantity: -20,
-        unit: 'PCS',
-        reference: 'Sales Order #SO-2026-0001',
-        operator: 'Sales Exec',
-      },
-    ]);
+    setMovements([]);
   };
 
   useEffect(() => {
