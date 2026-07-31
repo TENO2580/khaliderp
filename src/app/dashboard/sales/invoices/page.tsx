@@ -16,54 +16,7 @@ export default function InvoicesPage() {
 
   const fetchData = async () => {
     setIsLoading(false);
-    // Complete demo invoices
-    setInvoices([
-      {
-        id: '1',
-        invoiceNumber: 'INV-2026-0001',
-        orderNumber: 'SO-2026-0001',
-        customerName: 'Aroma House',
-        ownerName: 'Rajesh Kumar',
-        customerGst: '33AABCA9876C1Z5',
-        customerAddress: '45 Commercial Street, T. Nagar, Chennai, Tamil Nadu - 600017',
-        customerPhone: '+91 98765 43210',
-        invoiceDate: new Date().toISOString(),
-        dueDate: new Date(Date.now() + 15 * 86400000).toISOString(),
-        items: [
-          { name: 'Lavender Soy Candle 200g', hsn: '3406', qty: 50, price: 350, taxable: 17500, cgst: 1575, sgst: 1575, total: 20650 },
-          { name: 'Vanilla Bean Candle 500g', hsn: '3406', qty: 25, price: 650, taxable: 16250, cgst: 1462.5, sgst: 1462.5, total: 19175 },
-        ],
-        taxableAmount: 33750,
-        cgstTotal: 3037.5,
-        sgstTotal: 3037.5,
-        gstAmount: 6075,
-        transportCharge: 1475,
-        totalAmount: 41300,
-        status: 'ISSUED',
-      },
-      {
-        id: '2',
-        invoiceNumber: 'INV-2026-0002',
-        orderNumber: 'SO-2026-0002',
-        customerName: 'Candle World',
-        ownerName: 'Priya Sharma',
-        customerGst: '33AABCC5432B1Z8',
-        customerAddress: '12 Cross Cut Road, Gandhipuram, Coimbatore, Tamil Nadu - 641012',
-        customerPhone: '+91 98765 43211',
-        invoiceDate: new Date().toISOString(),
-        dueDate: new Date(Date.now() + 15 * 86400000).toISOString(),
-        items: [
-          { name: 'Classic White Pillar Candle 1kg', hsn: '3406', qty: 100, price: 180, taxable: 18000, cgst: 1620, sgst: 1620, total: 21240 },
-        ],
-        taxableAmount: 18000,
-        cgstTotal: 1620,
-        sgstTotal: 1620,
-        gstAmount: 3240,
-        transportCharge: 0,
-        totalAmount: 21240,
-        status: 'PAID',
-      },
-    ]);
+    setInvoices([]);
   };
 
   useEffect(() => {

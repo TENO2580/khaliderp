@@ -14,30 +14,7 @@ export default function PaymentsPage() {
 
   const fetchData = async () => {
     setIsLoading(false);
-    setPayments([
-      {
-        id: '1',
-        paymentRef: 'PAY-2026-0001',
-        invoiceNumber: 'INV-2026-0001',
-        customerName: 'Aroma House',
-        date: new Date().toISOString(),
-        method: 'UPI',
-        referenceNumber: 'UPI/38291048201',
-        amount: 25000,
-        status: 'CONFIRMED',
-      },
-      {
-        id: '2',
-        paymentRef: 'PAY-2026-0002',
-        invoiceNumber: 'INV-2026-0002',
-        customerName: 'Candle World',
-        date: new Date().toISOString(),
-        method: 'BANK_TRANSFER',
-        referenceNumber: 'NEFT/59302019',
-        amount: 21240,
-        status: 'CONFIRMED',
-      },
-    ]);
+    setPayments([]);
   };
 
   useEffect(() => {
