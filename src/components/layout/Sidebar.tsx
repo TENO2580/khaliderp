@@ -233,5 +233,6 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         )}
       </div>
     </aside>
+    </>
   );
 }
