@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import DataTable, { Column } from '@/components/shared/DataTable';
 import { formatDate } from '@/lib/utils';
-import { Phone, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { Phone, AlertTriangle, CheckCircle, Clock, MessageCircle } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -85,14 +85,31 @@ export default function StockAlertsPage() {
     },
     {
       header: 'Action',
-      cell: (i) => (
-        <button
-          onClick={() => handleContacted(i.id)}
-          className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors"
-        >
-          <Phone className="h-3.5 w-3.5" /> Call Customer
-        </button>
-      ),
+      cell: (i) => {
+        const phone = i.whatsapp || i.phone;
+        const encodedMessage = encodeURIComponent(`Hi ${i.name},\nThis is a friendly reminder that you might be running low on stock. Would you like to place a new order?`);
+        return (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleContacted(i.id)}
+              className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors"
+            >
+              <Phone className="h-3.5 w-3.5" /> Call
+            </button>
+            {phone && (
+              <a
+                href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${encodedMessage}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => handleContacted(i.id)}
+                className="flex items-center gap-1 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-600 transition-colors"
+              >
+                <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+              </a>
+            )}
+          </div>
+        );
+      },
     },
   ];
 

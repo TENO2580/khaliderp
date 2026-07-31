@@ -64,6 +64,8 @@ export async function GET(req: NextRequest) {
         return {
           id: c.id,
           name: c.name,
+          phone: c.phone,
+          whatsapp: c.whatsapp,
           lastOrderDate: latestOrder.deliveryDate,
           lastOrderQty: latestOrderQty,
           dailyConsumptionRate: parseFloat(dailyConsumptionRate.toFixed(2)),
