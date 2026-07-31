@@ -82,10 +82,9 @@ export async function GET(req: NextRequest) {
         });
     }
 
-    // Production vs Sales
-    const recentBatches = await prisma.productionBatch.findMany({
+    const recentBatches = await prisma.batch.findMany({
       take: 5,
-      orderBy: { startDate: 'desc' },
+      orderBy: { productionDate: 'desc' },
       include: {
         productions: { select: { quantityProduced: true } },
       }
