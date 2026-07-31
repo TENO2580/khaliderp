@@ -14,6 +14,7 @@ export default function ProductionPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
 
   // Modal State
@@ -41,7 +42,7 @@ export default function ProductionPage() {
     setIsLoading(true);
     try {
       const [pRes, bRes, uRes] = await Promise.all([
-        api.get(`/production?page=${page}&limit=10&search=${encodeURIComponent(search)}`),
+        api.get(`/production?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`),
         api.get('/production/batches/list?limit=100'),
         api.get('/auth/me'),
       ]);
@@ -133,7 +134,7 @@ export default function ProductionPage() {
         </div>
       </div>
 
-      <DataTable
+      <DataTable limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}
         data={productions}
         searchPlaceholder="Search production # or batch #..."

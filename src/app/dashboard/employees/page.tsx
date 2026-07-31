@@ -13,6 +13,8 @@ export default function EmployeesPage() {
   const [attendanceStats, setAttendanceStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
   // Modals
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -158,7 +160,7 @@ export default function EmployeesPage() {
         </div>
       )}
 
-      <DataTable
+      <DataTable limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}
         data={employees}
         searchPlaceholder="Search employee name or ID..."

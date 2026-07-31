@@ -13,6 +13,7 @@ export default function CustomersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
@@ -43,7 +44,7 @@ export default function CustomersPage() {
   const fetchCustomers = async () => {
     setIsLoading(true);
     try {
-      const res = await api.get(`/customers?page=${page}&limit=10&search=${encodeURIComponent(search)}`);
+      const res = await api.get(`/customers?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`);
       setCustomers(res.data.data.data);
       setTotalPages(res.data.data.pagination.totalPages);
       setTotalItems(res.data.data.pagination.total);
@@ -219,7 +220,7 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      <DataTable
+      <DataTable limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}
         data={customers}
         searchPlaceholder="Search by name, ID, phone..."

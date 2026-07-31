@@ -66,7 +66,7 @@ export default function StockMovementsPage() {
         </div>
       </div>
 
-      <DataTable
+      <DataTable limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}
         data={movements}
         searchPlaceholder="Search movement item or reference..."

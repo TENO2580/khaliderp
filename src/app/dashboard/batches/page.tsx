@@ -14,6 +14,7 @@ export default function BatchesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
 
   // Modal State
@@ -25,7 +26,7 @@ export default function BatchesPage() {
     setIsLoading(true);
     try {
       const [bRes, pRes] = await Promise.all([
-        api.get(`/production/batches/list?page=${page}&limit=10&search=${encodeURIComponent(search)}`),
+        api.get(`/production/batches/list?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`),
         api.get('/inventory?limit=100'),
       ]);
       setBatches(bRes.data.data.data);
@@ -103,7 +104,7 @@ export default function BatchesPage() {
         </div>
       </div>
 
-      <DataTable
+      <DataTable limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}
         data={batches}
         searchPlaceholder="Search batch number..."

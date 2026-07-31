@@ -15,6 +15,7 @@ export default function SalesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
 
   // Create/Edit Order Modal
@@ -44,7 +45,7 @@ export default function SalesPage() {
     setIsLoading(true);
     try {
       const [oRes, cRes, pRes] = await Promise.all([
-        api.get(`/sales?page=${page}&limit=10&search=${encodeURIComponent(search)}`),
+        api.get(`/sales?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`),
         api.get('/customers?limit=100'),
         api.get('/inventory?limit=100'),
       ]);
@@ -252,7 +253,7 @@ export default function SalesPage() {
         </div>
       </div>
 
-      <DataTable
+      <DataTable limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}
         data={orders}
         searchPlaceholder="Search order # or customer..."

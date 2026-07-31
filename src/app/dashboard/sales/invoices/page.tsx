@@ -80,7 +80,7 @@ export default function InvoicesPage() {
         </div>
       </div>
 
-      <DataTable
+      <DataTable limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}
         data={invoices}
         searchPlaceholder="Search invoice # or customer..."

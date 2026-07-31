@@ -12,6 +12,7 @@ export default function InventoryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
 
   // Adjustment modal
@@ -23,7 +24,7 @@ export default function InventoryPage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const res = await api.get(`/inventory?page=${page}&limit=10&search=${encodeURIComponent(search)}`);
+      const res = await api.get(`/inventory?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`);
       setInventory(res.data.data.data);
       setTotalPages(res.data.data.pagination.totalPages);
     } catch {
@@ -124,7 +125,7 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      <DataTable
+      <DataTable limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}
         data={inventory}
         searchPlaceholder="Search product or SKU..."

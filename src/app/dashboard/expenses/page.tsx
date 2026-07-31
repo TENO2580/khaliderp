@@ -149,7 +149,7 @@ export default function ExpensesPage() {
         </div>
       )}
 
-      <DataTable
+      <DataTable limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}
         data={expenses}
         searchPlaceholder="Search expense description..."

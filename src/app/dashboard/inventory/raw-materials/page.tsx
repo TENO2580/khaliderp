@@ -103,7 +103,7 @@ export default function RawMaterialsPage() {
         </div>
       </div>
 
-      <DataTable
+      <DataTable limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}
         data={materials}
         searchPlaceholder="Search material..."

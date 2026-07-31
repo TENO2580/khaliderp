@@ -31,6 +31,8 @@ interface DataTableProps<T> {
   onPageChange?: (page: number) => void;
   onExportClick?: () => void;
   isLoading?: boolean;
+  limit?: number;
+  onLimitChange?: (limit: number) => void;
 }
 
 export default function DataTable<T extends { id?: string }>({
@@ -46,6 +48,8 @@ export default function DataTable<T extends { id?: string }>({
   onPageChange,
   onExportClick,
   isLoading = false,
+  limit,
+  onLimitChange,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState('');
 
@@ -146,11 +150,29 @@ export default function DataTable<T extends { id?: string }>({
       {/* Pagination Footer */}
       {onPageChange && totalPages > 1 && (
         <div className="flex items-center justify-between border-t border-gray-200/80 px-6 py-4 dark:border-gray-800">
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            Page <span className="font-semibold text-gray-900 dark:text-white">{page}</span> of{' '}
-            <span className="font-semibold text-gray-900 dark:text-white">{totalPages}</span>
-            {totalItems !== undefined && ` (${totalItems} total items)`}
-          </p>
+          <div className="flex items-center gap-4">
+            {limit && onLimitChange && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500 dark:text-gray-400">Rows per page:</span>
+                <select
+                  value={limit}
+                  onChange={(e) => onLimitChange(Number(e.target.value))}
+                  className="rounded border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                >
+                  <option value={10}>10</option>
+                  <option value={30}>30</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={200}>200</option>
+                </select>
+              </div>
+            )}
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Page <span className="font-semibold text-gray-900 dark:text-white">{page}</span> of{' '}
+              <span className="font-semibold text-gray-900 dark:text-white">{totalPages}</span>
+              {totalItems !== undefined && ` (${totalItems} total items)`}
+            </p>
+          </div>
 
           <div className="flex items-center gap-2">
             <button

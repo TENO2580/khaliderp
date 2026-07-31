@@ -94,7 +94,7 @@ export default function PurchasePage() {
         </div>
       </div>
 
-      <DataTable
+      <DataTable limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}
         data={orders}
         searchPlaceholder="Search PO # or supplier..."
