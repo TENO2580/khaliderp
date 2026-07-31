@@ -25,29 +25,31 @@ export default function PurchasePage() {
   });
 
   const fetchData = async () => {
-    setIsLoading(false);
-    setOrders([]);
+    setIsLoading(true);
+    try {
+      const res = await api.get(`/purchase?search=${encodeURIComponent(search)}`);
+      setOrders(res.data.data.data);
+    } catch {
+      setOrders([]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
     fetchData();
   }, [search]);
 
-  const handleCreateSubmit = (e: React.FormEvent) => {
+  const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newPo = {
-      id: Date.now().toString(),
-      poNumber: `PO-2026-000${orders.length + 1}`,
-      supplierName: formData.supplierName,
-      orderDate: new Date().toISOString(),
-      material: `${formData.material} (${formData.quantity} Units)`,
-      totalAmount: formData.quantity * formData.unitPrice,
-      status: 'ORDERED',
-      paymentStatus: 'UNPAID',
-    };
-    setOrders([newPo, ...orders]);
-    toast.success('Purchase Order created!');
-    setIsCreateOpen(false);
+    try {
+      await api.post('/purchase', formData);
+      toast.success('Purchase Order created!');
+      setIsCreateOpen(false);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Error creating PO');
+    }
   };
 
   const columns: Column<any>[] = [

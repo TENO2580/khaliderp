@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/db';
-import { authenticateRequest, jsonResponse } from '@/lib/middleware-server';
+import { authenticateRequest, jsonResponse, errorResponse } from '@/lib/middleware-server';
 
 export async function GET(req: NextRequest) {
   const { user, error } = await authenticateRequest(req);
@@ -24,4 +24,29 @@ export async function GET(req: NextRequest) {
   });
 
   return jsonResponse({ data: rawMaterials });
+}
+
+export async function POST(req: NextRequest) {
+  const { user, error } = await authenticateRequest(req);
+  if (error) return error;
+
+  try {
+    const body = await req.json();
+    const { name, category, unit, currentStock, reorderLevel, unitCost } = body;
+
+    const rawMaterial = await prisma.rawMaterial.create({
+      data: {
+        name,
+        category,
+        unit: unit || 'KG',
+        currentStock: Number(currentStock || 0),
+        reorderLevel: Number(reorderLevel || 0),
+        unitCost: Number(unitCost || 0),
+      },
+    });
+
+    return jsonResponse(rawMaterial, 201, 'Raw material created successfully');
+  } catch (err: any) {
+    return errorResponse(err.message || 'Failed to create raw material', 400);
+  }
 }
