@@ -16,6 +16,18 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     delete body.createdAt;
     delete body.updatedAt;
 
+    if (body.lastPurchaseDate) {
+      body.lastPurchaseDate = new Date(body.lastPurchaseDate).toISOString();
+    } else {
+      body.lastPurchaseDate = null;
+    }
+
+    if (body.nextFollowupDate) {
+      body.nextFollowupDate = new Date(body.nextFollowupDate).toISOString();
+    } else {
+      body.nextFollowupDate = null;
+    }
+
     const customer = await prisma.customer.update({
       where: { id },
       data: body,

@@ -34,6 +34,12 @@ export default function CustomersPage() {
     type: 'RETAILER',
     creditLimit: 50000,
     status: 'ACTIVE',
+    district: '',
+    state: 'Tamil Nadu',
+    notes: '',
+    sellingPrice: 0,
+    nextFollowupDate: '',
+    lastPurchaseDate: '',
   });
 
   const fetchCustomers = async () => {
@@ -86,6 +92,10 @@ export default function CustomersPage() {
       type: customer.type || 'RETAILER',
       creditLimit: customer.creditLimit || 50000,
       status: customer.status || 'ACTIVE',
+      notes: customer.notes || '',
+      sellingPrice: customer.sellingPrice || 0,
+      nextFollowupDate: customer.nextFollowupDate ? new Date(customer.nextFollowupDate).toISOString().split('T')[0] : '',
+      lastPurchaseDate: customer.lastPurchaseDate ? new Date(customer.lastPurchaseDate).toISOString().split('T')[0] : '',
     });
     setEditId(customer.id);
     setIsEdit(true);
@@ -223,7 +233,7 @@ export default function CustomersPage() {
           setFormData({
             name: '', ownerName: '', phone: '', whatsapp: '', email: '', gstNumber: '',
             address: '', district: '', state: 'Tamil Nadu', pincode: '', type: 'RETAILER',
-            creditLimit: 50000, status: 'ACTIVE',
+            creditLimit: 50000, status: 'ACTIVE', notes: '', sellingPrice: 0, nextFollowupDate: '', lastPurchaseDate: ''
           });
           setIsEdit(false);
           setIsCreateOpen(true);
@@ -313,12 +323,89 @@ export default function CustomersPage() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">District</label>
+                  <input
+                    type="text"
+                    value={formData.district}
+                    onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">State</label>
+                  <input
+                    type="text"
+                    value={formData.state}
+                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Status</label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  >
+                    <option value="ACTIVE">Active</option>
+                    <option value="INACTIVE">Inactive</option>
+                    <option value="LEAD">Lead</option>
+                    <option value="LOST">Lost</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Last Selling Cost (₹)</label>
+                  <input
+                    type="number"
+                    value={formData.sellingPrice}
+                    onChange={(e) => setFormData({ ...formData, sellingPrice: Number(e.target.value) })}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Last Order Date</label>
+                  <input
+                    type="date"
+                    value={formData.lastPurchaseDate}
+                    onChange={(e) => setFormData({ ...formData, lastPurchaseDate: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Next Follow-Up</label>
+                  <input
+                    type="date"
+                    value={formData.nextFollowupDate}
+                    onChange={(e) => setFormData({ ...formData, nextFollowupDate: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Address</label>
                 <textarea
                   rows={2}
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Notes</label>
+                <textarea
+                  rows={2}
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                 />
               </div>

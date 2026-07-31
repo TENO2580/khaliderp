@@ -53,6 +53,18 @@ export async function POST(req: NextRequest) {
     const count = await prisma.customer.count();
     const customerId = `CUST-${String(count + 1).padStart(4, '0')}`;
 
+    if (body.lastPurchaseDate) {
+      body.lastPurchaseDate = new Date(body.lastPurchaseDate).toISOString();
+    } else {
+      body.lastPurchaseDate = null;
+    }
+
+    if (body.nextFollowupDate) {
+      body.nextFollowupDate = new Date(body.nextFollowupDate).toISOString();
+    } else {
+      body.nextFollowupDate = null;
+    }
+
     const customer = await prisma.customer.create({
       data: {
         ...body,
