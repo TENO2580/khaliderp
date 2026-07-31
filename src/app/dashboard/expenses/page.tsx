@@ -19,26 +19,28 @@ export default function ExpensesPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [totalPages, setTotalPages] = useState(1);
 
   // Add Expense Modal
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [formData, setFormData] = useState({
     categoryId: '',
-    amount: 1500,
-    date: new Date().toISOString(),
+    amount: 0,
+    date: new Date().toISOString().split('T')[0],
     description: '',
+    paymentMethod: '',
   });
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
       const [eRes, cRes, sRes] = await Promise.all([
-        api.get(`/expenses?search=${encodeURIComponent(search)}&startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`),
+        api.get(`/expenses?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`),
         api.get('/expenses/categories'),
         api.get('/expenses/stats'),
       ]);
       setExpenses(eRes.data.data.data);
-      setCategories(cRes.data.data);
+      setTotalPages(eRes.data.data.pagination?.totalPages || 1);      setCategories(cRes.data.data);
       setStats(sRes.data.data);
       if (cRes.data.data?.length > 0) {
         setFormData((prev) => ({ ...prev, categoryId: cRes.data.data[0].id }));
@@ -52,7 +54,7 @@ export default function ExpensesPage() {
 
   useEffect(() => {
     fetchData();
-  }, [search, limit, startDate, endDate, statusFilter]);
+  }, [page, search, limit, startDate, endDate, statusFilter]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +63,8 @@ export default function ExpensesPage() {
       return;
     }
     try {
-      await api.post('/expenses', formData);
+      const descParts = [formData.description, formData.paymentMethod ? `Payment: ${formData.paymentMethod}` : ''].filter(Boolean).join(' | ');
+      await api.post('/expenses', { ...formData, description: descParts || formData.description });
       toast.success('Expense recorded successfully!');
       setIsCreateOpen(false);
       fetchData();
@@ -165,6 +168,7 @@ export default function ExpensesPage() {
         addButtonLabel="Record Expense"
         isLoading={isLoading}
         page={page}
+        totalPages={totalPages}
         onPageChange={setPage}
         startDate={startDate}
         onStartDateChange={setStartDate}
@@ -213,13 +217,41 @@ export default function ExpensesPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Description</label>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Date *</label>
+                <input
+                  type="date"
+                  required
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Payment Method</label>
+                <select
+                  value={formData.paymentMethod}
+                  onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
+                  className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                >
+                  <option value="">Select Payment Method</option>
+                  <option value="CASH">Cash</option>
+                  <option value="BANK TRANSFER">Bank Transfer</option>
+                  <option value="UPI">UPI</option>
+                  <option value="CHEQUE">Cheque</option>
+                  <option value="NEFT">NEFT</option>
+                  <option value="RTGS">RTGS</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Notes</label>
                 <textarea
                   rows={2}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                  placeholder="e.g. Factory LPG Gas Refill cylinder"
+                  placeholder="e.g. FUEL, JOB VACANCY, supplier name etc."
                 />
               </div>
 

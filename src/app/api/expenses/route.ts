@@ -40,13 +40,30 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const expenses = await prisma.expense.findMany({
-    where,
-    orderBy: { date: 'desc' },
-    include: { category: true, createdBy: true },
-  });
+  const page = parseInt(url.searchParams.get('page') || '1');
+  const limit = parseInt(url.searchParams.get('limit') || '100');
+  const skip = (page - 1) * limit;
 
-  return jsonResponse({ data: expenses });
+  const [expenses, total] = await Promise.all([
+    prisma.expense.findMany({
+      where,
+      orderBy: { date: 'desc' },
+      include: { category: true, createdBy: true },
+      skip,
+      take: limit,
+    }),
+    prisma.expense.count({ where }),
+  ]);
+
+  return jsonResponse({
+    data: expenses,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  });
 }
 
 export async function POST(req: NextRequest) {
