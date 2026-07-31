@@ -55,6 +55,39 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       });
     }
 
+    // Auto-generate invoice if DELIVERED
+    if (status === 'DELIVERED') {
+      await prisma.invoice.upsert({
+        where: { orderId: order.id },
+        update: {
+          subtotal: order.subtotal,
+          cgst: order.cgst,
+          sgst: order.sgst,
+          igst: order.igst,
+          totalGst: order.totalGst,
+          transportCharge: order.transportCharge,
+          totalAmount: order.totalAmount,
+          outstanding: order.outstanding,
+          paidAmount: order.paidAmount,
+        },
+        create: {
+          invoiceNumber: `INV-${order.orderNumber}`,
+          orderId: order.id,
+          customerId: order.customerId,
+          subtotal: order.subtotal,
+          cgst: order.cgst,
+          sgst: order.sgst,
+          igst: order.igst,
+          totalGst: order.totalGst,
+          transportCharge: order.transportCharge,
+          totalAmount: order.totalAmount,
+          outstanding: order.outstanding,
+          paidAmount: order.paidAmount,
+          status: 'ISSUED',
+        }
+      });
+    }
+
     return jsonResponse(order, 200, 'Sales order updated successfully');
   } catch (err: any) {
     return errorResponse(err.message || 'Failed to update sales order', 400);

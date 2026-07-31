@@ -17,9 +17,19 @@ export default function InvoicesPage() {
   const [search, setSearch] = useState('');
   const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
 
+  const [totalPages, setTotalPages] = useState(1);
+
   const fetchData = async () => {
-    setIsLoading(false);
-    setInvoices([]);
+    setIsLoading(true);
+    try {
+      const res = await api.get(`/sales/invoices/list?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`);
+      setInvoices(res.data.data.data);
+      setTotalPages(res.data.data.pagination.totalPages);
+    } catch (err) {
+      toast.error('Failed to load invoices');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -88,6 +98,8 @@ export default function InvoicesPage() {
         data={invoices}
         searchPlaceholder="Search invoice # or customer..."
         onSearch={(q) => setSearch(q)}
+        totalPages={totalPages}
+        onPageChange={(p) => setPage(p)}
         isLoading={isLoading}
       />
 
