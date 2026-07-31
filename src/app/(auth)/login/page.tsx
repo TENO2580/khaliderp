@@ -60,9 +60,11 @@ export default function LoginPage() {
       toast.success(`Authenticated as ${user.name} (${user.role})`);
       window.location.href = '/dashboard';
     } catch (err: any) {
+      console.error('Login error:', err);
       const errorMessage =
         err.response?.data?.message ||
-        'Your Google account is not authorized to access Tripidio ERP. Please contact the system administrator.';
+        err.message ||
+        'Unknown network or server error occurred. Check Vercel logs.';
       toast.error(errorMessage, { duration: 6000 });
     } finally {
       setIsGoogleLoading(false);
