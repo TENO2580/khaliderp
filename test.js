@@ -1,11 +1,7 @@
-import { NextRequest } from 'next/server';
-import prisma from '@/lib/db';
-import { authenticateRequest, jsonResponse, errorResponse } from '@/lib/middleware-server';
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
-export async function GET(req: NextRequest) {
-  const { user, error } = await authenticateRequest(req);
-  if (error) return error;
-
+async function main() {
   try {
     const customers = await prisma.customer.findMany({
       include: {
@@ -17,31 +13,29 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    const DEFAULT_CONSUMPTION_RATE = 5; // units per day
+    const DEFAULT_CONSUMPTION_RATE = 5;
 
     const predictions = customers
-      .filter((c: any) => c.salesOrders.length > 0)
-      .map((c: any) => {
+      .filter((c) => c.salesOrders.length > 0)
+      .map((c) => {
         const orders = c.salesOrders;
         const latestOrder = orders[orders.length - 1];
         
         // Sum quantity of the latest order
-        const latestOrderQty = latestOrder.items.reduce((sum: number, item: any) => sum + item.quantity, 0);
+        const latestOrderQty = latestOrder.items.reduce((sum, item) => sum + item.quantity, 0);
         
         let dailyConsumptionRate = DEFAULT_CONSUMPTION_RATE;
 
         if (orders.length > 1) {
-          // Calculate historical consumption based on orders before the latest
           const firstOrder = orders[0];
           const secondToLastOrder = orders[orders.length - 2];
           
           const msElapsed = new Date(secondToLastOrder.deliveryDate).getTime() - new Date(firstOrder.deliveryDate).getTime();
           const daysElapsed = Math.max(1, msElapsed / (1000 * 60 * 60 * 24));
           
-          // Total quantity ordered from first up to second-to-last
           let totalHistoricalQty = 0;
           for (let i = 0; i < orders.length - 1; i++) {
-            totalHistoricalQty += orders[i].items.reduce((sum: number, item: any) => sum + item.quantity, 0);
+            totalHistoricalQty += orders[i].items.reduce((sum, item) => sum + item.quantity, 0);
           }
           
           if (daysElapsed > 0 && totalHistoricalQty > 0) {
@@ -74,10 +68,11 @@ export async function GET(req: NextRequest) {
           status,
         };
       })
-      .sort((a: any, b: any) => a.daysUntilRunOut - b.daysUntilRunOut);
-
-    return jsonResponse(predictions, 200, 'Predictions calculated');
-  } catch (err: any) {
-    return errorResponse(err.message || 'Failed to calculate predictions', 500);
+      .sort((a, b) => a.daysUntilRunOut - b.daysUntilRunOut);
+      
+    console.log(predictions);
+  } catch (err) {
+    console.error(err);
   }
 }
+main().finally(() => prisma.$disconnect());
