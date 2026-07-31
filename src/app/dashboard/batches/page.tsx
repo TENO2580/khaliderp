@@ -13,6 +13,9 @@ export default function BatchesPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
@@ -29,7 +32,7 @@ export default function BatchesPage() {
     setIsLoading(true);
     try {
       const [bRes, pRes] = await Promise.all([
-        api.get(`/production/batches/list?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`),
+        api.get(`/production/batches/list?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`),
         api.get('/inventory?limit=100'),
       ]);
       setBatches(bRes.data.data.data);
@@ -44,7 +47,7 @@ export default function BatchesPage() {
 
   useEffect(() => {
     fetchData();
-  }, [page, search, limit]);
+  }, [page, search, limit, startDate, endDate, statusFilter]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,6 +150,16 @@ export default function BatchesPage() {
         totalPages={totalPages}
         onPageChange={(p) => setPage(p)}
         isLoading={isLoading}
+        startDate={startDate}
+        onStartDateChange={setStartDate}
+        endDate={endDate}
+        onEndDateChange={setEndDate}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        statusOptions={[
+          { label: 'In Production', value: 'IN_PRODUCTION' },
+          { label: 'Completed', value: 'COMPLETED' },
+        ]}
       />
 
       {/* Create Batch Modal */}
