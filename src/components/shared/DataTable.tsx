@@ -148,7 +148,7 @@ export default function DataTable<T extends { id?: string }>({
       </div>
 
       {/* Pagination Footer */}
-      {onPageChange && totalPages > 1 && (
+      {((onPageChange && totalPages > 1) || (limit && onLimitChange)) && (
         <div className="flex items-center justify-between border-t border-gray-200/80 px-6 py-4 dark:border-gray-800">
           <div className="flex items-center gap-4">
             {limit && onLimitChange && (
