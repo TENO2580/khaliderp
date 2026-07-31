@@ -17,13 +17,28 @@ export default function SalesPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Create Order Modal
+  // Create/Edit Order Modal
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEdit, setIsEdit] = useState(false);
+  const [editId, setEditId] = useState('');
   const [customerId, setCustomerId] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('CREDIT');
   const [items, setItems] = useState<any[]>([
     { productId: '', quantity: 10, unitPrice: 350, gstRate: 18 },
   ]);
+  const [editFormData, setEditFormData] = useState({
+    batchUsed: '',
+    orderDate: '',
+    deliveryDate: '',
+    type: '',
+    productionCost: '',
+    sellingCost: '',
+    margin: '',
+    totalAmount: 0,
+    status: 'PENDING',
+    outstanding: 0,
+    creditNotes: '',
+  });
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -55,12 +70,32 @@ export default function SalesPage() {
       return;
     }
     try {
-      await api.post('/sales', {
-        customerId,
-        paymentMethod,
-        items,
-      });
-      toast.success('Sales order created successfully!');
+      if (isEdit) {
+        await api.put(`/sales/${editId}`, {
+          orderDate: editFormData.orderDate,
+          deliveryDate: editFormData.deliveryDate,
+          status: editFormData.status,
+          totalAmount: editFormData.totalAmount,
+          outstanding: editFormData.outstanding,
+          quantity: items[0].quantity,
+          notes: {
+            batchUsed: editFormData.batchUsed,
+            type: editFormData.type,
+            productionCost: editFormData.productionCost,
+            sellingCost: editFormData.sellingCost,
+            margin: editFormData.margin,
+            creditNotes: editFormData.creditNotes,
+          }
+        });
+        toast.success('Sales order updated successfully!');
+      } else {
+        await api.post('/sales', {
+          customerId,
+          paymentMethod,
+          items,
+        });
+        toast.success('Sales order created successfully!');
+      }
       setIsCreateOpen(false);
       fetchData();
     } catch (err: any) {
@@ -84,6 +119,37 @@ export default function SalesPage() {
     } catch {
       return {};
     }
+  };
+
+  const handleEditClick = (order: any) => {
+    const data = parseNotes(order.notes);
+    
+    setEditFormData({
+      batchUsed: data.batchUsed || '',
+      orderDate: order.orderDate ? new Date(order.orderDate).toISOString().split('T')[0] : '',
+      deliveryDate: order.deliveryDate ? new Date(order.deliveryDate).toISOString().split('T')[0] : '',
+      type: data.type || '',
+      productionCost: data.productionCost || '',
+      sellingCost: data.sellingCost || (order.items?.[0]?.unitPrice || ''),
+      margin: data.margin || '',
+      totalAmount: order.totalAmount || 0,
+      status: order.status || 'PENDING',
+      outstanding: order.outstanding || 0,
+      creditNotes: data.creditNotes || '',
+    });
+    
+    setCustomerId(order.customerId);
+    setItems([
+      {
+        productId: order.items?.[0]?.productId || '',
+        quantity: order.items?.reduce((sum: number, i: any) => sum + i.quantity, 0) || 0,
+        unitPrice: order.items?.[0]?.unitPrice || 0,
+        gstRate: order.items?.[0]?.gstRate || 18,
+      }
+    ]);
+    setEditId(order.id);
+    setIsEdit(true);
+    setIsCreateOpen(true);
   };
 
   const columns: Column<any>[] = [
@@ -163,6 +229,18 @@ export default function SalesPage() {
         );
       },
     },
+    {
+      header: 'Actions',
+      cell: (o) => (
+        <button
+          onClick={() => handleEditClick(o)}
+          className="rounded-lg p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/50"
+          title="Edit Order"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+        </button>
+      ),
+    },
   ];
 
   return (
@@ -179,7 +257,12 @@ export default function SalesPage() {
         data={orders}
         searchPlaceholder="Search order # or customer..."
         onSearch={(q) => setSearch(q)}
-        onAddClick={() => setIsCreateOpen(true)}
+        onAddClick={() => {
+          setIsEdit(false);
+          setCustomerId('');
+          setItems([{ productId: '', quantity: 10, unitPrice: 350, gstRate: 18 }]);
+          setIsCreateOpen(true);
+        }}
         addButtonLabel="Create Sales Order"
         page={page}
         totalPages={totalPages}
@@ -286,6 +369,116 @@ export default function SalesPage() {
                 ))}
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                {isEdit && (
+                  <>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Order Date</label>
+                      <input
+                        type="date"
+                        value={editFormData.orderDate}
+                        onChange={(e) => setEditFormData({ ...editFormData, orderDate: e.target.value })}
+                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Delivery Date</label>
+                      <input
+                        type="date"
+                        value={editFormData.deliveryDate}
+                        onChange={(e) => setEditFormData({ ...editFormData, deliveryDate: e.target.value })}
+                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Batch Used</label>
+                      <input
+                        type="text"
+                        value={editFormData.batchUsed}
+                        onChange={(e) => setEditFormData({ ...editFormData, batchUsed: e.target.value })}
+                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Type</label>
+                      <input
+                        type="text"
+                        value={editFormData.type}
+                        onChange={(e) => setEditFormData({ ...editFormData, type: e.target.value })}
+                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Production Cost (₹)</label>
+                      <input
+                        type="text"
+                        value={editFormData.productionCost}
+                        onChange={(e) => setEditFormData({ ...editFormData, productionCost: e.target.value })}
+                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Selling Cost (₹)</label>
+                      <input
+                        type="text"
+                        value={editFormData.sellingCost}
+                        onChange={(e) => setEditFormData({ ...editFormData, sellingCost: e.target.value })}
+                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Margin % & Amount</label>
+                      <input
+                        type="text"
+                        value={editFormData.margin}
+                        onChange={(e) => setEditFormData({ ...editFormData, margin: e.target.value })}
+                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Total Selling Cost (₹)</label>
+                      <input
+                        type="number"
+                        value={editFormData.totalAmount}
+                        onChange={(e) => setEditFormData({ ...editFormData, totalAmount: Number(e.target.value) })}
+                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Status</label>
+                      <select
+                        value={editFormData.status}
+                        onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
+                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                      >
+                        <option value="PENDING">Pending</option>
+                        <option value="DELIVERED">Delivered</option>
+                        <option value="CANCELLED">Cancelled</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Outstanding Credit (₹)</label>
+                      <input
+                        type="number"
+                        value={editFormData.outstanding}
+                        onChange={(e) => setEditFormData({ ...editFormData, outstanding: Number(e.target.value) })}
+                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Credit Notes</label>
+                      <input
+                        type="text"
+                        value={editFormData.creditNotes}
+                        onChange={(e) => setEditFormData({ ...editFormData, creditNotes: e.target.value })}
+                        placeholder="e.g. 5000(friday)"
+                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+
               <div className="flex justify-end gap-3 pt-4">
                 <button
                   type="button"
@@ -298,7 +491,7 @@ export default function SalesPage() {
                   type="submit"
                   className="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700"
                 >
-                  Submit Order
+                  {isEdit ? 'Save Changes' : 'Submit Order'}
                 </button>
               </div>
             </form>
