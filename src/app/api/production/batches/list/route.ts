@@ -6,11 +6,36 @@ export async function GET(req: NextRequest) {
   const { user, error } = await authenticateRequest(req);
   if (error) return error;
 
-  const batches = await prisma.batch.findMany({
-    orderBy: { productionDate: 'desc' },
-    take: 100,
-    include: { product: true },
-  });
+  const url = new URL(req.url);
+  const page = parseInt(url.searchParams.get('page') || '1');
+  const limit = parseInt(url.searchParams.get('limit') || '10');
+  const search = url.searchParams.get('search') || '';
 
-  return jsonResponse({ data: batches });
+  const skip = (page - 1) * limit;
+  const where: any = {};
+
+  if (search) {
+    where.batchNumber = { contains: search, mode: 'insensitive' };
+  }
+
+  const [data, total] = await Promise.all([
+    prisma.batch.findMany({
+      where,
+      orderBy: { productionDate: 'desc' },
+      skip,
+      take: limit,
+      include: { product: true },
+    }),
+    prisma.batch.count({ where }),
+  ]);
+
+  return jsonResponse({
+    data,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit) || 1,
+    },
+  });
 }
