@@ -8,8 +8,8 @@ export async function GET(req: NextRequest) {
 
   const url = new URL(req.url);
   const search = url.searchParams.get('search') || '';
-  const date = url.searchParams.get('date') || '';
-  const month = url.searchParams.get('month') || '';
+  const startDate = url.searchParams.get('startDate') || '';
+  const endDate = url.searchParams.get('endDate') || '';
   const status = url.searchParams.get('status') || '';
 
   const where: any = {};
@@ -24,23 +24,19 @@ export async function GET(req: NextRequest) {
     where.status = status;
   }
 
-  if (date) {
-    const d = new Date(date);
-    if (!isNaN(d.getTime())) {
-      where.orderDate = {
-        gte: new Date(d.setHours(0, 0, 0, 0)),
-        lt: new Date(d.setHours(23, 59, 59, 999)),
-      };
+  if (startDate || endDate) {
+    where.orderDate = {};
+    if (startDate) {
+      const d = new Date(startDate);
+      if (!isNaN(d.getTime())) {
+        where.orderDate.gte = new Date(d.setHours(0, 0, 0, 0));
+      }
     }
-  } else if (month) {
-    const [y, m] = month.split('-');
-    if (y && m) {
-      const start = new Date(parseInt(y), parseInt(m) - 1, 1);
-      const end = new Date(parseInt(y), parseInt(m), 1);
-      where.orderDate = {
-        gte: start,
-        lt: end,
-      };
+    if (endDate) {
+      const d = new Date(endDate);
+      if (!isNaN(d.getTime())) {
+        where.orderDate.lte = new Date(d.setHours(23, 59, 59, 999));
+      }
     }
   }
 

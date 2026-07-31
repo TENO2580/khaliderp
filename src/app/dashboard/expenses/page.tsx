@@ -16,8 +16,8 @@ export default function ExpensesPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const [dateFilter, setDateFilter] = useState('');
-  const [monthFilter, setMonthFilter] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
   // Add Expense Modal
@@ -33,7 +33,7 @@ export default function ExpensesPage() {
     setIsLoading(true);
     try {
       const [eRes, cRes, sRes] = await Promise.all([
-        api.get(`/expenses?search=${encodeURIComponent(search)}&date=${dateFilter}&month=${monthFilter}&status=${statusFilter}`),
+        api.get(`/expenses?search=${encodeURIComponent(search)}&startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`),
         api.get('/expenses/categories'),
         api.get('/expenses/stats'),
       ]);
@@ -52,7 +52,7 @@ export default function ExpensesPage() {
 
   useEffect(() => {
     fetchData();
-  }, [search, limit, dateFilter, monthFilter, statusFilter]);
+  }, [search, limit, startDate, endDate, statusFilter]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,10 +166,10 @@ export default function ExpensesPage() {
         isLoading={isLoading}
         page={page}
         onPageChange={setPage}
-        dateFilter={dateFilter}
-        onDateChange={setDateFilter}
-        monthFilter={monthFilter}
-        onMonthChange={setMonthFilter}
+        startDate={startDate}
+        onStartDateChange={setStartDate}
+        endDate={endDate}
+        onEndDateChange={setEndDate}
         statusFilter={statusFilter}
         onStatusChange={setStatusFilter}
         statusOptions={[

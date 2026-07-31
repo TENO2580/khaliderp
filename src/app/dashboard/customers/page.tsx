@@ -16,8 +16,8 @@ export default function CustomersPage() {
   const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const [dateFilter, setDateFilter] = useState('');
-  const [monthFilter, setMonthFilter] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   // Modal states
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -46,7 +46,7 @@ export default function CustomersPage() {
   const fetchCustomers = async () => {
     setIsLoading(true);
     try {
-      const res = await api.get(`/customers?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&date=${dateFilter}&month=${monthFilter}&status=${statusFilter}`);
+      const res = await api.get(`/customers?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`);
       setCustomers(res.data.data.data);
       setTotalPages(res.data.data.pagination.totalPages);
       setTotalItems(res.data.data.pagination.total);
@@ -59,7 +59,7 @@ export default function CustomersPage() {
 
   useEffect(() => {
     fetchCustomers();
-  }, [page, search, limit, dateFilter, monthFilter, statusFilter]);
+  }, [page, search, limit, startDate, endDate, statusFilter]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -248,10 +248,10 @@ export default function CustomersPage() {
         totalItems={totalItems}
         onPageChange={(p) => setPage(p)}
         isLoading={isLoading}
-        dateFilter={dateFilter}
-        onDateChange={setDateFilter}
-        monthFilter={monthFilter}
-        onMonthChange={setMonthFilter}
+        startDate={startDate}
+        onStartDateChange={setStartDate}
+        endDate={endDate}
+        onEndDateChange={setEndDate}
         statusFilter={statusFilter}
         onStatusChange={setStatusFilter}
         statusOptions={[

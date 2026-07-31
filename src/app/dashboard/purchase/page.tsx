@@ -16,8 +16,8 @@ export default function PurchasePage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
-  const [dateFilter, setDateFilter] = useState('');
-  const [monthFilter, setMonthFilter] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
   // Modal State
@@ -33,7 +33,7 @@ export default function PurchasePage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const res = await api.get(`/purchase?search=${encodeURIComponent(search)}&date=${dateFilter}&month=${monthFilter}&status=${statusFilter}`);
+      const res = await api.get(`/purchase?search=${encodeURIComponent(search)}&startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`);
       setOrders(res.data.data.data);
     } catch {
       setOrders([]);
@@ -44,7 +44,7 @@ export default function PurchasePage() {
 
   useEffect(() => {
     fetchData();
-  }, [search, limit, dateFilter, monthFilter, statusFilter]);
+  }, [search, limit, startDate, endDate, statusFilter]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,10 +112,10 @@ export default function PurchasePage() {
         isLoading={isLoading}
         page={page}
         onPageChange={setPage}
-        dateFilter={dateFilter}
-        onDateChange={setDateFilter}
-        monthFilter={monthFilter}
-        onMonthChange={setMonthFilter}
+        startDate={startDate}
+        onStartDateChange={setStartDate}
+        endDate={endDate}
+        onEndDateChange={setEndDate}
         statusFilter={statusFilter}
         onStatusChange={setStatusFilter}
         statusOptions={[

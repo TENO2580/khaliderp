@@ -14,8 +14,8 @@ export default function InventoryPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
-  const [dateFilter, setDateFilter] = useState('');
-  const [monthFilter, setMonthFilter] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   // Adjustment modal
   const [isAdjustOpen, setIsAdjustOpen] = useState(false);
@@ -26,7 +26,7 @@ export default function InventoryPage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const res = await api.get(`/inventory?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`);
+      const res = await api.get(`/inventory?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`);
       setInventory(res.data.data.data);
       setTotalPages(res.data.data.pagination.totalPages);
     } catch {
@@ -38,7 +38,7 @@ export default function InventoryPage() {
 
   useEffect(() => {
     fetchData();
-  }, [page, search, limit]);
+  }, [page, search, limit, startDate, endDate, statusFilter]);
 
   const handleAdjustSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,10 +138,10 @@ export default function InventoryPage() {
         totalPages={totalPages}
         onPageChange={setPage}
         isLoading={isLoading}
-        dateFilter={dateFilter}
-        onDateChange={setDateFilter}
-        monthFilter={monthFilter}
-        onMonthChange={setMonthFilter}
+        startDate={startDate}
+        onStartDateChange={setStartDate}
+        endDate={endDate}
+        onEndDateChange={setEndDate}
         statusFilter={statusFilter}
         onStatusChange={setStatusFilter}
         statusOptions={[

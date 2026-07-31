@@ -33,10 +33,10 @@ interface DataTableProps<T> {
   isLoading?: boolean;
   limit?: number;
   onLimitChange?: (limit: number) => void;
-  dateFilter?: string;
-  onDateChange?: (date: string) => void;
-  monthFilter?: string;
-  onMonthChange?: (month: string) => void;
+  startDate?: string;
+  onStartDateChange?: (date: string) => void;
+  endDate?: string;
+  onEndDateChange?: (date: string) => void;
   statusFilter?: string;
   onStatusChange?: (status: string) => void;
   statusOptions?: { label: string; value: string }[];
@@ -57,10 +57,10 @@ export default function DataTable<T extends { id?: string }>({
   isLoading = false,
   limit,
   onLimitChange,
-  dateFilter,
-  onDateChange,
-  monthFilter,
-  onMonthChange,
+  startDate,
+  onStartDateChange,
+  endDate,
+  onEndDateChange,
   statusFilter,
   onStatusChange,
   statusOptions,
@@ -89,20 +89,22 @@ export default function DataTable<T extends { id?: string }>({
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {onDateChange && (
+          {onStartDateChange && (
             <input
               type="date"
-              value={dateFilter || ''}
-              onChange={(e) => onDateChange(e.target.value)}
+              value={startDate || ''}
+              onChange={(e) => onStartDateChange(e.target.value)}
               className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
+              title="Start Date"
             />
           )}
-          {onMonthChange && (
+          {onEndDateChange && (
             <input
-              type="month"
-              value={monthFilter || ''}
-              onChange={(e) => onMonthChange(e.target.value)}
+              type="date"
+              value={endDate || ''}
+              onChange={(e) => onEndDateChange(e.target.value)}
               className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
+              title="End Date"
             />
           )}
           {onStatusChange && statusOptions && (
