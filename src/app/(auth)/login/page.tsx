@@ -10,8 +10,8 @@ import api from '@/lib/api';
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
-  const [email, setEmail] = useState('Tenogte@gmail.com');
-  const [password, setPassword] = useState('Admin@123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -65,7 +65,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-11 pr-4 text-sm font-medium text-slate-900 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
-                  placeholder="Tenogte@gmail.com"
+                  placeholder="Enter your email"
                 />
               </div>
             </div>
@@ -105,16 +105,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Initial Authorized Users Box */}
-          <div className="mt-6 rounded-2xl border border-blue-100 bg-blue-50/70 p-4 dark:border-blue-900/40 dark:bg-blue-950/40">
-            <p className="text-xs font-bold uppercase tracking-wider text-blue-900 dark:text-blue-300">
-              Initial Authorized Accounts
-            </p>
-            <div className="mt-2 space-y-1 text-xs text-blue-800 dark:text-blue-200 font-mono">
-              <p><span className="font-bold font-sans">Super Admin:</span> Tenogte@gmail.com</p>
-              <p><span className="font-bold font-sans">Admin:</span> Khalidshantp@gmail.com</p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
