@@ -35,6 +35,10 @@ export const NAV_ITEMS: NavItem[] = [
     href: '/dashboard/customers',
     icon: Users,
     permission: 'customers:read',
+    children: [
+      { title: 'Customer List', href: '/dashboard/customers' },
+      { title: 'Stock Alerts', href: '/dashboard/customers/followups' },
+    ]
   },
   {
     title: 'Sales',
