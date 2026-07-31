@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Settings, Shield, Building, Database, Save, RotateCcw, UserCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
