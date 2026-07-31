@@ -14,7 +14,9 @@ export default function InventoryPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
-
+  const [dateFilter, setDateFilter] = useState('');
+  const [monthFilter, setMonthFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   // Adjustment modal
   const [isAdjustOpen, setIsAdjustOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
