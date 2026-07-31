@@ -42,45 +42,51 @@ export default function InvoicesPage() {
 
   const columns: Column<any>[] = [
     {
-      header: 'Invoice #',
+      header: 'INVOICE #',
       accessorKey: 'invoiceNumber',
-      cell: (i) => <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">{i.invoiceNumber}</span>,
+      cell: (i) => (
+        <button 
+          onClick={() => setSelectedInvoice(i)}
+          className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline text-left"
+        >
+          {i.invoiceNumber}
+        </button>
+      ),
     },
     {
-      header: 'Sales Order',
-      accessorKey: 'orderNumber',
-      cell: (i) => <span className="font-mono text-xs font-medium text-gray-500">{i.orderNumber}</span>,
+      header: 'CUSTOMER',
+      accessorKey: 'customerName',
+      cell: (i) => <span className="font-semibold text-gray-900 dark:text-white uppercase">{i.customerName}</span>,
     },
     {
-      header: 'Customer Name',
-      cell: (i) => <span className="font-semibold text-gray-900 dark:text-white">{i.customerName}</span>,
-    },
-    {
-      header: 'Invoice Date',
+      header: 'DATE',
+      accessorKey: 'invoiceDate',
       cell: (i) => <span className="text-xs text-gray-500">{formatDate(i.invoiceDate)}</span>,
     },
     {
-      header: 'GST Tax (18%)',
-      cell: (i) => <span className="text-xs font-medium text-blue-600">{formatCurrency(i.gstAmount)}</span>,
+      header: 'TAXABLE AMT',
+      accessorKey: 'subtotal',
+      cell: (i) => <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{formatCurrency(i.order?.subtotal || i.totalAmount - i.gstAmount)}</span>,
     },
     {
-      header: 'Total Amount',
-      cell: (i) => <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(i.totalAmount)}</span>,
+      header: 'CGST',
+      accessorKey: 'cgst',
+      cell: (i) => <span className="text-xs text-gray-500">{formatCurrency(i.order?.cgst || i.gstAmount / 2)}</span>,
     },
     {
-      header: 'Status',
-      cell: (i) => <StatusBadge status={i.status} />,
+      header: 'SGST',
+      accessorKey: 'sgst',
+      cell: (i) => <span className="text-xs text-gray-500">{formatCurrency(i.order?.sgst || i.gstAmount / 2)}</span>,
     },
     {
-      header: 'Action',
-      cell: (i) => (
-        <button
-          onClick={() => setSelectedInvoice(i)}
-          className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors"
-        >
-          <Printer className="h-3.5 w-3.5" /> View & Print
-        </button>
-      ),
+      header: 'IGST',
+      accessorKey: 'igst',
+      cell: (i) => <span className="text-xs text-gray-500">{formatCurrency(i.order?.igst || 0)}</span>,
+    },
+    {
+      header: 'TOTAL',
+      accessorKey: 'totalAmount',
+      cell: (i) => <span className="font-bold text-emerald-600">{formatCurrency(i.totalAmount)}</span>,
     },
   ];
 
