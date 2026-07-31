@@ -232,38 +232,36 @@ export async function GET(req: NextRequest) {
     ];
 
     return jsonResponse({
-      data: {
-        kpis: {
-          todaysSales: Math.round(todaysSales),
-          todaysProfit: Math.round(todaysProfit),
-          monthlySales: Math.round(monthlySales),
-          monthlyProfit: Math.round(monthlyProfit),
-          monthlyExpenses: Math.round(monthlyExpenses),
-          grossMargin,
-          currentWaxStock: Math.round(waxStock),
-          finishedGoodsStock: Math.round(finishedGoodsStock),
-          ordersPending,
-          ordersDelivered,
-          totalCustomers,
-          activeCustomers,
-          outstandingCredit: Math.round(outstandingCredit),
-          inventoryValue: Math.round(inventoryValue),
-          productionToday: Math.round(productionToday),
-          productionThisMonth: Math.round(productionThisMonth),
-          employeeAttendance: employeeAttendanceToday,
-          // % changes
-          salesChange,
-          expenseChange,
-        },
-        charts: {
-          monthlyFinancials,
-          customerOrders: topCustomers,
-          inventoryHealth,
-          salesTrend: dailySalesTrend,
-          productionVsSales,
-          expenseBreakdown,
-          monthlySalesTrend: salesTrend,
-        },
+      kpis: {
+        todaysSales: Math.round(todaysSales),
+        todaysProfit: Math.round(todaysProfit),
+        monthlySales: Math.round(monthlySales),
+        monthlyProfit: Math.round(monthlyProfit),
+        monthlyExpenses: Math.round(monthlyExpenses),
+        grossMargin,
+        currentWaxStock: Math.round(waxStock),
+        finishedGoodsStock: Math.round(finishedGoodsStock),
+        ordersPending,
+        ordersDelivered,
+        totalCustomers,
+        activeCustomers,
+        outstandingCredit: Math.round(outstandingCredit),
+        inventoryValue: Math.round(inventoryValue),
+        productionToday: Math.round(productionToday),
+        productionThisMonth: Math.round(productionThisMonth),
+        employeeAttendance: employeeAttendanceToday,
+        // % changes
+        salesChange,
+        expenseChange,
+      },
+      charts: {
+        monthlyFinancials,
+        customerOrders: topCustomers,
+        inventoryHealth,
+        salesTrend: dailySalesTrend,
+        productionVsSales,
+        expenseBreakdown,
+        monthlySalesTrend: salesTrend,
       },
     });
   } catch (err: any) {
