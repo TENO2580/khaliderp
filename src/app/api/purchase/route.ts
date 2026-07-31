@@ -8,6 +8,9 @@ export async function GET(req: NextRequest) {
 
   const url = new URL(req.url);
   const search = url.searchParams.get('search') || '';
+  const date = url.searchParams.get('date') || '';
+  const month = url.searchParams.get('month') || '';
+  const status = url.searchParams.get('status') || '';
 
   const where: any = {};
   if (search) {
@@ -15,6 +18,30 @@ export async function GET(req: NextRequest) {
       { poNumber: { contains: search, mode: 'insensitive' } },
       { supplier: { name: { contains: search, mode: 'insensitive' } } }
     ];
+  }
+
+  if (status) {
+    where.status = status;
+  }
+
+  if (date) {
+    const d = new Date(date);
+    if (!isNaN(d.getTime())) {
+      where.orderDate = {
+        gte: new Date(d.setHours(0, 0, 0, 0)),
+        lt: new Date(d.setHours(23, 59, 59, 999)),
+      };
+    }
+  } else if (month) {
+    const [y, m] = month.split('-');
+    if (y && m) {
+      const start = new Date(parseInt(y), parseInt(m) - 1, 1);
+      const end = new Date(parseInt(y), parseInt(m), 1);
+      where.orderDate = {
+        gte: start,
+        lt: end,
+      };
+    }
   }
 
   const purchases = await prisma.purchaseOrder.findMany({

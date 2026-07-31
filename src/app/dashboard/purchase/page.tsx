@@ -16,6 +16,9 @@ export default function PurchasePage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
+  const [monthFilter, setMonthFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
   // Modal State
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -30,7 +33,7 @@ export default function PurchasePage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const res = await api.get(`/purchase?search=${encodeURIComponent(search)}`);
+      const res = await api.get(`/purchase?search=${encodeURIComponent(search)}&date=${dateFilter}&month=${monthFilter}&status=${statusFilter}`);
       setOrders(res.data.data.data);
     } catch {
       setOrders([]);
@@ -41,7 +44,7 @@ export default function PurchasePage() {
 
   useEffect(() => {
     fetchData();
-  }, [search, limit]);
+  }, [search, limit, dateFilter, monthFilter, statusFilter]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,14 +100,31 @@ export default function PurchasePage() {
         </div>
       </div>
 
-      <DataTable limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
+      <DataTable
+        limit={limit}
+        onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}
         data={orders}
         searchPlaceholder="Search PO # or supplier..."
-        onSearch={(q) => setSearch(q)}
+        onSearch={setSearch}
         onAddClick={() => setIsCreateOpen(true)}
         addButtonLabel="Create Purchase Order"
         isLoading={isLoading}
+        page={page}
+        onPageChange={setPage}
+        dateFilter={dateFilter}
+        onDateChange={setDateFilter}
+        monthFilter={monthFilter}
+        onMonthChange={setMonthFilter}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        statusOptions={[
+          { label: 'Draft', value: 'DRAFT' },
+          { label: 'Ordered', value: 'ORDERED' },
+          { label: 'Partially Received', value: 'PARTIALLY_RECEIVED' },
+          { label: 'Received', value: 'RECEIVED' },
+          { label: 'Cancelled', value: 'CANCELLED' },
+        ]}
       />
 
       {/* Create PO Modal */}

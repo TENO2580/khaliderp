@@ -16,7 +16,9 @@ export default function CustomersPage() {
   const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-
+  const [dateFilter, setDateFilter] = useState('');
+  const [monthFilter, setMonthFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   // Modal states
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
@@ -44,7 +46,7 @@ export default function CustomersPage() {
   const fetchCustomers = async () => {
     setIsLoading(true);
     try {
-      const res = await api.get(`/customers?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`);
+      const res = await api.get(`/customers?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&date=${dateFilter}&month=${monthFilter}&status=${statusFilter}`);
       setCustomers(res.data.data.data);
       setTotalPages(res.data.data.pagination.totalPages);
       setTotalItems(res.data.data.pagination.total);
@@ -57,7 +59,7 @@ export default function CustomersPage() {
 
   useEffect(() => {
     fetchCustomers();
-  }, [page, search, limit]);
+  }, [page, search, limit, dateFilter, monthFilter, statusFilter]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -220,7 +222,9 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      <DataTable limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
+      <DataTable
+        limit={limit}
+        onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}
         data={customers}
         searchPlaceholder="Search by name, ID, phone..."
@@ -244,6 +248,18 @@ export default function CustomersPage() {
         totalItems={totalItems}
         onPageChange={(p) => setPage(p)}
         isLoading={isLoading}
+        dateFilter={dateFilter}
+        onDateChange={setDateFilter}
+        monthFilter={monthFilter}
+        onMonthChange={setMonthFilter}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        statusOptions={[
+          { label: 'Active', value: 'ACTIVE' },
+          { label: 'Inactive', value: 'INACTIVE' },
+          { label: 'Lead', value: 'LEAD' },
+          { label: 'Lost', value: 'LOST' },
+        ]}
       />
 
       {/* Create Customer Modal */}

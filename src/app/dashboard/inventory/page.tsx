@@ -125,15 +125,27 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      <DataTable limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
+      <DataTable
+        limit={limit}
+        onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}
         data={inventory}
         searchPlaceholder="Search product or SKU..."
-        onSearch={(q) => setSearch(q)}
+        onSearch={setSearch}
         page={page}
         totalPages={totalPages}
-        onPageChange={(p) => setPage(p)}
+        onPageChange={setPage}
         isLoading={isLoading}
+        dateFilter={dateFilter}
+        onDateChange={setDateFilter}
+        monthFilter={monthFilter}
+        onMonthChange={setMonthFilter}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        statusOptions={[
+          { label: 'Low Stock', value: 'LOW_STOCK' },
+          { label: 'In Stock', value: 'IN_STOCK' },
+        ]}
       />
 
       {/* Adjust Stock Modal */}

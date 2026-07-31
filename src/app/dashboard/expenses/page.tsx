@@ -16,6 +16,9 @@ export default function ExpensesPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [dateFilter, setDateFilter] = useState('');
+  const [monthFilter, setMonthFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
   // Add Expense Modal
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -30,7 +33,7 @@ export default function ExpensesPage() {
     setIsLoading(true);
     try {
       const [eRes, cRes, sRes] = await Promise.all([
-        api.get(`/expenses?search=${encodeURIComponent(search)}`),
+        api.get(`/expenses?search=${encodeURIComponent(search)}&date=${dateFilter}&month=${monthFilter}&status=${statusFilter}`),
         api.get('/expenses/categories'),
         api.get('/expenses/stats'),
       ]);
@@ -49,7 +52,7 @@ export default function ExpensesPage() {
 
   useEffect(() => {
     fetchData();
-  }, [search, limit]);
+  }, [search, limit, dateFilter, monthFilter, statusFilter]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,14 +154,29 @@ export default function ExpensesPage() {
         </div>
       )}
 
-      <DataTable limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
+      <DataTable
+        limit={limit}
+        onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}
         data={expenses}
         searchPlaceholder="Search expense description..."
-        onSearch={(q) => setSearch(q)}
+        onSearch={setSearch}
         onAddClick={() => setIsCreateOpen(true)}
         addButtonLabel="Record Expense"
         isLoading={isLoading}
+        page={page}
+        onPageChange={setPage}
+        dateFilter={dateFilter}
+        onDateChange={setDateFilter}
+        monthFilter={monthFilter}
+        onMonthChange={setMonthFilter}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        statusOptions={[
+          { label: 'Pending', value: 'PENDING' },
+          { label: 'Approved', value: 'APPROVED' },
+          { label: 'Rejected', value: 'REJECTED' },
+        ]}
       />
 
       {/* Add Expense Modal */}

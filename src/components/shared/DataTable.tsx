@@ -33,6 +33,13 @@ interface DataTableProps<T> {
   isLoading?: boolean;
   limit?: number;
   onLimitChange?: (limit: number) => void;
+  dateFilter?: string;
+  onDateChange?: (date: string) => void;
+  monthFilter?: string;
+  onMonthChange?: (month: string) => void;
+  statusFilter?: string;
+  onStatusChange?: (status: string) => void;
+  statusOptions?: { label: string; value: string }[];
 }
 
 export default function DataTable<T extends { id?: string }>({
@@ -50,6 +57,13 @@ export default function DataTable<T extends { id?: string }>({
   isLoading = false,
   limit,
   onLimitChange,
+  dateFilter,
+  onDateChange,
+  monthFilter,
+  onMonthChange,
+  statusFilter,
+  onStatusChange,
+  statusOptions,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState('');
 
@@ -74,7 +88,37 @@ export default function DataTable<T extends { id?: string }>({
           />
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {onDateChange && (
+            <input
+              type="date"
+              value={dateFilter || ''}
+              onChange={(e) => onDateChange(e.target.value)}
+              className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
+            />
+          )}
+          {onMonthChange && (
+            <input
+              type="month"
+              value={monthFilter || ''}
+              onChange={(e) => onMonthChange(e.target.value)}
+              className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
+            />
+          )}
+          {onStatusChange && statusOptions && (
+            <select
+              value={statusFilter || ''}
+              onChange={(e) => onStatusChange(e.target.value)}
+              className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
+            >
+              <option value="">All Statuses</option>
+              {statusOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          )}
           {onExportClick && (
             <button
               onClick={onExportClick}
@@ -102,7 +146,13 @@ export default function DataTable<T extends { id?: string }>({
           <thead className="bg-gray-50/80 text-xs uppercase font-semibold tracking-wider text-gray-500 dark:bg-gray-950/50 dark:text-gray-400 border-b border-gray-200/80 dark:border-gray-800">
             <tr>
               {columns.map((col, idx) => (
-                <th key={idx} className="px-6 py-3.5">
+                <th
+                  key={idx}
+                  className={cn(
+                    "px-6 py-3.5 whitespace-nowrap",
+                    idx === 0 && "sticky left-0 z-10 bg-gray-50/95 dark:bg-gray-950/95 shadow-[1px_0_0_0_#e5e7eb] dark:shadow-[1px_0_0_0_#1f2937]"
+                  )}
+                >
                   {col.header}
                 </th>
               ))}
@@ -129,10 +179,16 @@ export default function DataTable<T extends { id?: string }>({
               data.map((row, rIdx) => (
                 <tr
                   key={row.id || rIdx}
-                  className="transition-colors hover:bg-gray-50/80 dark:hover:bg-gray-800/50"
+                  className="group transition-colors hover:bg-gray-50/80 dark:hover:bg-gray-800/50"
                 >
                   {columns.map((col, cIdx) => (
-                    <td key={cIdx} className="px-6 py-4 font-medium text-gray-900 dark:text-gray-200">
+                    <td
+                      key={cIdx}
+                      className={cn(
+                        "px-6 py-4 font-medium text-gray-900 dark:text-gray-200 whitespace-nowrap",
+                        cIdx === 0 && "sticky left-0 z-10 bg-white dark:bg-gray-900 group-hover:bg-gray-50/95 dark:group-hover:bg-gray-800/95 shadow-[1px_0_0_0_#e5e7eb] dark:shadow-[1px_0_0_0_#1f2937]"
+                      )}
+                    >
                       {col.cell
                         ? col.cell(row)
                         : col.accessorKey

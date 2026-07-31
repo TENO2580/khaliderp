@@ -17,6 +17,9 @@ export default function SalesPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
+  const [dateFilter, setDateFilter] = useState('');
+  const [monthFilter, setMonthFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
   // Create/Edit Order Modal
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -45,7 +48,7 @@ export default function SalesPage() {
     setIsLoading(true);
     try {
       const [oRes, cRes, pRes] = await Promise.all([
-        api.get(`/sales?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`),
+        api.get(`/sales?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&date=${dateFilter}&month=${monthFilter}&status=${statusFilter}`),
         api.get('/customers?limit=100'),
         api.get('/inventory?limit=100'),
       ]);
@@ -62,7 +65,7 @@ export default function SalesPage() {
 
   useEffect(() => {
     fetchData();
-  }, [page, search, limit]);
+  }, [page, search, limit, dateFilter, monthFilter, statusFilter]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -253,11 +256,11 @@ export default function SalesPage() {
         </div>
       </div>
 
-      <DataTable limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
+      <DataTable
         columns={columns}
         data={orders}
         searchPlaceholder="Search order # or customer..."
-        onSearch={(q) => setSearch(q)}
+        onSearch={setSearch}
         onAddClick={() => {
           setIsEdit(false);
           setCustomerId('');
@@ -267,8 +270,26 @@ export default function SalesPage() {
         addButtonLabel="Create Sales Order"
         page={page}
         totalPages={totalPages}
-        onPageChange={(p) => setPage(p)}
+        onPageChange={setPage}
         isLoading={isLoading}
+        limit={limit}
+        onLimitChange={setLimit}
+        dateFilter={dateFilter}
+        onDateChange={setDateFilter}
+        monthFilter={monthFilter}
+        onMonthChange={setMonthFilter}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        statusOptions={[
+          { label: 'Pending', value: 'PENDING' },
+          { label: 'Confirmed', value: 'CONFIRMED' },
+          { label: 'In Production', value: 'IN_PRODUCTION' },
+          { label: 'Ready', value: 'READY' },
+          { label: 'Dispatched', value: 'DISPATCHED' },
+          { label: 'Delivered', value: 'DELIVERED' },
+          { label: 'Cancelled', value: 'CANCELLED' },
+          { label: 'Returned', value: 'RETURNED' },
+        ]}
       />
 
       {/* Create Order Modal */}

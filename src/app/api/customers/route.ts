@@ -10,6 +10,9 @@ export async function GET(req: NextRequest) {
   const page = parseInt(url.searchParams.get('page') || '1');
   const limit = parseInt(url.searchParams.get('limit') || '10');
   const search = url.searchParams.get('search') || '';
+  const date = url.searchParams.get('date') || '';
+  const month = url.searchParams.get('month') || '';
+  const status = url.searchParams.get('status') || '';
 
   const skip = (page - 1) * limit;
   const where: any = {};
@@ -21,6 +24,30 @@ export async function GET(req: NextRequest) {
       { phone: { contains: search } },
       { customerId: { contains: search, mode: 'insensitive' } },
     ];
+  }
+
+  if (status) {
+    where.status = status;
+  }
+
+  if (date) {
+    const d = new Date(date);
+    if (!isNaN(d.getTime())) {
+      where.createdAt = {
+        gte: new Date(d.setHours(0, 0, 0, 0)),
+        lt: new Date(d.setHours(23, 59, 59, 999)),
+      };
+    }
+  } else if (month) {
+    const [y, m] = month.split('-');
+    if (y && m) {
+      const start = new Date(parseInt(y), parseInt(m) - 1, 1);
+      const end = new Date(parseInt(y), parseInt(m), 1);
+      where.createdAt = {
+        gte: start,
+        lt: end,
+      };
+    }
   }
 
   const [data, total] = await Promise.all([
