@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, Bell, Command } from 'lucide-react';
+import { Search, Bell, Command, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
 import { getInitials } from '@/lib/utils';
@@ -9,21 +9,30 @@ import { getInitials } from '@/lib/utils';
 interface TopNavProps {
   sidebarCollapsed: boolean;
   onSearchOpen: () => void;
+  onMobileMenuClick?: () => void;
 }
 
-export default function TopNav({ sidebarCollapsed, onSearchOpen }: TopNavProps) {
+export default function TopNav({ sidebarCollapsed, onSearchOpen, onMobileMenuClick }: TopNavProps) {
   const { user } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
 
   return (
     <header
       className={cn(
-        'fixed top-0 right-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white/80 px-6 backdrop-blur-lg transition-all duration-300 dark:border-gray-800 dark:bg-gray-950/80',
-        sidebarCollapsed ? 'left-[72px]' : 'left-[280px]'
+        'fixed top-0 right-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white/80 px-4 md:px-6 backdrop-blur-lg transition-all duration-300 dark:border-gray-800 dark:bg-gray-950/80',
+        'left-0', // Default mobile
+        sidebarCollapsed ? 'lg:left-[72px]' : 'lg:left-[280px]' // Desktop
       )}
     >
-      {/* Search Bar */}
-      <button
+      {/* Left side: Mobile Menu + Search Bar */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onMobileMenuClick}
+          className="lg:hidden rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        <button
         onClick={onSearchOpen}
         className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-500 transition-colors hover:border-gray-300 hover:bg-gray-100 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700"
       >
@@ -33,6 +42,7 @@ export default function TopNav({ sidebarCollapsed, onSearchOpen }: TopNavProps) 
           <Command className="inline h-3 w-3" />K
         </kbd>
       </button>
+      </div>
 
       {/* Right side */}
       <div className="flex items-center gap-3">

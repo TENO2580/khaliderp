@@ -12,6 +12,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
   // Redirect to login if not authenticated
@@ -50,17 +51,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
-      <TopNav sidebarCollapsed={sidebarCollapsed} onSearchOpen={() => setSearchOpen(true)} />
+      <Sidebar 
+        collapsed={sidebarCollapsed} 
+        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} 
+        mobileOpen={mobileSidebarOpen}
+        onMobileClose={() => setMobileSidebarOpen(false)}
+      />
+      <TopNav 
+        sidebarCollapsed={sidebarCollapsed} 
+        onSearchOpen={() => setSearchOpen(true)} 
+        onMobileMenuClick={() => setMobileSidebarOpen(true)}
+      />
 
       {/* Main Content */}
       <main
         className={cn(
           'pt-16 transition-all duration-300',
-          sidebarCollapsed ? 'ml-[72px]' : 'ml-[280px]'
+          'ml-0', // Default (Mobile)
+          sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[280px]' // Desktop
         )}
       >
-        <div className="p-6">{children}</div>
+        <div className="p-4 md:p-6">{children}</div>
       </main>
 
       {/* Global Search Modal */}

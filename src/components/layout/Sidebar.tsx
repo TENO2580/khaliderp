@@ -8,9 +8,9 @@ import {
   ChevronDown,
   ChevronLeft,
   LogOut,
-  Moon,
   Sun,
   Flame,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NAV_ITEMS, hasPermission, ROLE_LABELS } from '@/lib/constants';
@@ -20,9 +20,11 @@ import { useTheme } from 'next-themes';
 interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
-export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
+export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -56,12 +58,22 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   };
 
   return (
-    <aside
-      className={cn(
-        'fixed left-0 top-0 z-40 flex flex-col h-screen border-r border-gray-200 bg-white transition-all duration-300 dark:border-gray-800 dark:bg-gray-950',
-        collapsed ? 'w-[72px]' : 'w-[280px]'
+    <>
+      {/* Mobile Backdrop Overlay */}
+      {mobileOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-gray-900/50 backdrop-blur-sm lg:hidden"
+          onClick={onMobileClose}
+        />
       )}
-    >
+      
+      <aside
+        className={cn(
+          'fixed left-0 top-0 z-50 flex flex-col h-screen border-r border-gray-200 bg-white transition-all duration-300 dark:border-gray-800 dark:bg-gray-950',
+          collapsed ? 'lg:w-[72px]' : 'lg:w-[280px]',
+          mobileOpen ? 'translate-x-0 w-[280px]' : '-translate-x-full lg:translate-x-0'
+        )}
+      >
       {/* Logo */}
       <div className="flex h-16 items-center justify-between border-b border-gray-200 px-4 dark:border-gray-800">
         <Link href="/dashboard" className="flex items-center gap-3">
@@ -82,11 +94,17 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         </Link>
         <button
           onClick={onToggle}
-          className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+          className="hidden lg:block rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
         >
           <ChevronLeft
             className={cn('h-4 w-4 transition-transform', collapsed && 'rotate-180')}
           />
+        </button>
+        <button
+          onClick={onMobileClose}
+          className="lg:hidden rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+        >
+          <X className="h-4 w-4" />
         </button>
       </div>
 
