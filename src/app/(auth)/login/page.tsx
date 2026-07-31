@@ -45,9 +45,12 @@ export default function LoginPage() {
       {/* LEFT PANE - Information & Graphics (Hidden on mobile) */}
       <div className="hidden lg:flex w-1/2 flex-col justify-between bg-gradient-to-br from-[#f8fbff] to-[#eef5ff] dark:from-slate-900 dark:to-slate-950 relative overflow-hidden p-12 xl:p-16">
         
-        {/* Background decorative circles */}
-        <div className="absolute top-0 right-0 -translate-y-1/3 translate-x-1/3 w-[800px] h-[800px] rounded-full border-[40px] border-blue-50/50 dark:border-blue-900/10 pointer-events-none" />
-        <div className="absolute top-10 right-10 w-[600px] h-[600px] rounded-full border-[20px] border-blue-50/30 dark:border-blue-900/5 pointer-events-none" />
+        {/* Background decorative circles with animation */}
+        <div className="absolute top-0 right-0 -translate-y-1/3 translate-x-1/3 w-[800px] h-[800px] rounded-full border-[40px] border-blue-50/50 dark:border-blue-900/10 pointer-events-none animate-[pulse_6s_ease-in-out_infinite]" />
+        <div className="absolute top-10 right-10 w-[600px] h-[600px] rounded-full border-[20px] border-blue-50/30 dark:border-blue-900/5 pointer-events-none animate-[pulse_8s_ease-in-out_200ms_infinite]" />
+        
+        {/* Additional animated floating orb */}
+        <div className="absolute bottom-20 left-10 w-64 h-64 bg-blue-400/20 dark:bg-blue-600/10 blur-3xl rounded-full pointer-events-none animate-[pulse_10s_ease-in-out_infinite]" />
 
         <div className="relative z-10">
           {/* Logo */}
@@ -138,7 +141,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-12 pr-4 text-sm font-medium text-slate-900 transition-all hover:border-slate-300 focus:border-blue-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:ring-blue-600/20"
+                  className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-12 pr-4 text-sm font-medium text-slate-900 transition-all hover:border-slate-300 focus:border-blue-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:bg-slate-950 dark:focus:border-blue-500 dark:focus:ring-blue-600/20"
                   placeholder="Enter your email or username"
                 />
               </div>
@@ -155,7 +158,7 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-12 pr-12 text-sm font-medium text-slate-900 transition-all hover:border-slate-300 focus:border-blue-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:ring-blue-600/20"
+                  className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-12 pr-12 text-sm font-medium text-slate-900 transition-all hover:border-slate-300 focus:border-blue-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:bg-slate-950 dark:focus:border-blue-500 dark:focus:ring-blue-600/20"
                   placeholder="Enter your password"
                 />
                 <button
