@@ -78,58 +78,90 @@ export default function SalesPage() {
     }
   };
 
+  const parseNotes = (notes: string) => {
+    try {
+      return JSON.parse(notes);
+    } catch {
+      return {};
+    }
+  };
+
   const columns: Column<any>[] = [
     {
-      header: 'Order #',
-      accessorKey: 'orderNumber',
-      cell: (o) => <span className="font-mono text-xs font-semibold text-blue-600 dark:text-blue-400">{o.orderNumber}</span>,
+      header: 'Name',
+      cell: (o) => <span className="font-semibold text-gray-900 dark:text-white">{o.customer?.name || 'Unknown'}</span>,
     },
     {
-      header: 'Customer',
-      cell: (o) => <span className="font-semibold text-gray-900 dark:text-white">{o.customer?.name}</span>,
+      header: 'Batch Used',
+      cell: (o) => {
+        const data = parseNotes(o.notes);
+        return <span className="text-sm text-gray-600 dark:text-gray-300">{data.batchUsed || '-'}</span>;
+      },
     },
     {
-      header: 'Date',
+      header: 'Order Date',
       cell: (o) => <span className="text-xs text-gray-500">{formatDate(o.orderDate)}</span>,
     },
     {
-      header: 'Total Amount',
+      header: 'Delivery Date',
+      cell: (o) => <span className="text-xs text-gray-500">{o.deliveryDate ? formatDate(o.deliveryDate) : '-'}</span>,
+    },
+    {
+      header: 'TYPE',
+      cell: (o) => {
+        const data = parseNotes(o.notes);
+        return <span className="text-sm text-gray-600 dark:text-gray-300">{data.type || '-'}</span>;
+      },
+    },
+    {
+      header: 'Quantity (KG)',
+      cell: (o) => {
+        const qty = o.items?.reduce((sum: number, i: any) => sum + i.quantity, 0) || 0;
+        return <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{qty.toFixed(2)}</span>;
+      },
+    },
+    {
+      header: 'Production Cost',
+      cell: (o) => {
+        const data = parseNotes(o.notes);
+        return <span className="text-sm text-gray-600 dark:text-gray-300">{data.productionCost ? `₹${data.productionCost}` : '-'}</span>;
+      },
+    },
+    {
+      header: 'Selling Cost',
+      cell: (o) => {
+        const data = parseNotes(o.notes);
+        return <span className="text-sm text-gray-600 dark:text-gray-300">{data.sellingCost ? `₹${data.sellingCost}` : (o.items?.[0]?.unitPrice ? formatCurrency(o.items[0].unitPrice) : '-')}</span>;
+      },
+    },
+    {
+      header: 'Margin % & Amount',
+      cell: (o) => {
+        const data = parseNotes(o.notes);
+        return <span className="text-sm text-gray-600 dark:text-gray-300">{data.margin || '-'}</span>;
+      },
+    },
+    {
+      header: 'Total Selling Cost',
       cell: (o) => <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(o.totalAmount)}</span>,
     },
     {
-      header: 'Outstanding',
-      cell: (o) => (
-        <span className={o.outstanding > 0 ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'text-gray-500'}>
-          {formatCurrency(o.outstanding)}
-        </span>
-      ),
-    },
-    {
-      header: 'Order Status',
+      header: 'Status',
       cell: (o) => <StatusBadge status={o.status} />,
     },
     {
-      header: 'Payment Status',
-      cell: (o) => <StatusBadge status={o.paymentStatus} />,
-    },
-    {
-      header: 'Actions',
-      cell: (o) => (
-        <div className="flex items-center gap-2">
-          {!o.invoice ? (
-            <button
-              onClick={() => handleGenerateInvoice(o.id)}
-              className="flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-400"
-            >
-              <FileText className="h-3.5 w-3.5" /> Invoice
-            </button>
-          ) : (
-            <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-              <CheckCircle2 className="h-3.5 w-3.5" /> Invoiced
-            </span>
-          )}
-        </div>
-      ),
+      header: 'Credit',
+      cell: (o) => {
+        const data = parseNotes(o.notes);
+        if (data.creditNotes) {
+           return <span className="text-sm text-rose-600 font-medium">{data.creditNotes}</span>;
+        }
+        return (
+          <span className={o.outstanding > 0 ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'text-gray-500'}>
+            {formatCurrency(o.outstanding)}
+          </span>
+        );
+      },
     },
   ];
 
