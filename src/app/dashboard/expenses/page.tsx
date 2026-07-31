@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { Receipt, Check, Plus, CreditCard } from 'lucide-react';
+import { Receipt, Check, Plus, CreditCard, Edit3, Trash2 } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -29,6 +29,17 @@ export default function ExpensesPage() {
     date: new Date().toISOString().split('T')[0],
     description: '',
     paymentMethod: '',
+  });
+
+  // Edit Expense Modal
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editId, setEditId] = useState('');
+  const [editData, setEditData] = useState({
+    categoryId: '',
+    amount: 0,
+    date: '',
+    description: '',
+    status: '',
   });
 
   const fetchData = async () => {
@@ -83,6 +94,41 @@ export default function ExpensesPage() {
     }
   };
 
+  const openEdit = (expense: any) => {
+    setEditId(expense.id);
+    setEditData({
+      categoryId: expense.categoryId || expense.category?.id || '',
+      amount: expense.amount,
+      date: expense.date ? new Date(expense.date).toISOString().split('T')[0] : '',
+      description: expense.description || '',
+      status: expense.status || 'PENDING',
+    });
+    setIsEditOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await api.put(`/expenses/${editId}`, editData);
+      toast.success('Expense updated successfully!');
+      setIsEditOpen(false);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Error updating expense');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this expense?')) return;
+    try {
+      await api.delete(`/expenses/${id}`);
+      toast.success('Expense deleted');
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Error deleting expense');
+    }
+  };
+
   const columns: Column<any>[] = [
     {
       header: 'Category',
@@ -116,17 +162,30 @@ export default function ExpensesPage() {
     },
     {
       header: 'Action',
-      cell: (e) =>
-        e.status === 'PENDING' ? (
+      cell: (e) => (
+        <div className="flex items-center gap-1">
           <button
-            onClick={() => handleApprove(e.id)}
-            className="flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400"
+            onClick={() => openEdit(e)}
+            className="flex items-center gap-1 rounded-lg bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-400"
           >
-            <Check className="h-3.5 w-3.5" /> Approve
+            <Edit3 className="h-3.5 w-3.5" /> Edit
           </button>
-        ) : (
-          <span className="text-xs text-gray-400">Approved</span>
-        ),
+          {e.status === 'PENDING' && (
+            <button
+              onClick={() => handleApprove(e.id)}
+              className="flex items-center gap-1 rounded-lg bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400"
+            >
+              <Check className="h-3.5 w-3.5" />
+            </button>
+          )}
+          <button
+            onClick={() => handleDelete(e.id)}
+            className="flex items-center gap-1 rounded-lg bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-400"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ),
     },
   ];
 
@@ -268,6 +327,91 @@ export default function ExpensesPage() {
                   className="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700"
                 >
                   Submit Expense
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Expense Modal */}
+      {isEditOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Edit Expense</h2>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Category *</label>
+                <select
+                  required
+                  value={editData.categoryId}
+                  onChange={(e) => setEditData({ ...editData, categoryId: e.target.value })}
+                  className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                >
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Amount (₹) *</label>
+                <input
+                  type="number"
+                  required
+                  value={editData.amount}
+                  onChange={(e) => setEditData({ ...editData, amount: Number(e.target.value) })}
+                  className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Date *</label>
+                <input
+                  type="date"
+                  required
+                  value={editData.date}
+                  onChange={(e) => setEditData({ ...editData, date: e.target.value })}
+                  className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Status</label>
+                <select
+                  value={editData.status}
+                  onChange={(e) => setEditData({ ...editData, status: e.target.value })}
+                  className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                >
+                  <option value="PENDING">Pending</option>
+                  <option value="APPROVED">Approved</option>
+                  <option value="REJECTED">Rejected</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Notes</label>
+                <textarea
+                  rows={2}
+                  value={editData.description}
+                  onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                  className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsEditOpen(false)}
+                  className="rounded-xl px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-400"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                >
+                  Save Changes
                 </button>
               </div>
             </form>
