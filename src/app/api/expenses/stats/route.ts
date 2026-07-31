@@ -18,11 +18,9 @@ export async function GET(req: NextRequest) {
     ]);
 
     return jsonResponse({
-      data: {
-        total: totalAgg._sum.amount || 0,
-        average: Math.round(totalAgg._avg.amount || 0),
-        count: countResult,
-      },
+      total: totalAgg._sum.amount || 0,
+      average: Math.round(totalAgg._avg.amount || 0),
+      count: countResult,
     });
   } catch (err: any) {
     return errorResponse(err.message || 'Failed to fetch expense stats', 500);
