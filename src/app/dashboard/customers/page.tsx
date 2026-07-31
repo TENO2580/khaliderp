@@ -34,8 +34,6 @@ export default function CustomersPage() {
     type: 'RETAILER',
     creditLimit: 50000,
     status: 'ACTIVE',
-    district: '',
-    state: 'Tamil Nadu',
     notes: '',
     sellingPrice: 0,
     nextFollowupDate: '',
