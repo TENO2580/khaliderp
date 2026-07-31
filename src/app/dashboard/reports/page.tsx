@@ -39,6 +39,7 @@ export default function ReportsPage() {
 
   const fetchReport = useCallback(async () => {
     setIsLoading(true);
+    setReportData(null); // Clear old data to prevent render crashes on tab switch
     try {
       const res = await api.get(`/reports?type=${activeTab}`);
       setReportData(res.data.data);
@@ -231,9 +232,9 @@ export default function ReportsPage() {
               <td className="px-4 py-3">
                 <div className="flex items-center gap-2">
                   <div className="w-20 h-2 bg-gray-200 rounded-full dark:bg-gray-800 overflow-hidden">
-                    <div className="h-full bg-blue-600 rounded-full" style={{ width: `${r.percentage}%` }} />
+                    <div className="h-full bg-blue-600 rounded-full" style={{ width: `${r.percentage || 0}%` }} />
                   </div>
-                  <span className="text-xs font-bold">{r.percentage.toFixed(1)}%</span>
+                  <span className="text-xs font-bold">{(r.percentage || 0).toFixed(1)}%</span>
                 </div>
               </td>
             </tr>
