@@ -12,6 +12,7 @@ export default function SalesPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
+  const [batches, setBatches] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -47,15 +48,17 @@ export default function SalesPage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [oRes, cRes, pRes] = await Promise.all([
+      const [oRes, cRes, pRes, bRes] = await Promise.all([
         api.get(`/sales?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`),
         api.get('/customers?limit=100'),
         api.get('/inventory?limit=100'),
+        api.get('/production/batches'),
       ]);
       setOrders(oRes.data.data.data);
       setTotalPages(oRes.data.data.pagination.totalPages);
       setCustomers(cRes.data.data.data);
       setProducts(pRes.data.data.data);
+      setBatches(bRes.data.data);
     } catch {
       setOrders([]);
     } finally {
@@ -66,6 +69,52 @@ export default function SalesPage() {
   useEffect(() => {
     fetchData();
   }, [page, search, limit, startDate, endDate, statusFilter]);
+
+  // FIFO Batch Calculation & Auto Margin
+  useEffect(() => {
+    if (!isEdit && batches.length > 0 && items[0].productId) {
+      const qty = Number(items[0].quantity) || 0;
+      const unitPrice = Number(items[0].unitPrice) || 0;
+
+      // Filter and sort batches for FIFO
+      const availableBatches = batches
+        .filter(b => b.productId === items[0].productId && b.remainingQty > 0)
+        .sort((a, b) => new Date(a.productionDate).getTime() - new Date(b.productionDate).getTime());
+
+      let remainingToFulfill = qty;
+      let usedBatchNumbers: string[] = [];
+      let totalProdCost = 0;
+
+      for (const batch of availableBatches) {
+        if (remainingToFulfill <= 0) break;
+
+        const allocated = Math.min(remainingToFulfill, batch.remainingQty);
+        usedBatchNumbers.push(batch.batchNumber);
+        
+        const costPerUnit = batch.costPerKg || (batch.producedQty ? batch.productionCost / batch.producedQty : 0);
+        totalProdCost += allocated * costPerUnit;
+
+        remainingToFulfill -= allocated;
+      }
+
+      const totalSellingCost = qty * unitPrice;
+      const marginAmt = totalSellingCost - totalProdCost;
+      const marginPct = totalSellingCost > 0 ? ((marginAmt / totalSellingCost) * 100).toFixed(2) : '0';
+      
+      const selectedProduct = products.find(p => (p.product?.id || p.id) === items[0].productId);
+      const typeName = selectedProduct?.product?.name || '';
+
+      setEditFormData(prev => ({
+        ...prev,
+        batchUsed: usedBatchNumbers.join(', '),
+        productionCost: totalProdCost.toFixed(2),
+        sellingCost: unitPrice.toString(),
+        totalAmount: totalSellingCost,
+        margin: `${marginPct}% (₹${marginAmt.toFixed(2)})`,
+        type: typeName || prev.type
+      }));
+    }
+  }, [items, batches, isEdit, products]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
