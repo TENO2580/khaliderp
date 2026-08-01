@@ -59,18 +59,6 @@ export const NAV_ITEMS: NavItem[] = [
     permission: 'production:read',
   },
   {
-    title: 'Inventory',
-    href: '/dashboard/inventory',
-    icon: Package,
-    permission: 'inventory:read',
-    children: [
-      { title: 'Finished Goods', href: '/dashboard/inventory' },
-      { title: 'Raw Materials', href: '/dashboard/inventory/raw-materials' },
-      { title: 'Stock Movements', href: '/dashboard/inventory/movements' },
-    ],
-  },
-
-  {
     title: 'Purchase',
     href: '/dashboard/purchase',
     icon: Truck,

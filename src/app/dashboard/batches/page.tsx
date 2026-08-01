@@ -24,6 +24,11 @@ export default function BatchesPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [productId, setProductId] = useState('');
   const [sellingPrice, setSellingPrice] = useState(350);
+  const [productionDate, setProductionDate] = useState(new Date().toISOString().split('T')[0]);
+  const [waxUsed, setWaxUsed] = useState<number | ''>('');
+  const [costPerKg, setCostPerKg] = useState<number | ''>('');
+  const [productionCost, setProductionCost] = useState<number | ''>('');
+  const [producedQty, setProducedQty] = useState<number | ''>('');
 
   // Edit Modal State
   const [editBatch, setEditBatch] = useState<any>(null);
@@ -54,8 +59,12 @@ export default function BatchesPage() {
     try {
       await api.post('/production/batches', {
         productId: productId || undefined,
-        productionDate: new Date().toISOString(),
+        productionDate,
         sellingPrice,
+        waxUsed: Number(waxUsed) || 0,
+        costPerKg: Number(costPerKg) || 0,
+        productionCost: Number(productionCost) || 0,
+        producedQty: Number(producedQty) || 0,
       });
       toast.success('New batch code generated!');
       setIsCreateOpen(false);
@@ -102,12 +111,12 @@ export default function BatchesPage() {
       cell: (b) => <span className="font-semibold text-gray-900 dark:text-white">{b.producedQty} KG</span>,
     },
     {
-      header: 'Sold',
-      cell: (b) => <span className="text-xs text-emerald-600 font-medium">{b.soldQty} KG</span>,
+      header: 'SOLD',
+      cell: (b) => <span className="text-xs text-emerald-600 font-medium">{Number(b.soldQty).toFixed(2)} KG</span>,
     },
     {
-      header: 'Remaining',
-      cell: (b) => <span className="text-xs text-amber-600 font-semibold">{b.remainingQty} KG</span>,
+      header: 'REMAINING',
+      cell: (b) => <span className="text-xs text-orange-600 font-medium">{Number(b.remainingQty).toFixed(2)} KG</span>,
     },
     {
       header: 'Completion %',
@@ -182,33 +191,89 @@ export default function BatchesPage() {
       {/* Create Batch Modal */}
       {isCreateOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
+          <div className="w-full max-w-2xl rounded-3xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Generate Production Batch Code</h2>
             <form onSubmit={handleCreateSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Target Product</label>
-                <select
-                  value={productId}
-                  onChange={(e) => setProductId(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                >
-                  <option value="">-- General / Multi-Product --</option>
-                  {products.map((p) => (
-                    <option key={p.id} value={p.product?.id || p.id}>
-                      {p.product?.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Target Selling Price / Unit (₹)</label>
-                <input
-                  type="number"
-                  value={sellingPrice}
-                  onChange={(e) => setSellingPrice(Number(e.target.value))}
-                  className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Target Product</label>
+                  <select
+                    value={productId}
+                    onChange={(e) => setProductId(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  >
+                    <option value="">-- General / Multi-Product --</option>
+                    {products.map((p) => (
+                      <option key={p.id} value={p.product?.id || p.id}>
+                        {p.product?.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Date of Purchase</label>
+                  <input
+                    type="date"
+                    required
+                    value={productionDate}
+                    onChange={(e) => setProductionDate(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Wax Initial Qty / Used (KG)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={waxUsed}
+                    onChange={(e) => setWaxUsed(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Wax Rate (₹)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={costPerKg}
+                    onChange={(e) => setCostPerKg(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Total Production Cost (₹)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={productionCost}
+                    onChange={(e) => setProductionCost(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Candles Produced (KG)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={producedQty}
+                    onChange={(e) => setProducedQty(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Target Selling Price / Unit (₹)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={sellingPrice}
+                    onChange={(e) => setSellingPrice(Number(e.target.value))}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  />
+                </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-4">

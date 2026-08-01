@@ -142,10 +142,37 @@ export default function SalesPage() {
         });
         toast.success('Sales order updated successfully!');
       } else {
+        let itemsToSend: any[] = [];
+        const qty = Number(items[0].quantity) || 0;
+        const availableBatches = batches
+          .filter(b => b.productId === items[0].productId && b.remainingQty > 0)
+          .sort((a, b) => new Date(a.productionDate).getTime() - new Date(b.productionDate).getTime());
+
+        let remainingToFulfill = qty;
+
+        for (const batch of availableBatches) {
+          if (remainingToFulfill <= 0) break;
+          const allocated = Math.min(remainingToFulfill, batch.remainingQty);
+          itemsToSend.push({
+            ...items[0],
+            batchId: batch.id,
+            quantity: allocated,
+          });
+          remainingToFulfill -= allocated;
+        }
+
+        if (remainingToFulfill > 0) {
+          itemsToSend.push({
+            ...items[0],
+            batchId: undefined,
+            quantity: remainingToFulfill,
+          });
+        }
+
         await api.post('/sales', {
           customerId,
           paymentMethod,
-          items,
+          items: itemsToSend,
           orderDate: editFormData.orderDate,
           deliveryDate: editFormData.deliveryDate,
           status: editFormData.status,

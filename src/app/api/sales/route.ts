@@ -86,6 +86,7 @@ export async function POST(req: NextRequest) {
       subtotal += itemSubtotal;
       return {
         productId: item.productId,
+        batchId: item.batchId || undefined,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         discount: item.discount || 0,

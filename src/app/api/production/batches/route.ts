@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
       product: true, 
       productions: true,
       salesOrderItems: {
-        where: { order: { status: 'DELIVERED' } }
+        where: { order: { status: { not: 'CANCELLED' } } }
       }
     },
   });
@@ -37,14 +37,14 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { productId, producedQty, sellingPrice, notes } = body;
+    const { productId, producedQty, sellingPrice, notes, productionDate, waxUsed, costPerKg, productionCost } = body;
 
     // Validation: Check if the most recent batch is fully consumed
     const latestBatch = await prisma.batch.findFirst({
       orderBy: { createdAt: 'desc' },
       include: {
         salesOrderItems: {
-          where: { order: { status: 'DELIVERED' } }
+          where: { order: { status: { not: 'CANCELLED' } } }
         }
       }
     });
@@ -65,9 +65,13 @@ export async function POST(req: NextRequest) {
         batchNumber,
         productId,
         producedQty: Number(producedQty || 0),
+        remainingQty: Number(producedQty || 0),
         sellingPrice: Number(sellingPrice || 0),
+        waxUsed: Number(waxUsed || 0),
+        costPerKg: Number(costPerKg || 0),
+        productionCost: Number(productionCost || 0),
         status: 'IN_PRODUCTION',
-        productionDate: new Date(),
+        productionDate: productionDate ? new Date(productionDate) : new Date(),
       },
       include: { product: true },
     });
