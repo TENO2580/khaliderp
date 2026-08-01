@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
+import { SearchableSelect } from '@/components/shared/SearchableSelect';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Plus, FileText, CheckCircle2, DollarSign, X } from 'lucide-react';
 import api from '@/lib/api';
@@ -500,19 +501,13 @@ export default function SalesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Select Customer *</label>
-                  <select
+                  <SearchableSelect
                     required
                     value={customerId}
-                    onChange={(e) => setCustomerId(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                  >
-                    <option value="">-- Choose Customer --</option>
-                    {customers.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name} ({c.type})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setCustomerId(val)}
+                    placeholder="-- Choose Customer --"
+                    options={customers.map(c => ({ value: c.id, label: `${c.name} (${c.type})` }))}
+                  />
                 </div>
 
                 <div>
