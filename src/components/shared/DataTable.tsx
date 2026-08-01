@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -45,7 +45,7 @@ interface DataTableProps<T> {
   onStatusChange?: (status: string) => void;
   statusOptions?: { label: string; value: string }[];
   enableInlineEdit?: boolean;
-  onInlineEdit?: (rowId: string, key: string, value: string) => void;
+  onBatchSave?: (edits: { rowId: string; key: string; value: string }[]) => void;
 }
 
 export default function DataTable<T extends { id?: string }>({
@@ -71,15 +71,47 @@ export default function DataTable<T extends { id?: string }>({
   onStatusChange,
   statusOptions,
   enableInlineEdit = false,
-  onInlineEdit,
+  onBatchSave,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState('');
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const pendingEditsRef = useRef<Record<string, Record<string, string>>>({});
+  const [pendingCount, setPendingCount] = useState(0);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setSearch(val);
     if (onSearch) onSearch(val);
+  };
+
+  const trackEdit = (rowId: string, key: string, value: string) => {
+    if (!pendingEditsRef.current[rowId]) {
+      pendingEditsRef.current[rowId] = {};
+    }
+    pendingEditsRef.current[rowId][key] = value;
+    // Count total unique edits
+    let count = 0;
+    for (const rid of Object.keys(pendingEditsRef.current)) {
+      count += Object.keys(pendingEditsRef.current[rid]).length;
+    }
+    setPendingCount(count);
+  };
+
+  const handleLock = () => {
+    if (isUnlocked && onBatchSave) {
+      const edits: { rowId: string; key: string; value: string }[] = [];
+      for (const [rowId, fields] of Object.entries(pendingEditsRef.current)) {
+        for (const [key, value] of Object.entries(fields)) {
+          edits.push({ rowId, key, value });
+        }
+      }
+      if (edits.length > 0) {
+        onBatchSave(edits);
+      }
+      pendingEditsRef.current = {};
+      setPendingCount(0);
+    }
+    setIsUnlocked(!isUnlocked);
   };
 
   return (
@@ -156,16 +188,21 @@ export default function DataTable<T extends { id?: string }>({
           )}
           {enableInlineEdit && (
             <button
-              onClick={() => setIsUnlocked(!isUnlocked)}
+              onClick={handleLock}
               className={cn(
-                "flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition-colors",
+                "flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition-colors relative",
                 isUnlocked
                   ? "bg-amber-500 text-white hover:bg-amber-600"
                   : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
               )}
             >
               {isUnlocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
-              <span>{isUnlocked ? 'Editing' : 'Locked'}</span>
+              <span>{isUnlocked ? 'Save & Lock' : 'Unlock Edit'}</span>
+              {isUnlocked && pendingCount > 0 && (
+                <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                  {pendingCount}
+                </span>
+              )}
             </button>
           )}
         </div>
@@ -238,10 +275,10 @@ export default function DataTable<T extends { id?: string }>({
                               ? String(row[col.accessorKey] ?? '')
                               : ''
                           }
-                          onBlur={(e) => {
+                          onChange={(e) => {
                             const rowId = (row as any).id;
-                            if (rowId && onInlineEdit && col.editableKey) {
-                              onInlineEdit(rowId, col.editableKey, e.target.value);
+                            if (rowId && col.editableKey) {
+                              trackEdit(rowId, col.editableKey, e.target.value);
                             }
                           }}
                           onKeyDown={(e) => {

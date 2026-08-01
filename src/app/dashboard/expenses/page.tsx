@@ -142,6 +142,8 @@ export default function ExpensesPage() {
     {
       header: 'Description',
       accessorKey: 'description',
+      editableKey: 'description',
+      inlineEditable: true,
       cell: (e) => <span className="text-xs text-gray-600 dark:text-gray-400">{e.description || 'N/A'}</span>,
     },
     {
@@ -150,6 +152,8 @@ export default function ExpensesPage() {
     },
     {
       header: 'Amount',
+      editableKey: 'amount',
+      inlineEditable: true,
       cell: (e) => <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(e.amount)}</span>,
     },
     {
@@ -158,6 +162,8 @@ export default function ExpensesPage() {
     },
     {
       header: 'Status',
+      editableKey: 'status',
+      inlineEditable: true,
       cell: (e) => <StatusBadge status={e.status} />,
     },
     {
@@ -188,6 +194,31 @@ export default function ExpensesPage() {
       ),
     },
   ];
+
+  const handleBatchSave = async (edits: { rowId: string; key: string; value: string }[]) => {
+    try {
+      const grouped: Record<string, Record<string, string>> = {};
+      for (const edit of edits) {
+        if (!grouped[edit.rowId]) grouped[edit.rowId] = {};
+        grouped[edit.rowId][edit.key] = edit.value;
+      }
+      for (const [rowId, fields] of Object.entries(grouped)) {
+        const updateBody: any = {};
+        for (const [key, value] of Object.entries(fields)) {
+          if (key === 'amount') {
+            updateBody[key] = Number(value) || 0;
+          } else {
+            updateBody[key] = value;
+          }
+        }
+        await api.put(`/expenses/${rowId}`, updateBody);
+      }
+      toast.success(`${Object.keys(grouped).length} expense(s) updated!`);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to save');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -240,6 +271,8 @@ export default function ExpensesPage() {
           { label: 'Approved', value: 'APPROVED' },
           { label: 'Rejected', value: 'REJECTED' },
         ]}
+        enableInlineEdit={true}
+        onBatchSave={handleBatchSave}
       />
 
       {/* Add Expense Modal */}

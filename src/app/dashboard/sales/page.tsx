@@ -251,52 +251,62 @@ export default function SalesPage() {
     setIsCreateOpen(true);
   };
 
-  const handleInlineEdit = async (rowId: string, key: string, value: string) => {
+  const handleBatchSave = async (edits: { rowId: string; key: string; value: string }[]) => {
     try {
-      const order = orders.find((o) => o.id === rowId);
-      if (!order) return;
+      // Group edits by rowId
+      const grouped: Record<string, Record<string, string>> = {};
+      for (const edit of edits) {
+        if (!grouped[edit.rowId]) grouped[edit.rowId] = {};
+        grouped[edit.rowId][edit.key] = edit.value;
+      }
 
-      const existingNotes = parseNotes(order.notes);
-
-      // Fields stored in notes vs direct fields
       const notesKeys = ['batchUsed', 'type', 'productionCost', 'sellingCost', 'margin', 'creditNotes'];
       const directKeys = ['totalAmount', 'outstanding', 'status'];
 
-      let updateBody: any = {};
+      for (const [rowId, fields] of Object.entries(grouped)) {
+        const order = orders.find((o) => o.id === rowId);
+        if (!order) continue;
 
-      if (notesKeys.includes(key)) {
-        const newNotes = { ...existingNotes, [key]: value };
-        // Auto-calc margin when production cost or total amount changes inline
-        if (key === 'productionCost' || key === 'totalAmount') {
-          const prodCost = key === 'productionCost' ? Number(value) || 0 : Number(existingNotes.productionCost) || 0;
-          const totalSelling = key === 'totalAmount' ? Number(value) || 0 : order.totalAmount || 0;
+        const existingNotes = parseNotes(order.notes);
+        let updateBody: any = {};
+        const newNotes = { ...existingNotes };
+        let hasNotesChange = false;
+
+        for (const [key, value] of Object.entries(fields)) {
+          if (notesKeys.includes(key)) {
+            newNotes[key] = value;
+            hasNotesChange = true;
+            if (key === 'totalAmount') {
+              updateBody.totalAmount = Number(value) || 0;
+            }
+          } else if (directKeys.includes(key)) {
+            updateBody[key] = key === 'totalAmount' || key === 'outstanding' ? Number(value) || 0 : value;
+          } else if (key === 'quantity') {
+            updateBody.quantity = Number(value) || 0;
+          }
+        }
+
+        // Auto-calc margin from the final values
+        const prodCost = Number(newNotes.productionCost || existingNotes.productionCost) || 0;
+        const totalSelling = updateBody.totalAmount !== undefined ? updateBody.totalAmount : (order.totalAmount || 0);
+        if (prodCost > 0 || totalSelling > 0) {
           const marginAmt = totalSelling - prodCost;
           const marginPct = totalSelling > 0 ? ((marginAmt / totalSelling) * 100).toFixed(2) : '0';
           newNotes.margin = `${marginPct}% (\u20b9${marginAmt.toFixed(2)})`;
+          hasNotesChange = true;
         }
-        updateBody.notes = newNotes;
-        if (key === 'totalAmount') {
-          updateBody.totalAmount = Number(value) || 0;
+
+        if (hasNotesChange) {
+          updateBody.notes = newNotes;
         }
-      } else if (directKeys.includes(key)) {
-        updateBody[key] = key === 'totalAmount' || key === 'outstanding' ? Number(value) || 0 : value;
-        // Also update margin in notes when totalAmount changes
-        if (key === 'totalAmount') {
-          const prodCost = Number(existingNotes.productionCost) || 0;
-          const totalSelling = Number(value) || 0;
-          const marginAmt = totalSelling - prodCost;
-          const marginPct = totalSelling > 0 ? ((marginAmt / totalSelling) * 100).toFixed(2) : '0';
-          updateBody.notes = { ...existingNotes, margin: `${marginPct}% (\u20b9${marginAmt.toFixed(2)})` };
-        }
-      } else if (key === 'quantity') {
-        updateBody.quantity = Number(value) || 0;
+
+        await api.put(`/sales/${rowId}`, updateBody);
       }
 
-      await api.put(`/sales/${rowId}`, updateBody);
-      toast.success('Updated successfully');
+      toast.success(`${Object.keys(grouped).length} order(s) updated successfully!`);
       fetchData();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to update');
+      toast.error(err.message || 'Failed to save changes');
     }
   };
 
@@ -464,7 +474,7 @@ export default function SalesPage() {
           { label: 'Returned', value: 'RETURNED' },
         ]}
         enableInlineEdit={true}
-        onInlineEdit={handleInlineEdit}
+        onBatchSave={handleBatchSave}
       />
 
       {/* Create Order Modal */}

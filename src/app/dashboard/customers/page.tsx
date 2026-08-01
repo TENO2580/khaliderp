@@ -133,6 +133,8 @@ export default function CustomersPage() {
   const columns: Column<any>[] = [
     {
       header: 'Name',
+      editableKey: 'name',
+      inlineEditable: true,
       cell: (c) => (
         <span className="font-semibold text-gray-900 dark:text-white">{c.name}</span>
       ),
@@ -144,6 +146,8 @@ export default function CustomersPage() {
     },
     {
       header: 'Location',
+      editableKey: 'district',
+      inlineEditable: true,
       cell: (c) => (
         <span className="text-sm text-gray-600 dark:text-gray-300">
           {[c.district, c.state].filter(Boolean).join(', ') || c.address || 'N/A'}
@@ -153,6 +157,8 @@ export default function CustomersPage() {
     {
       header: 'Phone',
       accessorKey: 'phone',
+      editableKey: 'phone',
+      inlineEditable: true,
       cell: (c) => <span className="text-sm text-gray-600 dark:text-gray-300">{c.phone || 'N/A'}</span>,
     },
     {
@@ -173,10 +179,14 @@ export default function CustomersPage() {
     },
     {
       header: 'Current Status',
+      editableKey: 'status',
+      inlineEditable: true,
       cell: (c) => <StatusBadge status={c.status} />,
     },
     {
       header: 'Notes',
+      editableKey: 'notes',
+      inlineEditable: true,
       cell: (c) => (
         <span className="text-sm text-gray-600 dark:text-gray-300 truncate max-w-[150px] inline-block" title={c.notes}>
           {c.notes || '-'}
@@ -185,6 +195,8 @@ export default function CustomersPage() {
     },
     {
       header: 'Last Selling Cost',
+      editableKey: 'sellingPrice',
+      inlineEditable: true,
       cell: (c) => (
         <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
           {c.sellingPrice ? formatCurrency(c.sellingPrice) : '-'}
@@ -193,6 +205,8 @@ export default function CustomersPage() {
     },
     {
       header: 'Category',
+      editableKey: 'type',
+      inlineEditable: true,
       cell: (c) => (
         <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
           {customerTypeLabels[c.type] || c.type}
@@ -212,6 +226,31 @@ export default function CustomersPage() {
       ),
     },
   ];
+
+  const handleBatchSave = async (edits: { rowId: string; key: string; value: string }[]) => {
+    try {
+      const grouped: Record<string, Record<string, string>> = {};
+      for (const edit of edits) {
+        if (!grouped[edit.rowId]) grouped[edit.rowId] = {};
+        grouped[edit.rowId][edit.key] = edit.value;
+      }
+      for (const [rowId, fields] of Object.entries(grouped)) {
+        const updateBody: any = {};
+        for (const [key, value] of Object.entries(fields)) {
+          if (key === 'sellingPrice' || key === 'creditLimit') {
+            updateBody[key] = Number(value) || 0;
+          } else {
+            updateBody[key] = value;
+          }
+        }
+        await api.put(`/customers/${rowId}`, updateBody);
+      }
+      toast.success(`${Object.keys(grouped).length} customer(s) updated!`);
+      fetchCustomers();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to save');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -260,6 +299,8 @@ export default function CustomersPage() {
           { label: 'Lead', value: 'LEAD' },
           { label: 'Lost', value: 'LOST' },
         ]}
+        enableInlineEdit={true}
+        onBatchSave={handleBatchSave}
       />
 
       {/* Create Customer Modal */}

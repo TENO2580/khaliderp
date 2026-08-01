@@ -108,6 +108,8 @@ export default function BatchesPage() {
     },
     {
       header: 'Produced',
+      editableKey: 'producedQty',
+      inlineEditable: true,
       cell: (b) => <span className="font-semibold text-gray-900 dark:text-white">{b.producedQty} KG</span>,
     },
     {
@@ -137,10 +139,14 @@ export default function BatchesPage() {
     },
     {
       header: 'Prod Cost',
+      editableKey: 'productionCost',
+      inlineEditable: true,
       cell: (b) => <span className="text-xs text-gray-600">{formatCurrency(b.productionCost)}</span>,
     },
     {
       header: 'Status',
+      editableKey: 'status',
+      inlineEditable: true,
       cell: (b) => <StatusBadge status={b.status} />,
     },
     {
@@ -155,6 +161,33 @@ export default function BatchesPage() {
       ),
     },
   ];
+
+  const handleBatchSave = async (edits: { rowId: string; key: string; value: string }[]) => {
+    try {
+      const grouped: Record<string, Record<string, string>> = {};
+      for (const edit of edits) {
+        if (!grouped[edit.rowId]) grouped[edit.rowId] = {};
+        grouped[edit.rowId][edit.key] = edit.value;
+      }
+      for (const [rowId, fields] of Object.entries(grouped)) {
+        const batch = batches.find((b) => b.id === rowId);
+        if (!batch) continue;
+        const updateBody: any = {};
+        for (const [key, value] of Object.entries(fields)) {
+          if (['producedQty', 'productionCost', 'sellingPrice', 'waxUsed', 'costPerKg'].includes(key)) {
+            updateBody[key] = Number(value) || 0;
+          } else {
+            updateBody[key] = value;
+          }
+        }
+        await api.put(`/production/batches/${rowId}`, updateBody);
+      }
+      toast.success(`${Object.keys(grouped).length} batch(es) updated!`);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to save');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -186,6 +219,8 @@ export default function BatchesPage() {
           { label: 'In Production', value: 'IN_PRODUCTION' },
           { label: 'Completed', value: 'COMPLETED' },
         ]}
+        enableInlineEdit={true}
+        onBatchSave={handleBatchSave}
       />
 
       {/* Create Batch Modal */}
