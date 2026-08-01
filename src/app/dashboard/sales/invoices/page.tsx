@@ -3,8 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
-import { formatCurrency, formatDate } from '@/lib/utils';
-import { FileText, Printer, X, Download, Flame } from 'lucide-react';
+import { formatCurrency, formatDate, cn } from '@/lib/utils';
+import { FileText, Printer, X, Download, Flame, Edit3, Check } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -16,6 +16,7 @@ export default function InvoicesPage() {
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
   const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const [totalPages, setTotalPages] = useState(1);
 
@@ -46,7 +47,10 @@ export default function InvoicesPage() {
       accessorKey: 'invoiceNumber',
       cell: (i) => (
         <button 
-          onClick={() => setSelectedInvoice(i)}
+          onClick={() => {
+            setSelectedInvoice(i);
+            setIsEditMode(false);
+          }}
           className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline text-left"
         >
           {i.invoiceNumber}
@@ -123,6 +127,16 @@ export default function InvoicesPage() {
               </div>
               <div className="flex items-center gap-3">
                 <button
+                  onClick={() => setIsEditMode(!isEditMode)}
+                  className={cn(
+                    "flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-colors",
+                    isEditMode ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  )}
+                >
+                  {isEditMode ? <Check className="h-4 w-4" /> : <Edit3 className="h-4 w-4" />} 
+                  {isEditMode ? 'Done Editing' : 'Edit Before Export'}
+                </button>
+                <button
                   onClick={handlePrintTrigger}
                   className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow hover:bg-blue-700 transition-colors"
                 >
@@ -138,7 +152,14 @@ export default function InvoicesPage() {
             </div>
 
             {/* Official GST Tax Invoice Printable Document */}
-            <div className="border border-gray-300 p-6 rounded-xl space-y-6 text-sm font-sans bg-white">
+            <div 
+              className={cn(
+                "border border-gray-300 p-6 rounded-xl space-y-6 text-sm font-sans bg-white",
+                isEditMode && "ring-2 ring-blue-400 outline-none"
+              )}
+              contentEditable={isEditMode}
+              suppressContentEditableWarning
+            >
               {/* Header */}
               <div className="flex justify-between items-start border-b border-gray-300 pb-4">
                 <div>
