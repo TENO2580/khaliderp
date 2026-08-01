@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/db';
 import { authenticateRequest, jsonResponse, errorResponse } from '@/lib/middleware-server';
+import { NotificationService } from '@/lib/services/NotificationService';
 
 export async function GET(req: NextRequest) {
   const { user, error } = await authenticateRequest(req);
@@ -124,6 +125,20 @@ export async function POST(req: NextRequest) {
       },
       include: { customer: true, items: true },
     });
+
+    // Fire Notification asynchronously
+    NotificationService.broadcastToRole('ADMIN', {
+      module: 'SALES',
+      category: 'ORDER_CREATED',
+      title: 'New Sales Order',
+      message: `Order ${order.orderNumber} created for ${order.customer.name} (Amount: ₹${order.totalAmount})`,
+      referenceType: 'SalesOrder',
+      referenceId: order.id,
+      link: `/dashboard/sales`,
+      icon: 'shopping-cart',
+      color: 'blue',
+      createdById: user.id,
+    }).catch(console.error);
 
     return jsonResponse(order, 201, 'Sales Order created');
   } catch (err: any) {

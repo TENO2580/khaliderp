@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/db';
 import { authenticateRequest, jsonResponse, errorResponse } from '@/lib/middleware-server';
+import { NotificationService } from '@/lib/services/NotificationService';
 
 export async function GET(req: NextRequest) {
   const { user, error } = await authenticateRequest(req);
@@ -75,6 +76,20 @@ export async function POST(req: NextRequest) {
       },
       include: { product: true },
     });
+
+    // Fire Notification asynchronously
+    NotificationService.broadcastToRole('PRODUCTION_MANAGER', {
+      module: 'PRODUCTION',
+      category: 'BATCH_STARTED',
+      title: 'Production Batch Started',
+      message: `Batch ${batch.batchNumber} started for ${batch.product?.name || 'Product'}. Quantity: ${batch.producedQty} KG`,
+      referenceType: 'Batch',
+      referenceId: batch.id,
+      link: `/dashboard/batches`,
+      icon: 'factory',
+      color: 'green',
+      createdById: user.id,
+    }).catch(console.error);
 
     return jsonResponse(batch, 201, 'Batch created successfully');
   } catch (err: any) {

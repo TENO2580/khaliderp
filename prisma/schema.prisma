@@ -34,6 +34,7 @@ model User {
 
   // Relations
   notifications Notification[]
+  createdNotifications Notification[] @relation("NotificationCreator")
   auditLogs     AuditLog[]
   expenses      Expense[]           @relation("ExpenseCreator")
   approvedExpenses Expense[]        @relation("ExpenseApprover")
@@ -715,31 +716,63 @@ enum PurchaseOrderStatus {
 // ============================================
 
 model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  title     String
-  message   String
-  type      NotificationType
-  isRead    Boolean          @default(false)
-  link      String?
-  createdAt DateTime         @default(now())
+  id            String               @id @default(cuid())
+  companyId     String?
+  branchId      String?
+  userId        String?
+  role          UserRole?
+  module        NotificationModule
+  category      String
+  priority      NotificationPriority @default(MEDIUM)
+  title         String
+  message       String
+  referenceType String?              // e.g., "SalesOrder", "Batch", "Inventory"
+  referenceId   String?
+  link          String?
+  icon          String?
+  color         String?              // hex or tailwind class
+  isRead        Boolean              @default(false)
+  isArchived    Boolean              @default(false)
+  isPinned      Boolean              @default(false)
+  readAt        DateTime?
+  expiresAt     DateTime?
+  metadata      Json?
+  
+  createdById   String?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
 
   // Relations
-  user      User             @relation(fields: [userId], references: [id])
+  user          User?                @relation(fields: [userId], references: [id])
+  createdBy     User?                @relation("NotificationCreator", fields: [createdById], references: [id])
 
   @@index([userId, isRead])
+  @@index([role, isRead])
+  @@index([module])
+  @@index([priority])
+  @@index([createdAt])
   @@map("notifications")
 }
 
-enum NotificationType {
-  LOW_STOCK
-  PENDING_PAYMENT
-  CUSTOMER_FOLLOWUP
-  PRODUCTION_DELAY
-  ORDER_DELAY
-  EMPLOYEE_ABSENT
-  UPCOMING_DELIVERY
+enum NotificationPriority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum NotificationModule {
+  DASHBOARD
+  SALES
+  CUSTOMERS
+  PRODUCTION
+  INVENTORY
+  PURCHASE
+  FINANCE
+  HR
+  TASKS
   SYSTEM
+  AI
 }
 
 model AuditLog {
