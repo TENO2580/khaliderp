@@ -252,22 +252,22 @@ export default function SalesPage() {
       header: 'Batch Used',
       cell: (o) => {
         const data = parseNotes(o.notes);
-        return <span className="text-sm text-gray-600 dark:text-gray-300">{data.batchUsed || '-'}</span>;
+        return <span className="text-sm text-gray-900 dark:text-gray-100">{data.batchUsed || '-'}</span>;
       },
     },
     {
       header: 'Order Date',
-      cell: (o) => <span className="text-xs text-gray-500">{formatDate(o.orderDate)}</span>,
+      cell: (o) => <span className="text-sm text-gray-900 dark:text-gray-100">{formatDate(o.orderDate)}</span>,
     },
     {
       header: 'Delivery Date',
-      cell: (o) => <span className="text-xs text-gray-500">{o.deliveryDate ? formatDate(o.deliveryDate) : '-'}</span>,
+      cell: (o) => <span className="text-sm text-gray-900 dark:text-gray-100">{o.deliveryDate ? formatDate(o.deliveryDate) : '-'}</span>,
     },
     {
       header: 'TYPE',
       cell: (o) => {
         const data = parseNotes(o.notes);
-        return <span className="text-sm text-gray-600 dark:text-gray-300">{data.type || '-'}</span>;
+        return <span className="text-sm text-gray-900 dark:text-gray-100">{data.type || '-'}</span>;
       },
     },
     {
@@ -281,21 +281,21 @@ export default function SalesPage() {
       header: 'Production Cost',
       cell: (o) => {
         const data = parseNotes(o.notes);
-        return <span className="text-sm text-gray-600 dark:text-gray-300">{data.productionCost ? `₹${data.productionCost}` : '-'}</span>;
+        return <span className="text-sm text-gray-900 dark:text-gray-100">{data.productionCost ? `₹${data.productionCost}` : '-'}</span>;
       },
     },
     {
       header: 'Selling Cost',
       cell: (o) => {
         const data = parseNotes(o.notes);
-        return <span className="text-sm text-gray-600 dark:text-gray-300">{data.sellingCost ? `₹${data.sellingCost}` : (o.items?.[0]?.unitPrice ? formatCurrency(o.items[0].unitPrice) : '-')}</span>;
+        return <span className="text-sm text-gray-900 dark:text-gray-100">{data.sellingCost ? `₹${data.sellingCost}` : (o.items?.[0]?.unitPrice ? formatCurrency(o.items[0].unitPrice) : '-')}</span>;
       },
     },
     {
       header: 'Margin % & Amount',
       cell: (o) => {
         const data = parseNotes(o.notes);
-        return <span className="text-sm text-gray-600 dark:text-gray-300">{data.margin || '-'}</span>;
+        return <span className="text-sm text-gray-900 dark:text-gray-100">{data.margin || '-'}</span>;
       },
     },
     {

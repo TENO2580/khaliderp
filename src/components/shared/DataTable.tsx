@@ -157,8 +157,8 @@ export default function DataTable<T extends { id?: string }>({
                 <th
                   key={idx}
                   className={cn(
-                    "px-6 py-3.5 whitespace-nowrap",
-                    idx === 0 && "sticky left-0 z-10 bg-gray-50/95 dark:bg-gray-950/95 shadow-[1px_0_0_0_#e5e7eb] dark:shadow-[1px_0_0_0_#1f2937]"
+                    "px-6 py-3.5 whitespace-nowrap border border-gray-200 dark:border-gray-800",
+                    idx === 0 && "sticky left-0 z-20 bg-gray-50 dark:bg-gray-950"
                   )}
                 >
                   {col.header}
@@ -193,8 +193,8 @@ export default function DataTable<T extends { id?: string }>({
                     <td
                       key={cIdx}
                       className={cn(
-                        "px-6 py-4 font-medium text-gray-900 dark:text-gray-200 whitespace-nowrap",
-                        cIdx === 0 && "sticky left-0 z-10 bg-white dark:bg-gray-900 group-hover:bg-gray-50/95 dark:group-hover:bg-gray-800/95 shadow-[1px_0_0_0_#e5e7eb] dark:shadow-[1px_0_0_0_#1f2937]"
+                        "px-6 py-4 font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap border border-gray-200 dark:border-gray-800",
+                        cIdx === 0 && "sticky left-0 z-10 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800"
                       )}
                     >
                       {col.cell
