@@ -133,30 +133,30 @@ export default function StockAlertsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm">
+        <div className="relative overflow-hidden rounded-2xl border border-white bg-white/60 p-5 shadow-[0_8px_30px_rgb(0,0,0,0.08)] backdrop-blur-2xl transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:border-white/[0.05] dark:border-t-white/[0.15] dark:bg-[#12121a]/60 dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)]">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-red-100 p-2.5"><AlertTriangle className="h-5 w-5 text-red-600" /></div>
+            <div className="rounded-lg bg-red-100 p-2.5 dark:bg-red-500/20"><AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" /></div>
             <div>
-              <p className="text-xs font-semibold text-gray-500">Critical (Out of Stock)</p>
-              <h3 className="text-2xl font-bold text-gray-900">{summary.critical}</h3>
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">Critical (Out of Stock)</p>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{summary.critical}</h3>
             </div>
           </div>
         </div>
-        <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm">
+        <div className="relative overflow-hidden rounded-2xl border border-white bg-white/60 p-5 shadow-[0_8px_30px_rgb(0,0,0,0.08)] backdrop-blur-2xl transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:border-white/[0.05] dark:border-t-white/[0.15] dark:bg-[#12121a]/60 dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)]">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-yellow-100 p-2.5"><Clock className="h-5 w-5 text-yellow-600" /></div>
+            <div className="rounded-lg bg-yellow-100 p-2.5 dark:bg-yellow-500/20"><Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" /></div>
             <div>
-              <p className="text-xs font-semibold text-gray-500">Warning (Next 7 Days)</p>
-              <h3 className="text-2xl font-bold text-gray-900">{summary.warning}</h3>
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">Warning (Next 7 Days)</p>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{summary.warning}</h3>
             </div>
           </div>
         </div>
-        <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm">
+        <div className="relative overflow-hidden rounded-2xl border border-white bg-white/60 p-5 shadow-[0_8px_30px_rgb(0,0,0,0.08)] backdrop-blur-2xl transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:border-white/[0.05] dark:border-t-white/[0.15] dark:bg-[#12121a]/60 dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)]">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-emerald-100 p-2.5"><CheckCircle className="h-5 w-5 text-emerald-600" /></div>
+            <div className="rounded-lg bg-emerald-100 p-2.5 dark:bg-emerald-500/20"><CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" /></div>
             <div>
-              <p className="text-xs font-semibold text-gray-500">Healthy Stock</p>
-              <h3 className="text-2xl font-bold text-gray-900">{summary.healthy}</h3>
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">Healthy Stock</p>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{summary.healthy}</h3>
             </div>
           </div>
         </div>
