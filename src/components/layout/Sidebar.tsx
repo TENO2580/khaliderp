@@ -70,7 +70,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
       
       <aside
         className={cn(
-          'fixed left-0 top-0 z-50 flex flex-col h-screen border-r border-white/60 bg-white/70 backdrop-blur-3xl transition-all duration-300 dark:border-white/[0.05] dark:bg-[#12121a]/60 dark:backdrop-blur-3xl',
+          'fixed left-0 top-0 z-50 flex flex-col h-screen border-r border-white bg-white/60 shadow-[4px_0_24px_rgb(0,0,0,0.02)] backdrop-blur-3xl transition-all duration-300 dark:border-white/[0.05] dark:bg-[#12121a]/60 dark:backdrop-blur-3xl',
           collapsed ? 'lg:w-[72px]' : 'lg:w-[280px]',
           mobileOpen ? 'translate-x-0 w-[280px]' : '-translate-x-full lg:translate-x-0'
         )}
@@ -131,7 +131,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                     className={cn(
                       'group flex flex-1 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all',
                       active
-                        ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)] border border-blue-500/30'
+                        ? 'bg-white text-blue-600 shadow-[0_4px_20px_rgba(37,99,235,0.15)] border border-blue-100 dark:bg-blue-600 dark:text-white dark:shadow-[0_0_15px_rgba(37,99,235,0.4)] dark:border-blue-500/30'
                         : 'text-gray-600 hover:bg-black/5 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200'
                     )}
                     title={collapsed ? item.title : undefined}

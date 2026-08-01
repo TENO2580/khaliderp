@@ -19,7 +19,7 @@ export default function TopNav({ sidebarCollapsed, onSearchOpen, onMobileMenuCli
   return (
     <header
       className={cn(
-        'fixed top-0 right-0 z-30 flex h-16 items-center justify-between border-b border-white/40 bg-white/70 px-4 md:px-6 backdrop-blur-2xl transition-all duration-300 dark:border-white/[0.05] dark:bg-[#12121a]/60',
+        'fixed top-0 right-0 z-30 flex h-16 items-center justify-between border-b border-white bg-white/60 px-4 md:px-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-2xl transition-all duration-300 dark:border-white/[0.05] dark:bg-[#12121a]/60',
         'left-0', // Default mobile
         sidebarCollapsed ? 'lg:left-[72px]' : 'lg:left-[280px]' // Desktop
       )}
@@ -34,7 +34,7 @@ export default function TopNav({ sidebarCollapsed, onSearchOpen, onMobileMenuCli
         </button>
         <button
         onClick={onSearchOpen}
-        className="flex items-center gap-3 rounded-xl border border-white/60 bg-white/70 px-4 py-2 text-sm text-gray-500 transition-colors hover:bg-white/90 dark:border-white/[0.08] dark:bg-white/[0.03] dark:hover:bg-white/[0.06] shadow-sm backdrop-blur-md"
+        className="flex items-center gap-3 rounded-xl border border-white bg-white/60 px-4 py-2 text-sm text-gray-500 transition-colors hover:bg-white/90 shadow-[0_4px_15px_rgb(0,0,0,0.02)] backdrop-blur-md dark:border-white/[0.08] dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
       >
         <Search className="h-4 w-4" />
         <span className="hidden md:inline">Search customers, invoices, batches...</span>

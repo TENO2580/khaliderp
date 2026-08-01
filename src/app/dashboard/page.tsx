@@ -209,7 +209,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
           {/* Monthly Financial Overview */}
-          <div className="relative overflow-hidden rounded-2xl border border-white/60 bg-white/70 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl dark:border-white/[0.05] dark:border-t-white/[0.15] dark:bg-[#12121a]/60 dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] flex flex-col">
+          <div className="relative overflow-hidden rounded-2xl border border-white bg-white/60 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.08)] backdrop-blur-2xl dark:border-white/[0.05] dark:border-t-white/[0.15] dark:bg-[#12121a]/60 dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] flex flex-col">
             <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Monthly Financial Overview</h3>
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -246,7 +246,7 @@ export default function DashboardPage() {
         {/* Charts Middle Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Expense Breakdown */}
-          <div className="relative overflow-hidden rounded-2xl border border-white/60 bg-white/70 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl dark:border-white/[0.05] dark:border-t-white/[0.15] dark:bg-[#12121a]/60 dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] flex flex-col">
+          <div className="relative overflow-hidden rounded-2xl border border-white bg-white/60 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.08)] backdrop-blur-2xl dark:border-white/[0.05] dark:border-t-white/[0.15] dark:bg-[#12121a]/60 dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] flex flex-col">
             <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Expense Breakdown (This Month)</h3>
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -274,7 +274,7 @@ export default function DashboardPage() {
           </div>
 
           {/* 6-Month Sales Trend */}
-          <div className="relative overflow-hidden rounded-2xl border border-white/60 bg-white/70 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl dark:border-white/[0.05] dark:border-t-white/[0.15] dark:bg-[#12121a]/60 dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] flex flex-col">
+          <div className="relative overflow-hidden rounded-2xl border border-white bg-white/60 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.08)] backdrop-blur-2xl dark:border-white/[0.05] dark:border-t-white/[0.15] dark:bg-[#12121a]/60 dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] flex flex-col">
             <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">6-Month Sales Trend</h3>
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -300,7 +300,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
           {/* Inventory Health */}
-          <div className="relative overflow-hidden rounded-2xl border border-white/60 bg-white/70 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl dark:border-white/[0.05] dark:border-t-white/[0.15] dark:bg-[#12121a]/60 dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] flex flex-col">
+          <div className="relative overflow-hidden rounded-2xl border border-white bg-white/60 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.08)] backdrop-blur-2xl dark:border-white/[0.05] dark:border-t-white/[0.15] dark:bg-[#12121a]/60 dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] flex flex-col">
             <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Inventory Health</h3>
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -317,7 +317,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Sales Trend (7 Days) */}
-          <div className="relative overflow-hidden rounded-2xl border border-white/60 bg-white/70 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl dark:border-white/[0.05] dark:border-t-white/[0.15] dark:bg-[#12121a]/60 dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] flex flex-col">
+          <div className="relative overflow-hidden rounded-2xl border border-white bg-white/60 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.08)] backdrop-blur-2xl dark:border-white/[0.05] dark:border-t-white/[0.15] dark:bg-[#12121a]/60 dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] flex flex-col">
             <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Sales Trend (7 Days)</h3>
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -335,7 +335,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Production vs Sales */}
-          <div className="relative overflow-hidden rounded-2xl border border-white/60 bg-white/70 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl dark:border-white/[0.05] dark:border-t-white/[0.15] dark:bg-[#12121a]/60 dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] flex flex-col">
+          <div className="relative overflow-hidden rounded-2xl border border-white bg-white/60 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.08)] backdrop-blur-2xl dark:border-white/[0.05] dark:border-t-white/[0.15] dark:bg-[#12121a]/60 dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] flex flex-col">
             <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Production vs Sales</h3>
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
