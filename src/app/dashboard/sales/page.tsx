@@ -70,51 +70,59 @@ export default function SalesPage() {
     fetchData();
   }, [page, search, limit, startDate, endDate, statusFilter]);
 
-  // FIFO Batch Calculation & Auto Margin
+  // FIFO Batch Calculation (just for batch tracking)
   useEffect(() => {
     if (!isEdit && batches.length > 0 && items[0].productId) {
       const qty = Number(items[0].quantity) || 0;
-      const unitPrice = Number(items[0].unitPrice) || 0;
-
-      // Filter and sort batches for FIFO
+      
       const availableBatches = batches
         .filter(b => b.productId === items[0].productId && b.remainingQty > 0)
         .sort((a, b) => new Date(a.productionDate).getTime() - new Date(b.productionDate).getTime());
 
       let remainingToFulfill = qty;
       let usedBatchNumbers: string[] = [];
-      let totalProdCost = 0;
 
       for (const batch of availableBatches) {
         if (remainingToFulfill <= 0) break;
-
         const allocated = Math.min(remainingToFulfill, batch.remainingQty);
         usedBatchNumbers.push(batch.batchNumber);
-        
-        const costPerUnit = batch.costPerKg || (batch.producedQty ? batch.productionCost / batch.producedQty : 0);
-        totalProdCost += allocated * costPerUnit;
-
         remainingToFulfill -= allocated;
       }
-
-      const totalSellingCost = qty * unitPrice;
-      const marginAmt = totalSellingCost - totalProdCost;
-      const marginPct = totalSellingCost > 0 ? ((marginAmt / totalSellingCost) * 100).toFixed(2) : '0';
       
       const selectedProduct = products.find(p => (p.product?.id || p.id) === items[0].productId);
       const typeName = selectedProduct?.product?.name || '';
 
-      setEditFormData(prev => ({
-        ...prev,
-        batchUsed: usedBatchNumbers.join(', '),
-        productionCost: totalProdCost.toFixed(2),
-        sellingCost: unitPrice.toString(),
-        totalAmount: totalSellingCost,
-        margin: `${marginPct}% (₹${marginAmt.toFixed(2)})`,
-        type: typeName || prev.type
-      }));
+      setEditFormData(prev => {
+        const batchUsedStr = usedBatchNumbers.join(', ');
+        if (prev.batchUsed !== batchUsedStr || (prev.type === '' && typeName)) {
+           return {
+             ...prev,
+             batchUsed: batchUsedStr,
+             type: prev.type || typeName
+           };
+        }
+        return prev;
+      });
     }
   }, [items, batches, isEdit, products]);
+
+  // Auto-calculate Margin based on manual inputs
+  useEffect(() => {
+    const prodCost = Number(editFormData.productionCost) || 0;
+    const totalSellingCost = Number(editFormData.totalAmount) || 0;
+    
+    if (totalSellingCost > 0 || prodCost > 0) {
+      const marginAmt = totalSellingCost - prodCost;
+      const marginPct = totalSellingCost > 0 ? ((marginAmt / totalSellingCost) * 100).toFixed(2) : '0';
+      const marginStr = `${marginPct}% (₹${marginAmt.toFixed(2)})`;
+      
+      if (editFormData.margin !== marginStr) {
+        setEditFormData(prev => ({ ...prev, margin: marginStr }));
+      }
+    } else if (editFormData.productionCost === '' && editFormData.totalAmount === 0 && editFormData.margin !== '') {
+      setEditFormData(prev => ({ ...prev, margin: '' }));
+    }
+  }, [editFormData.productionCost, editFormData.totalAmount]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -513,18 +521,32 @@ export default function SalesPage() {
                       <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Production Cost (₹)</label>
                       <input
                         type="text"
-                        readOnly
+                        inputMode="numeric"
                         value={editFormData.productionCost}
-                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-gray-50 text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 cursor-not-allowed"
+                        onChange={(e) => {
+                          if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) {
+                            toast.error('Only numbers are allowed for Production Cost');
+                            return;
+                          }
+                          setEditFormData({ ...editFormData, productionCost: e.target.value });
+                        }}
+                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                       />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Selling Cost (₹)</label>
                       <input
                         type="text"
-                        readOnly
+                        inputMode="numeric"
                         value={editFormData.sellingCost}
-                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-gray-50 text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 cursor-not-allowed"
+                        onChange={(e) => {
+                          if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) {
+                            toast.error('Only numbers are allowed for Selling Cost');
+                            return;
+                          }
+                          setEditFormData({ ...editFormData, sellingCost: e.target.value });
+                        }}
+                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                       />
                     </div>
                     <div>
@@ -539,10 +561,17 @@ export default function SalesPage() {
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Total Selling Cost (₹)</label>
                       <input
-                        type="number"
-                        readOnly
-                        value={editFormData.totalAmount}
-                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-gray-50 text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 cursor-not-allowed"
+                        type="text"
+                        inputMode="numeric"
+                        value={editFormData.totalAmount || ''}
+                        onChange={(e) => {
+                          if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) {
+                            toast.error('Only numbers are allowed for Total Selling Cost');
+                            return;
+                          }
+                          setEditFormData({ ...editFormData, totalAmount: e.target.value === '' ? 0 : Number(e.target.value) });
+                        }}
+                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                       />
                     </div>
                     <div>
