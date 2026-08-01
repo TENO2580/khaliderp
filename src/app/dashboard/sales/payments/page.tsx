@@ -14,6 +14,7 @@ export default function PaymentsPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
+  const totalItems = payments.length;
 
   const fetchData = async () => {
     setIsLoading(false);

@@ -15,6 +15,7 @@ export default function EmployeesPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const totalItems = employees.length;
 
   // Modals
   const [isCreateOpen, setIsCreateOpen] = useState(false);

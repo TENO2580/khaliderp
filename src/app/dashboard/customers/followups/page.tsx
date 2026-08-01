@@ -15,6 +15,8 @@ export default function StockAlertsPage() {
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
 
+  const totalItems = predictions.length;
+
   const fetchPredictions = async () => {
     setIsLoading(true);
     try {
