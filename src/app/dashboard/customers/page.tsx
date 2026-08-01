@@ -339,21 +339,12 @@ export default function CustomersPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">District</label>
+                <div className="col-span-2">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Location</label>
                   <input
                     type="text"
                     value={formData.district}
-                    onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">State</label>
-                  <input
-                    type="text"
-                    value={formData.state}
-                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, district: e.target.value, state: '' })}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                   />
                 </div>
