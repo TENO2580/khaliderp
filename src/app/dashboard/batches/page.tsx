@@ -110,6 +110,7 @@ export default function BatchesPage() {
       header: 'Produced',
       editableKey: 'producedQty',
       inlineEditable: true,
+      inputType: 'number',
       cell: (b) => <span className="font-semibold text-gray-900 dark:text-white">{b.producedQty} KG</span>,
     },
     {
@@ -141,6 +142,7 @@ export default function BatchesPage() {
       header: 'Prod Cost',
       editableKey: 'productionCost',
       inlineEditable: true,
+      inputType: 'number',
       cell: (b) => <span className="text-xs text-gray-600">{formatCurrency(b.productionCost)}</span>,
     },
     {

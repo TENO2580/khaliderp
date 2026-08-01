@@ -345,6 +345,7 @@ export default function SalesPage() {
       header: 'Quantity (KG)',
       editableKey: 'quantity',
       inlineEditable: true,
+      inputType: 'number',
       cell: (o) => {
         const qty = o.items?.reduce((sum: number, i: any) => sum + i.quantity, 0) || 0;
         return <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{qty.toFixed(2)}</span>;
@@ -354,6 +355,7 @@ export default function SalesPage() {
       header: 'Production Cost',
       editableKey: 'productionCost',
       inlineEditable: true,
+      inputType: 'number',
       cell: (o) => {
         const data = parseNotes(o.notes);
         return <span className="text-sm text-gray-900 dark:text-gray-100">{data.productionCost ? `₹${data.productionCost}` : '-'}</span>;
@@ -363,6 +365,7 @@ export default function SalesPage() {
       header: 'Selling Cost',
       editableKey: 'sellingCost',
       inlineEditable: true,
+      inputType: 'number',
       cell: (o) => {
         const data = parseNotes(o.notes);
         return <span className="text-sm text-gray-900 dark:text-gray-100">{data.sellingCost ? `₹${data.sellingCost}` : (o.items?.[0]?.unitPrice ? formatCurrency(o.items[0].unitPrice) : '-')}</span>;
@@ -379,6 +382,7 @@ export default function SalesPage() {
       header: 'Total Selling Cost',
       editableKey: 'totalAmount',
       inlineEditable: true,
+      inputType: 'number',
       cell: (o) => <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(o.totalAmount)}</span>,
     },
     {
@@ -391,6 +395,7 @@ export default function SalesPage() {
       header: 'Credit',
       editableKey: 'creditNotes',
       inlineEditable: true,
+      inputType: 'number',
       cell: (o) => {
         const data = parseNotes(o.notes);
         if (data.creditNotes) {

@@ -12,6 +12,7 @@ import {
   Unlock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 export interface Column<T> {
   header: string;
@@ -20,6 +21,7 @@ export interface Column<T> {
   sortable?: boolean;
   editableKey?: string;
   inlineEditable?: boolean;
+  inputType?: 'text' | 'number';
 }
 
 interface DataTableProps<T> {
@@ -276,9 +278,18 @@ export default function DataTable<T extends { id?: string }>({
                               : ''
                           }
                           onChange={(e) => {
+                            let value = e.target.value;
+                            if (col.inputType === 'number') {
+                              const filtered = value.replace(/[^0-9.]/g, '');
+                              if (value !== filtered) {
+                                toast.error('Only numbers are allowed in this field');
+                                value = filtered;
+                                e.target.value = filtered;
+                              }
+                            }
                             const rowId = (row as any).id;
                             if (rowId && col.editableKey) {
-                              trackEdit(rowId, col.editableKey, e.target.value);
+                              trackEdit(rowId, col.editableKey, value);
                             }
                           }}
                           onKeyDown={(e) => {

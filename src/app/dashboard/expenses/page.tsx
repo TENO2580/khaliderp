@@ -154,6 +154,7 @@ export default function ExpensesPage() {
       header: 'Amount',
       editableKey: 'amount',
       inlineEditable: true,
+      inputType: 'number',
       cell: (e) => <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(e.amount)}</span>,
     },
     {

@@ -159,6 +159,7 @@ export default function CustomersPage() {
       accessorKey: 'phone',
       editableKey: 'phone',
       inlineEditable: true,
+      inputType: 'number',
       cell: (c) => <span className="text-sm text-gray-600 dark:text-gray-300">{c.phone || 'N/A'}</span>,
     },
     {
@@ -197,6 +198,7 @@ export default function CustomersPage() {
       header: 'Last Selling Cost',
       editableKey: 'sellingPrice',
       inlineEditable: true,
+      inputType: 'number',
       cell: (c) => (
         <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
           {c.sellingPrice ? formatCurrency(c.sellingPrice) : '-'}
