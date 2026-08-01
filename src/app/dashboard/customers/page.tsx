@@ -132,15 +132,15 @@ export default function CustomersPage() {
 
   const columns: Column<any>[] = [
     {
-      header: 'Sl No.',
-      accessorKey: 'customerId',
-      cell: (c) => <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{c.customerId}</span>,
-    },
-    {
       header: 'Name',
       cell: (c) => (
         <span className="font-semibold text-gray-900 dark:text-white">{c.name}</span>
       ),
+    },
+    {
+      header: 'Sl No.',
+      accessorKey: 'customerId',
+      cell: (c) => <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{c.customerId}</span>,
     },
     {
       header: 'Location',
