@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { Plus, FileText, CheckCircle2, DollarSign } from 'lucide-react';
+import { Plus, FileText, CheckCircle2, DollarSign, X } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -404,7 +404,16 @@ export default function SalesPage() {
       {isCreateOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
           <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Create Sales Order</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">{isEdit ? 'Edit Sales Order' : 'Create Sales Order'}</h2>
+              <button
+                type="button"
+                onClick={() => setIsCreateOpen(false)}
+                className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
             <form onSubmit={handleCreateSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
