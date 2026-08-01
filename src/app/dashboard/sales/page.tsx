@@ -251,6 +251,55 @@ export default function SalesPage() {
     setIsCreateOpen(true);
   };
 
+  const handleInlineEdit = async (rowId: string, key: string, value: string) => {
+    try {
+      const order = orders.find((o) => o.id === rowId);
+      if (!order) return;
+
+      const existingNotes = parseNotes(order.notes);
+
+      // Fields stored in notes vs direct fields
+      const notesKeys = ['batchUsed', 'type', 'productionCost', 'sellingCost', 'margin', 'creditNotes'];
+      const directKeys = ['totalAmount', 'outstanding', 'status'];
+
+      let updateBody: any = {};
+
+      if (notesKeys.includes(key)) {
+        const newNotes = { ...existingNotes, [key]: value };
+        // Auto-calc margin when production cost or total amount changes inline
+        if (key === 'productionCost' || key === 'totalAmount') {
+          const prodCost = key === 'productionCost' ? Number(value) || 0 : Number(existingNotes.productionCost) || 0;
+          const totalSelling = key === 'totalAmount' ? Number(value) || 0 : order.totalAmount || 0;
+          const marginAmt = totalSelling - prodCost;
+          const marginPct = totalSelling > 0 ? ((marginAmt / totalSelling) * 100).toFixed(2) : '0';
+          newNotes.margin = `${marginPct}% (\u20b9${marginAmt.toFixed(2)})`;
+        }
+        updateBody.notes = newNotes;
+        if (key === 'totalAmount') {
+          updateBody.totalAmount = Number(value) || 0;
+        }
+      } else if (directKeys.includes(key)) {
+        updateBody[key] = key === 'totalAmount' || key === 'outstanding' ? Number(value) || 0 : value;
+        // Also update margin in notes when totalAmount changes
+        if (key === 'totalAmount') {
+          const prodCost = Number(existingNotes.productionCost) || 0;
+          const totalSelling = Number(value) || 0;
+          const marginAmt = totalSelling - prodCost;
+          const marginPct = totalSelling > 0 ? ((marginAmt / totalSelling) * 100).toFixed(2) : '0';
+          updateBody.notes = { ...existingNotes, margin: `${marginPct}% (\u20b9${marginAmt.toFixed(2)})` };
+        }
+      } else if (key === 'quantity') {
+        updateBody.quantity = Number(value) || 0;
+      }
+
+      await api.put(`/sales/${rowId}`, updateBody);
+      toast.success('Updated successfully');
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update');
+    }
+  };
+
   const columns: Column<any>[] = [
     {
       header: 'Name',
@@ -258,6 +307,8 @@ export default function SalesPage() {
     },
     {
       header: 'Batch Used',
+      editableKey: 'batchUsed',
+      inlineEditable: true,
       cell: (o) => {
         const data = parseNotes(o.notes);
         return <span className="text-sm text-gray-900 dark:text-gray-100">{data.batchUsed || '-'}</span>;
@@ -273,6 +324,8 @@ export default function SalesPage() {
     },
     {
       header: 'TYPE',
+      editableKey: 'type',
+      inlineEditable: true,
       cell: (o) => {
         const data = parseNotes(o.notes);
         return <span className="text-sm text-gray-900 dark:text-gray-100">{data.type || '-'}</span>;
@@ -280,6 +333,8 @@ export default function SalesPage() {
     },
     {
       header: 'Quantity (KG)',
+      editableKey: 'quantity',
+      inlineEditable: true,
       cell: (o) => {
         const qty = o.items?.reduce((sum: number, i: any) => sum + i.quantity, 0) || 0;
         return <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{qty.toFixed(2)}</span>;
@@ -287,6 +342,8 @@ export default function SalesPage() {
     },
     {
       header: 'Production Cost',
+      editableKey: 'productionCost',
+      inlineEditable: true,
       cell: (o) => {
         const data = parseNotes(o.notes);
         return <span className="text-sm text-gray-900 dark:text-gray-100">{data.productionCost ? `₹${data.productionCost}` : '-'}</span>;
@@ -294,6 +351,8 @@ export default function SalesPage() {
     },
     {
       header: 'Selling Cost',
+      editableKey: 'sellingCost',
+      inlineEditable: true,
       cell: (o) => {
         const data = parseNotes(o.notes);
         return <span className="text-sm text-gray-900 dark:text-gray-100">{data.sellingCost ? `₹${data.sellingCost}` : (o.items?.[0]?.unitPrice ? formatCurrency(o.items[0].unitPrice) : '-')}</span>;
@@ -308,14 +367,20 @@ export default function SalesPage() {
     },
     {
       header: 'Total Selling Cost',
+      editableKey: 'totalAmount',
+      inlineEditable: true,
       cell: (o) => <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(o.totalAmount)}</span>,
     },
     {
       header: 'Status',
+      editableKey: 'status',
+      inlineEditable: true,
       cell: (o) => <StatusBadge status={o.status} />,
     },
     {
       header: 'Credit',
+      editableKey: 'creditNotes',
+      inlineEditable: true,
       cell: (o) => {
         const data = parseNotes(o.notes);
         if (data.creditNotes) {
@@ -398,6 +463,8 @@ export default function SalesPage() {
           { label: 'Cancelled', value: 'CANCELLED' },
           { label: 'Returned', value: 'RETURNED' },
         ]}
+        enableInlineEdit={true}
+        onInlineEdit={handleInlineEdit}
       />
 
       {/* Create Order Modal */}

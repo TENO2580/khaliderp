@@ -8,6 +8,8 @@ import {
   Filter,
   Download,
   Plus,
+  Lock,
+  Unlock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -16,6 +18,8 @@ export interface Column<T> {
   accessorKey?: keyof T;
   cell?: (item: T) => React.ReactNode;
   sortable?: boolean;
+  editableKey?: string;
+  inlineEditable?: boolean;
 }
 
 interface DataTableProps<T> {
@@ -40,6 +44,8 @@ interface DataTableProps<T> {
   statusFilter?: string;
   onStatusChange?: (status: string) => void;
   statusOptions?: { label: string; value: string }[];
+  enableInlineEdit?: boolean;
+  onInlineEdit?: (rowId: string, key: string, value: string) => void;
 }
 
 export default function DataTable<T extends { id?: string }>({
@@ -64,8 +70,11 @@ export default function DataTable<T extends { id?: string }>({
   statusFilter,
   onStatusChange,
   statusOptions,
+  enableInlineEdit = false,
+  onInlineEdit,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState('');
+  const [isUnlocked, setIsUnlocked] = useState(false);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -145,6 +154,20 @@ export default function DataTable<T extends { id?: string }>({
               <span>{addButtonLabel}</span>
             </button>
           )}
+          {enableInlineEdit && (
+            <button
+              onClick={() => setIsUnlocked(!isUnlocked)}
+              className={cn(
+                "flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition-colors",
+                isUnlocked
+                  ? "bg-amber-500 text-white hover:bg-amber-600"
+                  : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+              )}
+            >
+              {isUnlocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+              <span>{isUnlocked ? 'Editing' : 'Locked'}</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -197,11 +220,44 @@ export default function DataTable<T extends { id?: string }>({
                         cIdx === 0 && "sticky left-0 z-10 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800"
                       )}
                     >
-                      {col.cell
-                        ? col.cell(row)
-                        : col.accessorKey
-                        ? (row[col.accessorKey] as any)
-                        : null}
+                      {isUnlocked && col.inlineEditable && col.editableKey ? (
+                        <input
+                          type="text"
+                          defaultValue={
+                            col.cell
+                              ? (() => {
+                                  const node = col.cell(row);
+                                  if (typeof node === 'string') return node;
+                                  if (React.isValidElement(node)) {
+                                    const children = (node as any).props?.children;
+                                    return typeof children === 'string' ? children : String(children ?? '');
+                                  }
+                                  return '';
+                                })()
+                              : col.accessorKey
+                              ? String(row[col.accessorKey] ?? '')
+                              : ''
+                          }
+                          onBlur={(e) => {
+                            const rowId = (row as any).id;
+                            if (rowId && onInlineEdit && col.editableKey) {
+                              onInlineEdit(rowId, col.editableKey, e.target.value);
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              (e.target as HTMLInputElement).blur();
+                            }
+                          }}
+                          className="w-full min-w-[80px] rounded border border-amber-400/50 bg-amber-50/30 px-2 py-1 text-sm text-gray-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:bg-amber-900/20 dark:text-gray-100 dark:border-amber-600/50"
+                        />
+                      ) : (
+                        col.cell
+                          ? col.cell(row)
+                          : col.accessorKey
+                          ? (row[col.accessorKey] as any)
+                          : null
+                      )}
                     </td>
                   ))}
                 </tr>
