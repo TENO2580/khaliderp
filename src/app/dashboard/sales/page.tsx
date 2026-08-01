@@ -510,15 +510,7 @@ export default function SalesPage() {
                         className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                       />
                     </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Batch Used</label>
-                      <input
-                        type="text"
-                        value={editFormData.batchUsed}
-                        onChange={(e) => setEditFormData({ ...editFormData, batchUsed: e.target.value })}
-                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                      />
-                    </div>
+
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Type</label>
                       <input
