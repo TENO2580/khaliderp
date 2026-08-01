@@ -74,9 +74,9 @@ export default function DataTable<T extends { id?: string }>({
   };
 
   return (
-    <div className="rounded-2xl border border-gray-200/80 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+    <div className="flex flex-col max-h-[calc(100vh-8rem)] rounded-2xl border border-gray-200/80 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
       {/* Header controls */}
-      <div className="flex flex-col gap-4 border-b border-gray-200/80 p-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex-none flex flex-col gap-4 border-b border-gray-200/80 p-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
@@ -149,16 +149,16 @@ export default function DataTable<T extends { id?: string }>({
       </div>
 
       {/* Table content */}
-      <div className="overflow-x-auto w-full">
+      <div className="flex-1 overflow-auto w-full">
         <table className="w-full min-w-max text-left text-sm text-gray-600 dark:text-gray-400">
-          <thead className="bg-gray-50/80 text-xs uppercase font-semibold tracking-wider text-gray-500 dark:bg-gray-950/50 dark:text-gray-400 border-b border-gray-200/80 dark:border-gray-800">
+          <thead className="sticky top-0 z-30 bg-gray-50 text-xs uppercase font-semibold tracking-wider text-gray-500 dark:bg-gray-950 dark:text-gray-400 outline outline-1 outline-gray-200 dark:outline-gray-800 shadow-sm">
             <tr>
               {columns.map((col, idx) => (
                 <th
                   key={idx}
                   className={cn(
-                    "px-6 py-3.5 whitespace-nowrap border border-gray-200 dark:border-gray-800",
-                    idx === 0 && "sticky left-0 z-20 bg-gray-50 dark:bg-gray-950"
+                    "px-6 py-3.5 whitespace-nowrap bg-gray-50 dark:bg-gray-950",
+                    idx === 0 && "sticky left-0 z-40"
                   )}
                 >
                   {col.header}
