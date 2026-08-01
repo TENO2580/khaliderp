@@ -139,7 +139,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                     <Icon
                       className={cn(
                         'h-5 w-5 shrink-0',
-                        active ? 'text-white' : 'text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300'
+                        active ? 'text-blue-600 dark:text-white' : 'text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300'
                       )}
                     />
                     {!collapsed && (
