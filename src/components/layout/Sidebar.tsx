@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,11 +12,13 @@ import {
   Flame,
   X,
   Moon,
+  Camera,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NAV_ITEMS, hasPermission, ROLE_LABELS } from '@/lib/constants';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from 'next-themes';
+import api from '@/lib/api';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -27,8 +29,11 @@ interface SidebarProps {
 
 export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const { theme, setTheme } = useTheme();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(() => {
     const activeItem = NAV_ITEMS.find(
       (item) => item.children && (pathname === item.href || pathname.startsWith(item.href + '/'))
@@ -56,6 +61,27 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
 
   const toggleSubmenu = (title: string) => {
     setOpenSubmenu((prev) => (prev === title ? null : title));
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Convert to Base64 for storing since we don't have S3 yet
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async () => {
+      const base64Avatar = reader.result as string;
+      try {
+        setIsUploading(true);
+        await api.patch('/auth/me', { avatar: base64Avatar });
+        updateUser({ avatar: base64Avatar });
+      } catch (error) {
+        console.error('Failed to update avatar', error);
+      } finally {
+        setIsUploading(false);
+      }
+    };
   };
 
   return (
@@ -216,9 +242,27 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         {/* User info */}
         {user && !collapsed && (
           <div className="flex items-center gap-3 rounded-xl px-3 py-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700 dark:bg-blue-900 dark:text-blue-300">
-              {user.name.charAt(0)}
+            <div 
+              className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700 dark:bg-blue-900 dark:text-blue-300 group overflow-hidden cursor-pointer"
+              onClick={() => fileInputRef.current?.click()}
+              title="Change Profile Picture"
+            >
+              {user.avatar ? (
+                <img src={user.avatar} alt={user.name} className={cn("h-full w-full object-cover", isUploading && "opacity-50")} />
+              ) : (
+                <span className={cn(isUploading && "opacity-50")}>{user.name.charAt(0)}</span>
+              )}
+              <div className="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center transition-all">
+                <Camera className="h-4 w-4 text-white" />
+              </div>
             </div>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept="image/*"
+              onChange={handleAvatarChange}
+            />
             <div className="flex-1 min-w-0">
               <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{user.name}</p>
               <p className="truncate text-xs text-gray-500">{ROLE_LABELS[user.role] || user.role}</p>
