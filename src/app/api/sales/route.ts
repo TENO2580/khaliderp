@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     const count = await prisma.salesOrder.count();
     const orderNumber = `SO-2026-${String(count + 1).padStart(4, '0')}`;
 
-    const { customerId, items, paymentMethod, notes, discount = 0, transportCharge = 0 } = body;
+    const { customerId, items, paymentMethod, notes, discount = 0, transportCharge = 0, orderDate, deliveryDate, status } = body;
 
     let subtotal = 0;
     const orderItemsData = items.map((item: any) => {
@@ -103,7 +103,9 @@ export async function POST(req: NextRequest) {
       data: {
         orderNumber,
         customerId,
-        orderDate: new Date(),
+        orderDate: orderDate ? new Date(orderDate) : new Date(),
+        deliveryDate: deliveryDate ? new Date(deliveryDate) : undefined,
+        status: status || 'PENDING',
         subtotal,
         totalGst,
         cgst: totalGst / 2,
@@ -113,7 +115,7 @@ export async function POST(req: NextRequest) {
         totalAmount,
         outstanding: totalAmount,
         paymentMethod: paymentMethod || 'CREDIT',
-        notes,
+        notes: notes ? JSON.stringify(notes) : undefined,
         createdBy: user.id,
         items: {
           create: orderItemsData,

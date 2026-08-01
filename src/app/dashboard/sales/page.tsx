@@ -97,6 +97,17 @@ export default function SalesPage() {
           customerId,
           paymentMethod,
           items,
+          orderDate: editFormData.orderDate,
+          deliveryDate: editFormData.deliveryDate,
+          status: editFormData.status,
+          notes: {
+            batchUsed: editFormData.batchUsed,
+            type: editFormData.type,
+            productionCost: editFormData.productionCost,
+            sellingCost: editFormData.sellingCost,
+            margin: editFormData.margin,
+            creditNotes: editFormData.creditNotes,
+          }
         });
         toast.success('Sales order created successfully!');
       }
@@ -264,7 +275,20 @@ export default function SalesPage() {
         onAddClick={() => {
           setIsEdit(false);
           setCustomerId('');
-          setItems([{ productId: '', quantity: 10, unitPrice: 350, gstRate: 18 }]);
+          setItems([{ productId: '', quantity: '', unitPrice: 350, gstRate: 18 }]);
+          setEditFormData({
+            batchUsed: '',
+            orderDate: new Date().toISOString().split('T')[0],
+            deliveryDate: '',
+            type: '',
+            productionCost: '',
+            sellingCost: '',
+            margin: '',
+            totalAmount: 0,
+            status: 'PENDING',
+            outstanding: 0,
+            creditNotes: '',
+          });
           setIsCreateOpen(true);
         }}
         addButtonLabel="Create Sales Order"
@@ -350,7 +374,7 @@ export default function SalesPage() {
                         }}
                         className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                       >
-                        <option value="">-- Select Product --</option>
+                        <option value="">-- Select Type --</option>
                         {products.map((inv) => (
                           <option key={inv.id} value={inv.product?.id || inv.id}>
                             {inv.product?.name} (Stock: {inv.currentStock})
@@ -367,7 +391,7 @@ export default function SalesPage() {
                         value={item.quantity}
                         onChange={(e) => {
                           const newItems = [...items];
-                          newItems[idx].quantity = Number(e.target.value);
+                          newItems[idx].quantity = e.target.value === '' ? '' : Number(e.target.value);
                           setItems(newItems);
                         }}
                         className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
@@ -392,8 +416,6 @@ export default function SalesPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                {isEdit && (
-                  <>
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Order Date</label>
                       <input
@@ -497,8 +519,6 @@ export default function SalesPage() {
                         className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                       />
                     </div>
-                  </>
-                )}
               </div>
 
               <div className="flex justify-end gap-3 pt-4">
