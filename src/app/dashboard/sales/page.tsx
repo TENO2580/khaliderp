@@ -449,11 +449,15 @@ export default function SalesPage() {
 
                     <div className="col-span-3">
                       <input
-                        type="number"
-                        min="1"
+                        type="text"
+                        inputMode="numeric"
                         placeholder="Qty"
                         value={item.quantity}
                         onChange={(e) => {
+                          if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) {
+                            toast.error('Only numbers are allowed for Quantity');
+                            return;
+                          }
                           const newItems = [...items];
                           newItems[idx].quantity = e.target.value === '' ? '' : Number(e.target.value);
                           setItems(newItems);
@@ -464,12 +468,17 @@ export default function SalesPage() {
 
                     <div className="col-span-4">
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         placeholder="Unit Price (₹)"
                         value={item.unitPrice}
                         onChange={(e) => {
+                          if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) {
+                            toast.error('Only numbers are allowed for Unit Price');
+                            return;
+                          }
                           const newItems = [...items];
-                          newItems[idx].unitPrice = Number(e.target.value);
+                          newItems[idx].unitPrice = e.target.value === '' ? '' : Number(e.target.value);
                           setItems(newItems);
                         }}
                         className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
@@ -551,9 +560,16 @@ export default function SalesPage() {
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Outstanding Credit (₹)</label>
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         value={editFormData.outstanding}
-                        onChange={(e) => setEditFormData({ ...editFormData, outstanding: Number(e.target.value) })}
+                        onChange={(e) => {
+                          if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) {
+                            toast.error('Only numbers are allowed for Outstanding Credit');
+                            return;
+                          }
+                          setEditFormData({ ...editFormData, outstanding: e.target.value === '' ? 0 : Number(e.target.value) });
+                        }}
                         className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                       />
                     </div>
