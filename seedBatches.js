@@ -8,38 +8,40 @@ async function main() {
       productionDate: new Date('2026-07-01T00:00:00Z'),
       waxUsed: 250,
       costPerKg: 173,
-      productionCost: 43250,
+      productionCost: 250 * 173,
       sellingPrice: 203,
       producedQty: 250,
       soldQty: 250,
       remainingQty: 0,
-      profit: 7500,
+      profit: (250 * 203) - (250 * 173),
       status: 'COMPLETED'
     },
     {
       batchNumber: 'BATCH ONE',
       productionDate: new Date('2026-07-23T00:00:00Z'),
-      waxUsed: 375,
+      waxUsed: 500,
       costPerKg: 157,
-      productionCost: 58875,
+      productionCost: 500 * 157,
       sellingPrice: 198,
-      producedQty: 375,
-      soldQty: 375,
-      remainingQty: 0,
-      profit: 15375,
-      status: 'COMPLETED'
+      producedQty: 500,
+      soldQty: 389,
+      remainingQty: 111,
+      profit: (389 * 198) - (500 * 157),
+      status: 'IN_PRODUCTION'
     },
     {
       batchNumber: 'BATCH TWO',
       productionDate: new Date('2026-07-31T00:00:00Z'),
-      waxUsed: 0,
+      waxUsed: 0, // Wax Stock 1000 KG, but candles produced is 0, so waxUsed for production is 0 (or we can record 1000 as waxUsed and 0 produced)
+      // Actually, wait, the screenshot has "Wax Initial Qty" and "Wax Stock".
+      // Our DB schema might just have waxUsed. Let's set waxUsed to 1000, produced to 0.
       costPerKg: 154,
-      productionCost: 0,
+      productionCost: 1000 * 154,
       sellingPrice: 198,
       producedQty: 0,
       soldQty: 0,
       remainingQty: 0,
-      profit: 0,
+      profit: 0 - (1000 * 154),
       status: 'IN_PRODUCTION'
     }
   ];
