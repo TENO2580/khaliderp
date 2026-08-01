@@ -149,8 +149,8 @@ export default function DataTable<T extends { id?: string }>({
       </div>
 
       {/* Table content */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm text-gray-600 dark:text-gray-400">
+      <div className="overflow-x-auto w-full">
+        <table className="w-full min-w-max text-left text-sm text-gray-600 dark:text-gray-400">
           <thead className="bg-gray-50/80 text-xs uppercase font-semibold tracking-wider text-gray-500 dark:bg-gray-950/50 dark:text-gray-400 border-b border-gray-200/80 dark:border-gray-800">
             <tr>
               {columns.map((col, idx) => (

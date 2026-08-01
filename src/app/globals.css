@@ -43,3 +43,26 @@ input:-webkit-autofill:active {
   -webkit-box-shadow: 0 0 0 30px #090d16 inset !important;
   -webkit-text-fill-color: #ffffff !important;
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .printable-area, .printable-area * {
+    visibility: visible;
+  }
+  .printable-area {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .no-print, .no-print * {
+    display: none !important;
+  }
+}
