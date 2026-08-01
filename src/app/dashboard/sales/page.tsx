@@ -351,7 +351,7 @@ export default function SalesPage() {
         onAddClick={() => {
           setIsEdit(false);
           setCustomerId('');
-          setItems([{ productId: '', quantity: '', unitPrice: 350, gstRate: 18 }]);
+          setItems([{ productId: products[0]?.product?.id || products[0]?.id || '', quantity: '', unitPrice: 350, gstRate: 18 }]);
           setEditFormData({
             batchUsed: '',
             orderDate: new Date().toISOString().split('T')[0],
@@ -437,26 +437,14 @@ export default function SalesPage() {
                 {items.map((item, idx) => (
                   <div key={idx} className="grid grid-cols-12 gap-2 items-center">
                     <div className="col-span-5">
-                      <select
+                      <input
+                        type="text"
+                        placeholder="Type"
                         required
-                        value={item.productId}
-                        onChange={(e) => {
-                          const pId = e.target.value;
-                          const found = products.find((p) => p.productId === pId || p.product?.id === pId);
-                          const price = found?.product?.sellingPrice || 350;
-                          const newItems = [...items];
-                          newItems[idx] = { ...newItems[idx], productId: pId, unitPrice: price };
-                          setItems(newItems);
-                        }}
+                        value={editFormData.type}
+                        onChange={(e) => setEditFormData({ ...editFormData, type: e.target.value })}
                         className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                      >
-                        <option value="">-- Select Type --</option>
-                        {products.map((inv) => (
-                          <option key={inv.id} value={inv.product?.id || inv.id}>
-                            {inv.product?.name} (Stock: {inv.currentStock})
-                          </option>
-                        ))}
-                      </select>
+                      />
                     </div>
 
                     <div className="col-span-3">
@@ -511,15 +499,7 @@ export default function SalesPage() {
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Type</label>
-                      <input
-                        type="text"
-                        value={editFormData.type}
-                        onChange={(e) => setEditFormData({ ...editFormData, type: e.target.value })}
-                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                      />
-                    </div>
+
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Production Cost (₹)</label>
                       <input
