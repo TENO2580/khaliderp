@@ -50,7 +50,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#080810] relative overflow-hidden">
+      {/* Ambient Backgrounds for Dark Mode Glass Effect */}
+      <div className="pointer-events-none absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full bg-purple-500/10 blur-[120px] dark:bg-purple-900/20" />
+      <div className="pointer-events-none absolute top-40 right-0 h-[400px] w-[400px] rounded-full bg-blue-500/10 blur-[100px] dark:bg-blue-900/20" />
+      <div className="pointer-events-none absolute -bottom-40 left-1/2 h-[400px] w-[600px] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-[120px] dark:bg-emerald-900/10" />
+
       <Sidebar 
         collapsed={sidebarCollapsed} 
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} 
