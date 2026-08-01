@@ -504,36 +504,36 @@ export default function SalesPage() {
                       <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Production Cost (₹)</label>
                       <input
                         type="text"
+                        readOnly
                         value={editFormData.productionCost}
-                        onChange={(e) => setEditFormData({ ...editFormData, productionCost: e.target.value })}
-                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-gray-50 text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 cursor-not-allowed"
                       />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Selling Cost (₹)</label>
                       <input
                         type="text"
+                        readOnly
                         value={editFormData.sellingCost}
-                        onChange={(e) => setEditFormData({ ...editFormData, sellingCost: e.target.value })}
-                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-gray-50 text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 cursor-not-allowed"
                       />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Margin % & Amount</label>
                       <input
                         type="text"
+                        readOnly
                         value={editFormData.margin}
-                        onChange={(e) => setEditFormData({ ...editFormData, margin: e.target.value })}
-                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-gray-50 text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 cursor-not-allowed"
                       />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Total Selling Cost (₹)</label>
                       <input
                         type="number"
+                        readOnly
                         value={editFormData.totalAmount}
-                        onChange={(e) => setEditFormData({ ...editFormData, totalAmount: Number(e.target.value) })}
-                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-gray-50 text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 cursor-not-allowed"
                       />
                     </div>
                     <div>
