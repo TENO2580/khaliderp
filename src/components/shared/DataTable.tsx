@@ -80,6 +80,57 @@ export default function DataTable<T extends { id?: string }>({
   const pendingEditsRef = useRef<Record<string, Record<string, string>>>({});
   const [pendingCount, setPendingCount] = useState(0);
 
+  // Drag to scroll refs
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const startY = useRef(0);
+  const scrollLeft = useRef(0);
+  const scrollTop = useRef(0);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // Prevent dragging if clicking an input, button, or select
+    if (['INPUT', 'BUTTON', 'SELECT'].includes((e.target as HTMLElement).tagName)) {
+      return;
+    }
+    isDragging.current = true;
+    if (scrollRef.current) {
+      startX.current = e.pageX - scrollRef.current.offsetLeft;
+      startY.current = e.pageY - scrollRef.current.offsetTop;
+      scrollLeft.current = scrollRef.current.scrollLeft;
+      scrollTop.current = scrollRef.current.scrollTop;
+      scrollRef.current.style.cursor = 'grabbing';
+      scrollRef.current.style.userSelect = 'none';
+    }
+  };
+
+  const handleMouseLeave = () => {
+    isDragging.current = false;
+    if (scrollRef.current) {
+      scrollRef.current.style.cursor = '';
+      scrollRef.current.style.userSelect = '';
+    }
+  };
+
+  const handleMouseUp = () => {
+    isDragging.current = false;
+    if (scrollRef.current) {
+      scrollRef.current.style.cursor = '';
+      scrollRef.current.style.userSelect = '';
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging.current || !scrollRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    const y = e.pageY - scrollRef.current.offsetTop;
+    const walkX = (x - startX.current) * 1.5;
+    const walkY = (y - startY.current) * 1.5;
+    scrollRef.current.scrollLeft = scrollLeft.current - walkX;
+    scrollRef.current.scrollTop = scrollTop.current - walkY;
+  };
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setSearch(val);
@@ -211,7 +262,14 @@ export default function DataTable<T extends { id?: string }>({
       </div>
 
       {/* Table content */}
-      <div className="flex-1 overflow-auto w-full">
+      <div 
+        ref={scrollRef}
+        onMouseDown={handleMouseDown}
+        onMouseLeave={handleMouseLeave}
+        onMouseUp={handleMouseUp}
+        onMouseMove={handleMouseMove}
+        className="flex-1 overflow-auto w-full"
+      >
         <table className="w-full min-w-max text-left text-sm text-gray-600 dark:text-gray-400">
           <thead className="sticky top-0 z-30 bg-gray-50 text-xs uppercase font-semibold tracking-wider text-gray-500 dark:bg-gray-950 dark:text-gray-400 outline outline-1 outline-gray-200 dark:outline-gray-800 shadow-sm">
             <tr>
