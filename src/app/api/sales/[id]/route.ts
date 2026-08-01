@@ -10,7 +10,6 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const { id } = await params;
     const body = await req.json();
     
-    // We expect order fields + notes + quantity
     const { 
       orderDate, 
       deliveryDate, 
@@ -22,73 +21,140 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     } = body;
 
     let parsedOrderDate = undefined;
-    if (orderDate) {
-      parsedOrderDate = new Date(orderDate).toISOString();
-    }
+    if (orderDate) parsedOrderDate = new Date(orderDate).toISOString();
     
     let parsedDeliveryDate = undefined;
-    if (deliveryDate) {
-      parsedDeliveryDate = new Date(deliveryDate).toISOString();
-    } else if (deliveryDate === '') {
-      parsedDeliveryDate = null;
-    }
+    if (deliveryDate) parsedDeliveryDate = new Date(deliveryDate).toISOString();
+    else if (deliveryDate === '') parsedDeliveryDate = null;
 
-    // First update the order
-    const order = await prisma.salesOrder.update({
-      where: { id },
-      data: {
-        ...(parsedOrderDate !== undefined && { orderDate: parsedOrderDate }),
-        ...(parsedDeliveryDate !== undefined && { deliveryDate: parsedDeliveryDate }),
-        ...(status && { status }),
-        ...(totalAmount !== undefined && { totalAmount: Number(totalAmount) }),
-        ...(outstanding !== undefined && { outstanding: Number(outstanding) }),
-        ...(notes && { notes: JSON.stringify(notes) }),
-      },
-      include: { items: true }
+    const result = await prisma.$transaction(async (tx) => {
+      // First update the order
+      const order = await tx.salesOrder.update({
+        where: { id },
+        data: {
+          ...(parsedOrderDate !== undefined && { orderDate: parsedOrderDate }),
+          ...(parsedDeliveryDate !== undefined && { deliveryDate: parsedDeliveryDate }),
+          ...(status && { status }),
+          ...(totalAmount !== undefined && { totalAmount: Number(totalAmount) }),
+          ...(outstanding !== undefined && { outstanding: Number(outstanding) }),
+          ...(notes && { notes: JSON.stringify(notes) }),
+        },
+        include: { items: true }
+      });
+
+      // If quantity is provided, update the first item
+      if (quantity !== undefined && order.items && order.items.length > 0) {
+        await tx.salesOrderItem.update({
+          where: { id: order.items[0].id },
+          data: { quantity: Number(quantity) }
+        });
+        order.items = await tx.salesOrderItem.findMany({ where: { orderId: order.id } });
+      }
+
+      // FIFO Allocation Engine
+      if (status === 'DELIVERED') {
+        for (const item of order.items) {
+          if (item.batchId) continue; // Already allocated
+
+          let qtyToAllocate = item.quantity;
+          const originalQty = item.quantity;
+
+          // Find active batches
+          const allBatches = await tx.batch.findMany({
+            orderBy: { productionDate: 'asc' },
+            include: { salesOrderItems: { where: { order: { status: 'DELIVERED' } } } }
+          });
+
+          const batchesWithRemaining = allBatches.map(b => {
+            const sold = b.salesOrderItems.reduce((acc, curr) => acc + curr.quantity, 0);
+            return { ...b, remainingQty: b.producedQty - sold };
+          }).filter(b => b.remainingQty > 0);
+
+          let firstAllocation = true;
+
+          for (const batch of batchesWithRemaining) {
+            if (qtyToAllocate <= 0) break;
+
+            const allocatedQty = Math.min(qtyToAllocate, batch.remainingQty);
+            const ratio = allocatedQty / originalQty;
+
+            const splitDiscount = Number(((item.discount || 0) * ratio).toFixed(2));
+            const splitAmount = Number(((allocatedQty * item.unitPrice) - splitDiscount).toFixed(2));
+            const splitGst = Number((splitAmount * (item.gstRate / 100)).toFixed(2));
+
+            if (firstAllocation) {
+              await tx.salesOrderItem.update({
+                where: { id: item.id },
+                data: {
+                  batchId: batch.id,
+                  quantity: allocatedQty,
+                  discount: splitDiscount,
+                  amount: splitAmount,
+                  gstAmount: splitGst,
+                }
+              });
+              firstAllocation = false;
+            } else {
+              await tx.salesOrderItem.create({
+                data: {
+                  orderId: order.id,
+                  productId: item.productId,
+                  batchId: batch.id,
+                  quantity: allocatedQty,
+                  unitPrice: item.unitPrice,
+                  discount: splitDiscount,
+                  gstRate: item.gstRate,
+                  gstAmount: splitGst,
+                  amount: splitAmount,
+                }
+              });
+            }
+
+            qtyToAllocate -= allocatedQty;
+          }
+          
+          if (qtyToAllocate > 0) {
+             throw new Error(`Not enough inventory to fulfill ${qtyToAllocate} KG of product.`);
+          }
+        }
+      }
+
+      // Auto-generate invoice if DELIVERED
+      if (status === 'DELIVERED') {
+        await tx.invoice.upsert({
+          where: { orderId: order.id },
+          update: {
+            subtotal: order.subtotal,
+            cgst: order.cgst,
+            sgst: order.sgst,
+            igst: order.igst,
+            totalGst: order.totalGst,
+            transportCharge: order.transportCharge,
+            totalAmount: order.totalAmount,
+            outstanding: order.outstanding,
+            paidAmount: order.paidAmount,
+          },
+          create: {
+            invoiceNumber: `INV-${order.orderNumber}`,
+            orderId: order.id,
+            customerId: order.customerId,
+            subtotal: order.subtotal,
+            cgst: order.cgst,
+            sgst: order.sgst,
+            igst: order.igst,
+            totalGst: order.totalGst,
+            transportCharge: order.transportCharge,
+            totalAmount: order.totalAmount,
+            outstanding: order.outstanding,
+            paidAmount: order.paidAmount,
+            status: 'ISSUED',
+          }
+        });
+      }
+      return order;
     });
 
-    // If quantity is provided, update the first item
-    if (quantity !== undefined && order.items && order.items.length > 0) {
-      await prisma.salesOrderItem.update({
-        where: { id: order.items[0].id },
-        data: { quantity: Number(quantity) }
-      });
-    }
-
-    // Auto-generate invoice if DELIVERED
-    if (status === 'DELIVERED') {
-      await prisma.invoice.upsert({
-        where: { orderId: order.id },
-        update: {
-          subtotal: order.subtotal,
-          cgst: order.cgst,
-          sgst: order.sgst,
-          igst: order.igst,
-          totalGst: order.totalGst,
-          transportCharge: order.transportCharge,
-          totalAmount: order.totalAmount,
-          outstanding: order.outstanding,
-          paidAmount: order.paidAmount,
-        },
-        create: {
-          invoiceNumber: `INV-${order.orderNumber}`,
-          orderId: order.id,
-          customerId: order.customerId,
-          subtotal: order.subtotal,
-          cgst: order.cgst,
-          sgst: order.sgst,
-          igst: order.igst,
-          totalGst: order.totalGst,
-          transportCharge: order.transportCharge,
-          totalAmount: order.totalAmount,
-          outstanding: order.outstanding,
-          paidAmount: order.paidAmount,
-          status: 'ISSUED',
-        }
-      });
-    }
-
-    return jsonResponse(order, 200, 'Sales order updated successfully');
+    return jsonResponse(result, 200, 'Sales order updated successfully');
   } catch (err: any) {
     return errorResponse(err.message || 'Failed to update sales order', 400);
   }

@@ -41,13 +41,28 @@ export async function GET(req: NextRequest) {
       orderBy: { productionDate: 'desc' },
       skip,
       take: limit,
-      include: { product: true },
+      include: { 
+        product: true,
+        salesOrderItems: {
+          where: { order: { status: 'DELIVERED' } }
+        }
+      },
     }),
     prisma.batch.count({ where }),
   ]);
 
+  const processed = data.map(b => {
+    const soldQty = b.salesOrderItems.reduce((acc, item) => acc + item.quantity, 0);
+    const remainingQty = Math.max(0, b.producedQty - soldQty);
+    let status = 'IN_PRODUCTION';
+    if (b.producedQty > 0 && remainingQty === 0) status = 'COMPLETED';
+    
+    const { salesOrderItems, ...rest } = b;
+    return { ...rest, soldQty, remainingQty, status };
+  });
+
   return jsonResponse({
-    data,
+    data: processed,
     pagination: {
       page,
       limit,

@@ -8,10 +8,27 @@ export async function GET(req: NextRequest) {
 
   const batches = await prisma.batch.findMany({
     orderBy: { productionDate: 'desc' },
-    include: { product: true, productions: true },
+    include: { 
+      product: true, 
+      productions: true,
+      salesOrderItems: {
+        where: { order: { status: 'DELIVERED' } }
+      }
+    },
   });
 
-  return jsonResponse({ data: batches });
+  const processed = batches.map(b => {
+    const soldQty = b.salesOrderItems.reduce((acc, item) => acc + item.quantity, 0);
+    const remainingQty = Math.max(0, b.producedQty - soldQty);
+    let status = 'IN_PRODUCTION';
+    if (b.producedQty > 0 && remainingQty === 0) status = 'COMPLETED';
+    
+    // Omit salesOrderItems from response payload if not needed
+    const { salesOrderItems, ...rest } = b;
+    return { ...rest, soldQty, remainingQty, status };
+  });
+
+  return jsonResponse({ data: processed });
 }
 
 export async function POST(req: NextRequest) {
@@ -22,8 +39,26 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { productId, producedQty, sellingPrice, notes } = body;
 
+    // Validation: Check if the most recent batch is fully consumed
+    const latestBatch = await prisma.batch.findFirst({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        salesOrderItems: {
+          where: { order: { status: 'DELIVERED' } }
+        }
+      }
+    });
+
+    if (latestBatch) {
+      const soldQty = latestBatch.salesOrderItems.reduce((acc, item) => acc + item.quantity, 0);
+      const remainingQty = latestBatch.producedQty - soldQty;
+      if (remainingQty > 0) {
+        return errorResponse(`Batch ${latestBatch.batchNumber} still has ${remainingQty} KG remaining. Complete this batch before creating the next batch.`, 400);
+      }
+    }
+
     const count = await prisma.batch.count();
-    const batchNumber = `BATCH-2026-${String(count + 1).padStart(4, '0')}`;
+    const batchNumber = `BATCH-${String(count).padStart(3, '0')}`; // BATCH-000, BATCH-001...
 
     const batch = await prisma.batch.create({
       data: {

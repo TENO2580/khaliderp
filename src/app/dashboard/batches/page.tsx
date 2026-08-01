@@ -110,6 +110,23 @@ export default function BatchesPage() {
       cell: (b) => <span className="text-xs text-amber-600 font-semibold">{b.remainingQty} KG</span>,
     },
     {
+      header: 'Completion %',
+      cell: (b) => {
+        const pct = b.producedQty > 0 ? ((b.soldQty / b.producedQty) * 100).toFixed(0) : 0;
+        return (
+          <div className="flex items-center gap-2">
+            <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden dark:bg-gray-700">
+              <div 
+                className="h-full bg-emerald-500" 
+                style={{ width: `${pct}%` }} 
+              />
+            </div>
+            <span className="text-xs text-gray-500 font-medium">{pct}%</span>
+          </div>
+        );
+      }
+    },
+    {
       header: 'Prod Cost',
       cell: (b) => <span className="text-xs text-gray-600">{formatCurrency(b.productionCost)}</span>,
     },
