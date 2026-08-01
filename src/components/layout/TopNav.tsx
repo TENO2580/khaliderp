@@ -93,8 +93,12 @@ export default function TopNav({ sidebarCollapsed, onSearchOpen, onMobileMenuCli
               <p className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</p>
               <p className="text-xs text-gray-500">{user.role.replace('_', ' ')}</p>
             </div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-sm font-semibold text-white">
-              {getInitials(user.name)}
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-sm font-semibold text-white overflow-hidden shadow-sm">
+              {user.avatar ? (
+                <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
+              ) : (
+                getInitials(user.name)
+              )}
             </div>
           </div>
         )}
