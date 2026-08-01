@@ -68,7 +68,7 @@ export default function PaymentsPage() {
         </div>
       </div>
 
-      <DataTable limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
+      <DataTable totalItems={totalItems} limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}
         data={payments}
         searchPlaceholder="Search payment ref or customer..."

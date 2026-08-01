@@ -19,6 +19,7 @@ export default function SalesPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -57,6 +58,7 @@ export default function SalesPage() {
       ]);
       setOrders(oRes.data.data.data);
       setTotalPages(oRes.data.data.pagination.totalPages);
+      setTotalItems(oRes.data.data.pagination.total);
       setCustomers(cRes.data.data.data);
       setProducts(pRes.data.data.data);
       setBatches(bRes.data.data);
@@ -432,7 +434,7 @@ export default function SalesPage() {
         </div>
       </div>
 
-      <DataTable
+      <DataTable totalItems={totalItems}
         columns={columns}
         data={orders}
         searchPlaceholder="Search order # or customer..."

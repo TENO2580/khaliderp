@@ -19,6 +19,7 @@ export default function InvoicesPage() {
   const [isEditMode, setIsEditMode] = useState(false);
 
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -26,6 +27,7 @@ export default function InvoicesPage() {
       const res = await api.get(`/sales/invoices/list?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`);
       setInvoices(res.data.data.data);
       setTotalPages(res.data.data.pagination.totalPages);
+      setTotalItems(res.data.data.pagination.total);
     } catch (err) {
       toast.error('Failed to load invoices');
     } finally {
@@ -103,7 +105,7 @@ export default function InvoicesPage() {
         </div>
       </div>
 
-      <DataTable limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
+      <DataTable totalItems={totalItems} limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}
         data={invoices}
         searchPlaceholder="Search invoice # or customer..."

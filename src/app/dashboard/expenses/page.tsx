@@ -20,6 +20,7 @@ export default function ExpensesPage() {
   const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
   // Add Expense Modal
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -248,7 +249,7 @@ export default function ExpensesPage() {
         </div>
       )}
 
-      <DataTable
+      <DataTable totalItems={totalItems}
         limit={limit}
         onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}

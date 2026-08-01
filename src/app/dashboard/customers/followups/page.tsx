@@ -162,7 +162,7 @@ export default function StockAlertsPage() {
         </div>
       </div>
 
-      <DataTable 
+      <DataTable totalItems={totalItems} 
         limit={limit} 
         onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}

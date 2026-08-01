@@ -16,6 +16,7 @@ export default function ProductionPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
   // Modal State
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -48,6 +49,7 @@ export default function ProductionPage() {
       ]);
       setProductions(pRes.data.data.data);
       setTotalPages(pRes.data.data.pagination.totalPages);
+      setTotalItems(pRes.data.data.pagination.total);
       setBatches(bRes.data.data.data);
       if (uRes.data.data) {
         setOperators([uRes.data.data]);
@@ -134,7 +136,7 @@ export default function ProductionPage() {
         </div>
       </div>
 
-      <DataTable limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
+      <DataTable totalItems={totalItems} limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}
         data={productions}
         searchPlaceholder="Search production # or batch #..."

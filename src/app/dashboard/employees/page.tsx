@@ -160,7 +160,7 @@ export default function EmployeesPage() {
         </div>
       )}
 
-      <DataTable limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
+      <DataTable totalItems={totalItems} limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}
         data={employees}
         searchPlaceholder="Search employee name or ID..."

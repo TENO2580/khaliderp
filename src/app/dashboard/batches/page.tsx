@@ -19,6 +19,7 @@ export default function BatchesPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
   // Modal State
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -42,6 +43,7 @@ export default function BatchesPage() {
       ]);
       setBatches(bRes.data.data.data);
       setTotalPages(bRes.data.data.pagination.totalPages);
+      setTotalItems(bRes.data.data.pagination.total);
       setProducts(pRes.data.data.data);
     } catch {
       toast.error('Failed to load batch list');
@@ -200,7 +202,7 @@ export default function BatchesPage() {
         </div>
       </div>
 
-      <DataTable limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
+      <DataTable totalItems={totalItems} limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}
         data={batches}
         searchPlaceholder="Search batch number..."
