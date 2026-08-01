@@ -70,13 +70,13 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
       
       <aside
         className={cn(
-          'fixed left-0 top-0 z-50 flex flex-col h-screen border-r border-gray-200 bg-white transition-all duration-300 dark:border-gray-800 dark:bg-gray-950',
+          'fixed left-0 top-0 z-50 flex flex-col h-screen border-r border-white/60 bg-white/70 backdrop-blur-3xl transition-all duration-300 dark:border-white/[0.05] dark:bg-[#12121a]/60 dark:backdrop-blur-3xl',
           collapsed ? 'lg:w-[72px]' : 'lg:w-[280px]',
           mobileOpen ? 'translate-x-0 w-[280px]' : '-translate-x-full lg:translate-x-0'
         )}
       >
       {/* Logo */}
-      <div className="flex h-16 items-center justify-between border-b border-gray-200 px-4 dark:border-gray-800">
+      <div className="flex h-16 items-center justify-between border-b border-white/40 px-4 dark:border-white/[0.05]">
         <Link href="/dashboard" className="flex items-center gap-3">
           <img
             src="/tripidio-logo.png"
@@ -131,8 +131,8 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                     className={cn(
                       'group flex flex-1 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all',
                       active
-                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-900 dark:hover:text-gray-200'
+                        ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)] border border-blue-500/30'
+                        : 'text-gray-600 hover:bg-black/5 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200'
                     )}
                     title={collapsed ? item.title : undefined}
                   >
@@ -184,8 +184,8 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                               className={cn(
                                 'block rounded-lg px-3 py-2 text-xs transition-all font-semibold',
                                 childActive
-                                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 shadow-sm'
-                                  : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-900 dark:hover:text-white'
+                                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300 dark:shadow-[0_0_10px_rgba(37,99,235,0.2)]'
+                                  : 'text-gray-500 hover:bg-black/5 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white'
                               )}
                             >
                               {child.title}
@@ -203,11 +203,11 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
       </nav>
 
       {/* Bottom section */}
-      <div className="border-t border-gray-200 p-3 dark:border-gray-800">
+      <div className="border-t border-white/40 p-3 dark:border-white/[0.05]">
         {/* Theme toggle */}
         <button
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="mb-2 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-900 font-semibold"
+          className="mb-2 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-600 hover:bg-black/5 dark:text-gray-400 dark:hover:bg-white/5 font-semibold"
         >
           {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           {!collapsed && <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>}
