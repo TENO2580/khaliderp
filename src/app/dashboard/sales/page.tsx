@@ -80,7 +80,7 @@ export default function SalesPage() {
       
       const availableBatches = batches
         .filter(b => b.productId === items[0].productId && b.remainingQty > 0)
-        .sort((a, b) => new Date(a.productionDate).getTime() - new Date(b.productionDate).getTime());
+        .sort((a, b) => new Date(a.purchaseDate).getTime() - new Date(b.purchaseDate).getTime());
 
       let remainingToFulfill = qty;
       let usedBatchNumbers: string[] = [];
@@ -157,7 +157,7 @@ export default function SalesPage() {
         const qty = Number(items[0].quantity) || 0;
         const availableBatches = batches
           .filter(b => b.productId === items[0].productId && b.remainingQty > 0)
-          .sort((a, b) => new Date(a.productionDate).getTime() - new Date(b.productionDate).getTime());
+          .sort((a, b) => new Date(a.purchaseDate).getTime() - new Date(b.purchaseDate).getTime());
 
         let remainingToFulfill = qty;
 

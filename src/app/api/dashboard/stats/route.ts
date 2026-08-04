@@ -208,7 +208,7 @@ export async function GET(req: NextRequest) {
     // 5) Production vs Sales by batch
     const recentBatches = await prisma.batch.findMany({
       take: 5,
-      orderBy: { productionDate: 'desc' },
+      orderBy: { purchaseDate: 'desc' },
     });
     const productionVsSales = recentBatches
       .map(b => ({

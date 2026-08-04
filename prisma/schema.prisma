@@ -261,17 +261,17 @@ enum MovementType {
 
 model Batch {
   id             String      @id @default(cuid())
-  batchNumber    String      @unique // e.g., BATCH-2026-0001
+  batchNumber    String      @unique // e.g., BATCH ZERO, BATCH ONE
   productId      String?
-  productionDate DateTime
-  waxUsed        Float       @default(0)
-  productionCost Float       @default(0)
+  purchaseDate   DateTime
+  waxInitialQty  Float       @default(0)
+  waxRate        Float       @default(0)
   sellingPrice   Float       @default(0)
   producedQty    Float       @default(0)
   soldQty        Float       @default(0)
   remainingQty   Float       @default(0)
-  profit         Float       @default(0)
-  costPerKg      Float       @default(0)
+  waxStock       Float       @default(0)
+  productionCost Float       @default(0) // waxInitialQty * waxRate
   status         BatchStatus @default(IN_PRODUCTION)
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
@@ -282,7 +282,7 @@ model Batch {
   salesOrderItems SalesOrderItem[]
 
   @@index([status])
-  @@index([productionDate])
+  @@index([purchaseDate])
   @@map("batches")
 }
 

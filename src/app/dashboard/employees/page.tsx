@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/lib/utils';
@@ -137,6 +138,12 @@ export default function EmployeesPage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Employee & HR Module</h1>
           <p className="text-sm text-gray-500">Manage factory operators, daily attendance & monthly payroll</p>
         </div>
+        <Link 
+          href="/dashboard/employees/attendance"
+          className="flex items-center gap-2 rounded-xl bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-400 dark:hover:bg-indigo-900/50"
+        >
+          View Production & Attendance
+        </Link>
       </div>
 
       {/* Attendance Stats */}

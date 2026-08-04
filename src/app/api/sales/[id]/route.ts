@@ -61,7 +61,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
           // Find active batches
           const allBatches = await tx.batch.findMany({
-            orderBy: { productionDate: 'asc' },
+            orderBy: { purchaseDate: 'asc' },
             include: { salesOrderItems: { where: { order: { status: 'DELIVERED' } } } }
           });
 

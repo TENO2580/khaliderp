@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   if (error) return error;
 
   const batches = await prisma.batch.findMany({
-    orderBy: { productionDate: 'desc' },
+    orderBy: { purchaseDate: 'desc' },
     include: { 
       product: true, 
       productions: true,
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { productId, producedQty, sellingPrice, notes, productionDate, waxUsed, costPerKg, productionCost } = body;
+    const { productId, producedQty, sellingPrice, notes, purchaseDate, waxInitialQty, waxRate, waxStock, batchNumber: providedBatchNumber } = body;
 
     // Validation: Check if the most recent batch is fully consumed
     const latestBatch = await prisma.batch.findFirst({
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
     }
 
     const count = await prisma.batch.count();
-    const batchNumber = `BATCH-${String(count).padStart(3, '0')}`; // BATCH-000, BATCH-001...
+    const batchNumber = providedBatchNumber || `BATCH-${String(count).padStart(3, '0')}`;
 
     const batch = await prisma.batch.create({
       data: {
@@ -68,11 +68,12 @@ export async function POST(req: NextRequest) {
         producedQty: Number(producedQty || 0),
         remainingQty: Number(producedQty || 0),
         sellingPrice: Number(sellingPrice || 0),
-        waxUsed: Number(waxUsed || 0),
-        costPerKg: Number(costPerKg || 0),
-        productionCost: Number(productionCost || 0),
+        waxInitialQty: Number(waxInitialQty || 0),
+        waxRate: Number(waxRate || 0),
+        waxStock: Number(waxStock || 0),
+        productionCost: Number(waxInitialQty || 0) * Number(waxRate || 0),
         status: 'IN_PRODUCTION',
-        productionDate: productionDate ? new Date(productionDate) : new Date(),
+        purchaseDate: purchaseDate ? new Date(purchaseDate) : new Date(),
       },
       include: { product: true },
     });

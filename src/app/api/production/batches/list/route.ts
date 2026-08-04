@@ -26,19 +26,19 @@ export async function GET(req: NextRequest) {
   }
   
   if (startDate || endDate) {
-    where.productionDate = {};
-    if (startDate) where.productionDate.gte = new Date(startDate);
+    where.purchaseDate = {};
+    if (startDate) where.purchaseDate.gte = new Date(startDate);
     if (endDate) {
       const end = new Date(endDate);
       end.setHours(23, 59, 59, 999);
-      where.productionDate.lte = end;
+      where.purchaseDate.lte = end;
     }
   }
 
   const [data, total] = await Promise.all([
     prisma.batch.findMany({
       where,
-      orderBy: { productionDate: 'desc' },
+      orderBy: { purchaseDate: 'desc' },
       skip,
       take: limit,
       include: { 
