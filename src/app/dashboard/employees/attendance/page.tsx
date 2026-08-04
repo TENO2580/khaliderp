@@ -4,55 +4,51 @@ import React, { useState, useEffect } from 'react';
 import { formatCurrency } from '@/lib/utils';
 import { ArrowLeft, Save } from 'lucide-react';
 import Link from 'next/link';
-
-// Generate days for a given month and year
-const generateDays = (year: number, month: number, employeeName: string) => {
-  const daysInMonth = new Date(year, month, 0).getDate();
-  const data = [];
-  for (let i = 1; i <= daysInMonth; i++) {
-    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-    data.push({
-      id: `${dateStr}-${employeeName}`,
-      date: dateStr,
-      name: employeeName,
-      isPresent: false,
-      targetKg: 125,
-      actualKg: 0,
-      dailySalary: 600,
-      notes: '',
-    });
-  }
-  return data;
-};
+import api from '@/lib/api';
+import { toast } from 'sonner';
 
 export default function EmployeeAttendancePage() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [employeeName, setEmployeeName] = useState('BINOD'); // Default for mockup
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
   const [rows, setRows] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Fetch employees list
   useEffect(() => {
-    // In a real app, this would fetch from API. 
-    // Here we generate an empty grid for the month, but pre-fill some mockup data to match the screenshot.
-    const initialRows = generateDays(selectedYear, selectedMonth, employeeName);
-    
-    // Mocking some data for the first few days to match the design
-    const mockDates = [
-      { date: `${selectedYear}-08-01`, actualKg: 25 },
-      { date: `${selectedYear}-08-03`, actualKg: 75 },
-      { date: `${selectedYear}-08-04`, actualKg: 50 },
-    ];
-    
-    const updatedRows = initialRows.map(row => {
-      const mockMatch = mockDates.find(m => m.date === row.date);
-      if (mockMatch) {
-        return { ...row, isPresent: true, actualKg: mockMatch.actualKg };
+    const fetchEmployees = async () => {
+      try {
+        const res = await api.get('/employees?limit=100');
+        const emps = res.data.data.data;
+        setEmployees(emps);
+        if (emps.length > 0) {
+          setSelectedEmployeeId(emps[0].id);
+        }
+      } catch (err) {
+        toast.error('Failed to load employees');
       }
-      return row;
-    });
+    };
+    fetchEmployees();
+  }, []);
 
-    setRows(updatedRows);
-  }, [selectedMonth, selectedYear, employeeName]);
+  // Fetch attendance for selected employee and month
+  useEffect(() => {
+    if (!selectedEmployeeId) return;
+    
+    const fetchAttendance = async () => {
+      setIsLoading(true);
+      try {
+        const res = await api.get(`/employees/attendance/bulk?employeeId=${selectedEmployeeId}&month=${selectedMonth}&year=${selectedYear}`);
+        setRows(res.data.data);
+      } catch (err) {
+        toast.error('Failed to load attendance');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchAttendance();
+  }, [selectedEmployeeId, selectedMonth, selectedYear]);
 
   const updateRow = (id: string, field: string, value: any) => {
     setRows(prev => prev.map(row => {
@@ -71,6 +67,18 @@ export default function EmployeeAttendancePage() {
   const calculateCostPerKg = (salary: number, actual: number) => {
     if (!actual) return 0;
     return salary / actual;
+  };
+
+  const handleSave = async () => {
+    try {
+      await api.put('/employees/attendance/bulk', {
+        employeeId: selectedEmployeeId,
+        records: rows,
+      });
+      toast.success('Attendance records saved!');
+    } catch (err) {
+      toast.error('Failed to save attendance records');
+    }
   };
 
   const daysPresent = rows.filter(r => r.isPresent).length;
@@ -93,13 +101,22 @@ export default function EmployeeAttendancePage() {
         <div className="flex items-center gap-4">
           <div className="flex gap-2">
             <select
+              value={selectedEmployeeId}
+              onChange={(e) => setSelectedEmployeeId(e.target.value)}
+              className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
+            >
+              {employees.map(emp => (
+                <option key={emp.id} value={emp.id}>{emp.name}</option>
+              ))}
+            </select>
+            <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
               className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
             >
               {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
                 <option key={m} value={m}>
-                  {new Date(2000, m - 1, 1).toLocaleString('default', { month: 'long' })}
+                  {new Date(2000, m - 1, 1).toLocaleString('default', { month: 'short' })}
                 </option>
               ))}
             </select>
@@ -113,7 +130,11 @@ export default function EmployeeAttendancePage() {
               ))}
             </select>
           </div>
-          <button className="flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 transition-colors">
+          <button 
+            onClick={handleSave}
+            disabled={isLoading}
+            className="flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 transition-colors disabled:opacity-50"
+          >
             <Save className="h-4 w-4" /> Save Records
           </button>
         </div>
