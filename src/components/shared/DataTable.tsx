@@ -90,7 +90,8 @@ export default function DataTable<T extends { id?: string }>({
 
   const handleMouseDown = (e: React.MouseEvent) => {
     // Prevent dragging if clicking an input, button, or select
-    if (['INPUT', 'BUTTON', 'SELECT'].includes((e.target as HTMLElement).tagName)) {
+    const target = e.target as HTMLElement;
+    if (target.closest('button, input, select, a, [role="button"]')) {
       return;
     }
     isDragging.current = true;
