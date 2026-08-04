@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -88,6 +88,28 @@ export default function DataTable<T extends { id?: string }>({
   const scrollLeft = useRef(0);
   const scrollTop = useRef(0);
 
+  const handleMouseMove = useRef((e: MouseEvent) => {
+    if (!isDragging.current || !scrollRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    const y = e.pageY - scrollRef.current.offsetTop;
+    const walkX = (x - startX.current) * 1.5;
+    const walkY = (y - startY.current) * 1.5;
+    scrollRef.current.scrollLeft = scrollLeft.current - walkX;
+    scrollRef.current.scrollTop = scrollTop.current - walkY;
+  }).current;
+
+  const handleMouseUp = useRef(() => {
+    isDragging.current = false;
+    if (scrollRef.current) {
+      scrollRef.current.style.cursor = '';
+      scrollRef.current.style.userSelect = '';
+      scrollRef.current.style.pointerEvents = '';
+    }
+    window.removeEventListener('mousemove', handleMouseMove);
+    window.removeEventListener('mouseup', handleMouseUp);
+  }).current;
+
   const handleMouseDown = (e: React.MouseEvent) => {
     // Prevent dragging if clicking an input, button, or select
     const target = e.target as HTMLElement;
@@ -102,35 +124,19 @@ export default function DataTable<T extends { id?: string }>({
       scrollTop.current = scrollRef.current.scrollTop;
       scrollRef.current.style.cursor = 'grabbing';
       scrollRef.current.style.userSelect = 'none';
+      scrollRef.current.style.pointerEvents = 'none'; // Prevents hover state lags while dragging
     }
+    
+    window.addEventListener('mousemove', handleMouseMove, { passive: false });
+    window.addEventListener('mouseup', handleMouseUp);
   };
 
-  const handleMouseLeave = () => {
-    isDragging.current = false;
-    if (scrollRef.current) {
-      scrollRef.current.style.cursor = '';
-      scrollRef.current.style.userSelect = '';
-    }
-  };
-
-  const handleMouseUp = () => {
-    isDragging.current = false;
-    if (scrollRef.current) {
-      scrollRef.current.style.cursor = '';
-      scrollRef.current.style.userSelect = '';
-    }
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging.current || !scrollRef.current) return;
-    e.preventDefault();
-    const x = e.pageX - scrollRef.current.offsetLeft;
-    const y = e.pageY - scrollRef.current.offsetTop;
-    const walkX = (x - startX.current) * 1.5;
-    const walkY = (y - startY.current) * 1.5;
-    scrollRef.current.scrollLeft = scrollLeft.current - walkX;
-    scrollRef.current.scrollTop = scrollTop.current - walkY;
-  };
+  useEffect(() => {
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [handleMouseMove, handleMouseUp]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -266,9 +272,6 @@ export default function DataTable<T extends { id?: string }>({
       <div 
         ref={scrollRef}
         onMouseDown={handleMouseDown}
-        onMouseLeave={handleMouseLeave}
-        onMouseUp={handleMouseUp}
-        onMouseMove={handleMouseMove}
         className="flex-1 overflow-auto w-full"
       >
         <table className="w-full min-w-max text-left text-sm text-gray-600 dark:text-gray-400">
