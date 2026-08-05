@@ -140,8 +140,9 @@ export default function EmployeesPage() {
         </div>
         <Link 
           href="/dashboard/employees/attendance"
-          className="flex items-center gap-2 rounded-xl bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-400 dark:hover:bg-indigo-900/50"
+          className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg hover:bg-blue-700 hover:scale-105 transition-all duration-200 dark:bg-blue-600 dark:hover:bg-blue-500"
         >
+          <CalendarCheck className="h-5 w-5" />
           View Production & Attendance
         </Link>
       </div>
