@@ -102,13 +102,13 @@ export async function POST(req: NextRequest) {
     const orderItemsData: any[] = [];
     const batchUpdates: any[] = [];
 
-    // Fetch available batches ordered by oldest first (Strict FIFO)
+    // Fetch available batches ordered by oldest first (Strict FIFO based on purchaseDate)
     const availableBatches = await prisma.batch.findMany({
       where: {
         status: { in: ['IN_PRODUCTION', 'COMPLETED', 'PARTIALLY_SOLD'] },
         remainingQty: { gt: 0 }
       },
-      orderBy: { createdAt: 'asc' }
+      orderBy: { purchaseDate: 'asc' }
     });
 
     // Fallback product if frontend doesn't provide one
@@ -121,10 +121,14 @@ export async function POST(req: NextRequest) {
       
       let requiredQty = Number(item.quantity);
       // Allow batches with matching productId or legacy batches with null productId
-      const productBatches = availableBatches.filter(b => 
-
+      let productBatches = availableBatches.filter(b => 
         (b.productId === item.productId || b.productId === null) && b.remainingQty > 0
       );
+
+      // If frontend specified a batchId, strictly pull from that batch
+      if (item.batchId) {
+        productBatches = productBatches.filter(b => b.id === item.batchId);
+      }
       
       const itemDiscount = Number(item.discount || 0);
       const discountPerKg = itemDiscount / (requiredQty || 1);
