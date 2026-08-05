@@ -94,10 +94,18 @@ export async function POST(req: NextRequest) {
       orderBy: { createdAt: 'asc' }
     });
 
+    // Fallback product if frontend doesn't provide one
+    const defaultProduct = await prisma.product.findFirst();
+
     for (const item of items) {
+      if (!item.productId && defaultProduct) {
+        item.productId = defaultProduct.id;
+      }
+      
       let requiredQty = Number(item.quantity);
       // Allow batches with matching productId or legacy batches with null productId
       const productBatches = availableBatches.filter(b => 
+
         (b.productId === item.productId || b.productId === null) && b.remainingQty > 0
       );
       
