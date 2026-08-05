@@ -72,7 +72,9 @@ export default function BatchesPage() {
     try {
       await api.put(`/production/batches/${editBatch.id}`, {
         ...editBatch,
-        remainingQty: editBatch.producedQty - editBatch.soldQty,
+        waxStock: (Number(editBatch.waxInitialQty) || 0) - (Number(editBatch.producedQty) || 0),
+        productionCost: (Number(editBatch.waxInitialQty) || 0) * (Number(editBatch.waxRate) || 0),
+        remainingQty: (Number(editBatch.producedQty) || 0) - (Number(editBatch.soldQty) || 0),
       });
       toast.success('Batch updated successfully!');
       setEditBatch(null);
@@ -134,10 +136,10 @@ export default function BatchesPage() {
     },
     {
       header: 'Wax Stock',
-      editableKey: 'waxStock',
-      inlineEditable: true,
-      inputType: 'number',
-      cell: (b) => <span className="text-xs text-blue-600 font-medium">{Number(b.waxStock).toFixed(2)} KG</span>,
+      cell: (b) => {
+        const stock = (Number(b.waxInitialQty) || 0) - (Number(b.producedQty) || 0);
+        return <span className="text-xs text-blue-600 font-medium">{stock.toFixed(2)} KG</span>;
+      },
     },
     {
       header: 'Completion %',
@@ -192,7 +194,7 @@ export default function BatchesPage() {
       for (const [rowId, fields] of Object.entries(grouped)) {
         const batch = batches.find((b: any) => b.id === rowId);
         if (!batch) continue;
-        const updateBody: any = {};
+        const updateBody: any = { ...batch };
         for (const [key, value] of Object.entries(fields)) {
           if (['producedQty', 'productionCost', 'sellingPrice', 'waxInitialQty', 'waxRate', 'waxStock'].includes(key)) {
             updateBody[key] = Number(value) || 0;
@@ -200,6 +202,12 @@ export default function BatchesPage() {
             updateBody[key] = value;
           }
         }
+        
+        // Auto-calculate dependencies
+        updateBody.waxStock = (Number(updateBody.waxInitialQty) || 0) - (Number(updateBody.producedQty) || 0);
+        updateBody.productionCost = (Number(updateBody.waxInitialQty) || 0) * (Number(updateBody.waxRate) || 0);
+        updateBody.remainingQty = (Number(updateBody.producedQty) || 0) - (Number(updateBody.soldQty) || 0);
+
         await api.put(`/production/batches/${rowId}`, updateBody);
       }
       toast.success(`${Object.keys(grouped).length} batch(es) updated!`);
