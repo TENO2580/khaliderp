@@ -382,10 +382,22 @@ export default function SalesPage() {
       },
     },
     {
-      header: 'Margin % & Amount',
+      header: 'Margin %',
       cell: (o) => {
         const data = parseNotes(o.notes);
-        return <span className="text-sm text-gray-900 dark:text-gray-100">{data.margin || '-'}</span>;
+        if (!data.margin) return <span className="text-sm text-gray-900 dark:text-gray-100">-</span>;
+        const parts = data.margin.split(' (');
+        return <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">{parts[0]}</span>;
+      },
+    },
+    {
+      header: 'Margin Amount',
+      cell: (o) => {
+        const data = parseNotes(o.notes);
+        if (!data.margin) return <span className="text-sm text-gray-900 dark:text-gray-100">-</span>;
+        const parts = data.margin.split(' (');
+        const amt = parts[1] ? parts[1].replace(')', '') : '-';
+        return <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{amt}</span>;
       },
     },
     {
