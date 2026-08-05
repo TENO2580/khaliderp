@@ -109,23 +109,29 @@ export default function SalesPage() {
     }
   }, [items, batches, isEdit, products]);
 
-  // Auto-calculate Margin based on manual inputs
+  // Auto-calculate Totals and Margins based on Unit inputs
   useEffect(() => {
-    const prodCost = Number(editFormData.productionCost) || 0;
-    const totalSellingCost = Number(editFormData.totalAmount) || 0;
+    const qty = Number(items[0].quantity) || 0;
+    const unitSellingPrice = Number(items[0].unitPrice) || 0;
+    const unitProdCost = Number(editFormData.productionCost) || 0;
     
-    if (totalSellingCost > 0 || prodCost > 0) {
-      const marginAmt = totalSellingCost - prodCost;
+    const totalSellingCost = qty * unitSellingPrice;
+    const totalProdCost = qty * unitProdCost;
+    
+    setEditFormData(prev => ({ ...prev, totalAmount: totalSellingCost }));
+
+    if (totalSellingCost > 0 || totalProdCost > 0) {
+      const marginAmt = totalSellingCost - totalProdCost;
       const marginPct = totalSellingCost > 0 ? ((marginAmt / totalSellingCost) * 100).toFixed(2) : '0';
       const marginStr = `${marginPct}% (₹${marginAmt.toFixed(2)})`;
       
       if (editFormData.margin !== marginStr) {
         setEditFormData(prev => ({ ...prev, margin: marginStr }));
       }
-    } else if (editFormData.productionCost === '' && editFormData.totalAmount === 0 && editFormData.margin !== '') {
+    } else if (editFormData.margin !== '') {
       setEditFormData(prev => ({ ...prev, margin: '' }));
     }
-  }, [editFormData.productionCost, editFormData.totalAmount]);
+  }, [items, editFormData.productionCost]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -529,143 +535,107 @@ export default function SalesPage() {
                 </div>
               </div>
 
-              {/* Order Items */}
-              <div className="space-y-3 pt-2">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500">Order Items</label>
-                {items.map((item, idx) => (
-                  <div key={idx} className="grid grid-cols-12 gap-2 items-center">
-                    <div className="col-span-5">
-                      <input
-                        type="text"
-                        placeholder="Type"
-                        required
-                        value={editFormData.type}
-                        onChange={(e) => setEditFormData({ ...editFormData, type: e.target.value })}
-                        className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                      />
-                    </div>
+              {/* Order Details */}
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Product Type</label>
+                  <input
+                    type="text"
+                    required
+                    value={editFormData.type}
+                    onChange={(e) => setEditFormData({ ...editFormData, type: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Quantity Sold</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    required
+                    value={items[0].quantity}
+                    onChange={(e) => {
+                      if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) return;
+                      const newItems = [...items];
+                      newItems[0].quantity = e.target.value === '' ? '' : Number(e.target.value);
+                      setItems(newItems);
+                    }}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  />
+                </div>
 
-                    <div className="col-span-3">
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="Qty"
-                        value={item.quantity}
-                        onChange={(e) => {
-                          if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) {
-                            toast.error('Only numbers are allowed for Quantity');
-                            return;
-                          }
-                          const newItems = [...items];
-                          newItems[idx].quantity = e.target.value === '' ? '' : Number(e.target.value);
-                          setItems(newItems);
-                        }}
-                        className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                      />
-                    </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Unit Production Cost (₹)</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={editFormData.productionCost}
+                    onChange={(e) => {
+                      if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) return;
+                      setEditFormData({ ...editFormData, productionCost: e.target.value });
+                    }}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Unit Selling Price (₹)</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    required
+                    value={items[0].unitPrice}
+                    onChange={(e) => {
+                      if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) return;
+                      const newItems = [...items];
+                      newItems[0].unitPrice = e.target.value === '' ? '' : Number(e.target.value);
+                      setItems(newItems);
+                    }}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  />
+                </div>
 
-                    <div className="col-span-4">
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="Unit Price (₹)"
-                        value={item.unitPrice}
-                        onChange={(e) => {
-                          if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) {
-                            toast.error('Only numbers are allowed for Unit Price');
-                            return;
-                          }
-                          const newItems = [...items];
-                          newItems[idx].unitPrice = e.target.value === '' ? '' : Number(e.target.value);
-                          setItems(newItems);
-                        }}
-                        className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                      />
-                    </div>
-                  </div>
-                ))}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Total Selling Amount (₹)</label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={editFormData.totalAmount}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-gray-50 text-gray-900 font-semibold dark:border-gray-800 dark:bg-gray-900 dark:text-white cursor-not-allowed"
+                  />
+                  <p className="text-[10px] text-gray-500 mt-1">Auto-calculated: Qty × Unit Price</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Margin % & Amount</label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={editFormData.margin}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-gray-50 text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 cursor-not-allowed"
+                  />
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Order Date</label>
-                      <input
-                        type="date"
-                        value={editFormData.orderDate}
-                        onChange={(e) => setEditFormData({ ...editFormData, orderDate: e.target.value })}
-                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Delivery Date</label>
-                      <input
-                        type="date"
-                        value={editFormData.deliveryDate}
-                        onChange={(e) => setEditFormData({ ...editFormData, deliveryDate: e.target.value })}
-                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                      />
-                    </div>
-
-
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Production Cost (₹)</label>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        value={editFormData.productionCost}
-                        onChange={(e) => {
-                          if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) {
-                            toast.error('Only numbers are allowed for Production Cost');
-                            return;
-                          }
-                          setEditFormData({ ...editFormData, productionCost: e.target.value });
-                        }}
-                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Selling Cost (₹)</label>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        value={editFormData.sellingCost}
-                        onChange={(e) => {
-                          if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) {
-                            toast.error('Only numbers are allowed for Selling Cost');
-                            return;
-                          }
-                          setEditFormData({ ...editFormData, sellingCost: e.target.value });
-                        }}
-                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Margin % & Amount</label>
-                      <input
-                        type="text"
-                        readOnly
-                        value={editFormData.margin}
-                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-gray-50 text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 cursor-not-allowed"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Total Selling Cost (₹)</label>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        value={editFormData.totalAmount || ''}
-                        onChange={(e) => {
-                          if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) {
-                            toast.error('Only numbers are allowed for Total Selling Cost');
-                            return;
-                          }
-                          setEditFormData({ ...editFormData, totalAmount: e.target.value === '' ? 0 : Number(e.target.value) });
-                        }}
-                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Status</label>
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Order Date</label>
+                  <input
+                    type="date"
+                    value={editFormData.orderDate}
+                    onChange={(e) => setEditFormData({ ...editFormData, orderDate: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Delivery Date</label>
+                  <input
+                    type="date"
+                    value={editFormData.deliveryDate}
+                    onChange={(e) => setEditFormData({ ...editFormData, deliveryDate: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Status</label>
                       <select
                         value={editFormData.status}
                         onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
