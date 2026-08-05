@@ -548,7 +548,7 @@ export default function SalesPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Quantity Sold</label>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Quantity (KG)</label>
                   <input
                     type="text"
                     inputMode="numeric"
