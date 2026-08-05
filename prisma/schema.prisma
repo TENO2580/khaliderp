@@ -848,6 +848,7 @@ model CaseVariant {
   profileId        String
   name             String   // e.g., "2 RS CASE"
   weightKg         Float    // e.g., 0.72
+  prodCostPerKg    Float?   // Optional override for Prod Cost/KG
   sellingPrice     Float    // e.g., 228.00
   
   profile          CostingProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)

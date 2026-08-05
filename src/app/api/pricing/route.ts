@@ -82,6 +82,7 @@ export async function PUT(req: NextRequest) {
               data: {
                 name: variant.name,
                 weightKg: Number(variant.weightKg),
+                prodCostPerKg: variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : null,
                 sellingPrice: Number(variant.sellingPrice)
               }
             });
@@ -91,6 +92,7 @@ export async function PUT(req: NextRequest) {
                 profileId: id,
                 name: variant.name,
                 weightKg: Number(variant.weightKg),
+                prodCostPerKg: variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : null,
                 sellingPrice: Number(variant.sellingPrice)
               }
             });
