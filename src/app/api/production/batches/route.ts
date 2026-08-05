@@ -64,6 +64,23 @@ export async function POST(req: NextRequest) {
       include: { product: true },
     });
 
+    // Automatically sync the waxRate to the Unit Economics profile
+    if (waxRate !== undefined && waxRate !== null) {
+      try {
+        const defaultProfile = await prisma.costingProfile.findFirst({
+          orderBy: { updatedAt: 'desc' }
+        });
+        if (defaultProfile) {
+          await prisma.costingProfile.update({
+            where: { id: defaultProfile.id },
+            data: { waxCost: Number(waxRate) }
+          });
+        }
+      } catch (profileErr) {
+        console.error("Failed to sync waxRate to CostingProfile", profileErr);
+      }
+    }
+
     // Fire Notification asynchronously
     NotificationService.broadcastToRole('PRODUCTION_MANAGER', {
       module: 'PRODUCTION',

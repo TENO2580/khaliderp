@@ -25,6 +25,29 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         status: body.status,
       },
     });
+
+    // Check if this is the latest batch, and if so, update the CostingProfile
+    if (body.waxRate !== undefined && body.waxRate !== null) {
+      try {
+        const latestBatch = await prisma.batch.findFirst({
+          orderBy: { createdAt: 'desc' }
+        });
+        if (latestBatch && latestBatch.id === id) {
+          const defaultProfile = await prisma.costingProfile.findFirst({
+            orderBy: { updatedAt: 'desc' }
+          });
+          if (defaultProfile) {
+            await prisma.costingProfile.update({
+              where: { id: defaultProfile.id },
+              data: { waxCost: Number(body.waxRate) }
+            });
+          }
+        }
+      } catch (profileErr) {
+        console.error("Failed to sync waxRate to CostingProfile on edit", profileErr);
+      }
+    }
+
     return jsonResponse(batch);
   } catch (err: any) {
     return errorResponse(err.message || 'Failed to update batch', 500);
