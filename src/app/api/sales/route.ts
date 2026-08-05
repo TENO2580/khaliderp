@@ -96,7 +96,10 @@ export async function POST(req: NextRequest) {
 
     for (const item of items) {
       let requiredQty = Number(item.quantity);
-      const productBatches = availableBatches.filter(b => b.productId === item.productId && b.remainingQty > 0);
+      // Allow batches with matching productId or legacy batches with null productId
+      const productBatches = availableBatches.filter(b => 
+        (b.productId === item.productId || b.productId === null) && b.remainingQty > 0
+      );
       
       const itemDiscount = Number(item.discount || 0);
       const discountPerKg = itemDiscount / (requiredQty || 1);
