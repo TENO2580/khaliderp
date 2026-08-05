@@ -170,11 +170,13 @@ export default function EmployeeAttendancePage() {
             {rows.map((row, idx) => {
               const efficiency = calculateEfficiency(row.actualKg, row.targetKg);
               const costPerKg = calculateCostPerKg(row.dailySalary, row.actualKg);
+              const salaryDisplay = row.isPresent ? row.dailySalary : 0;
+              const costDisplay = row.isPresent ? costPerKg : 0;
 
               return (
                 <tr key={row.id} className={idx % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50/80 dark:bg-gray-800/50'}>
                   <td className="px-4 py-2 text-center font-medium">{row.date}</td>
-                  <td className="px-4 py-2 text-center">{row.name}</td>
+                  <td className="px-4 py-2 text-center font-semibold">{row.name}</td>
                   <td className="px-4 py-2 text-center">
                     <input
                       type="checkbox"
@@ -194,29 +196,22 @@ export default function EmployeeAttendancePage() {
                   <td className="px-4 py-2 text-center">
                     <input
                       type="number"
-                      value={row.actualKg || ''}
+                      value={row.isPresent ? (row.actualKg || '') : ''}
                       onChange={(e) => updateRow(row.id, 'actualKg', Number(e.target.value))}
                       disabled={!row.isPresent}
                       className="w-16 rounded border border-gray-200 bg-transparent px-2 py-1 text-center text-sm disabled:opacity-50 focus:border-[#1e3a8a] focus:outline-none dark:border-gray-700"
                     />
                   </td>
-                  <td className="px-4 py-2 text-center">{efficiency.toFixed(1)}%</td>
-                  <td className="px-4 py-2 text-center">
-                    <input
-                      type="number"
-                      value={row.dailySalary || ''}
-                      onChange={(e) => updateRow(row.id, 'dailySalary', Number(e.target.value))}
-                      className="w-20 rounded border border-gray-200 bg-transparent px-2 py-1 text-center text-sm focus:border-[#1e3a8a] focus:outline-none dark:border-gray-700"
-                    />
-                  </td>
-                  <td className="px-4 py-2 text-center">{formatCurrency(costPerKg)}</td>
+                  <td className="px-4 py-2 text-center">{row.isPresent ? `${efficiency.toFixed(1)}%` : '0.0%'}</td>
+                  <td className="px-4 py-2 text-center font-semibold">₹{salaryDisplay.toFixed(2)}</td>
+                  <td className="px-4 py-2 text-center">₹{costDisplay.toFixed(2)}</td>
                   <td className="px-4 py-2">
                     <input
                       type="text"
                       value={row.notes}
                       onChange={(e) => updateRow(row.id, 'notes', e.target.value)}
                       className="w-full rounded border border-gray-200 bg-transparent px-2 py-1 text-sm focus:border-[#1e3a8a] focus:outline-none dark:border-gray-700"
-                      placeholder="Notes..."
+                      placeholder=""
                     />
                   </td>
                 </tr>

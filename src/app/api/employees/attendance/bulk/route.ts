@@ -48,9 +48,9 @@ export async function GET(request: Request) {
         date: dateStr,
         name: employee.name,
         isPresent: record ? record.status === 'PRESENT' : false,
-        targetKg: record?.targetKg || 0,
+        targetKg: record ? record.targetKg : 125,
         actualKg: record?.actualKg || 0,
-        dailySalary: record?.dailySalary || Math.round(employee.salary / 30), // fallback to monthly / 30
+        dailySalary: record ? record.dailySalary : 600,
         notes: record?.notes || '',
       });
     }
