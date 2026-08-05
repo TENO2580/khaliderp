@@ -564,7 +564,7 @@ export default function SalesPage() {
                     onChange={(e) => {
                       if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) return;
                       const newItems = [...items];
-                      newItems[0].quantity = e.target.value === '' ? '' : Number(e.target.value);
+                      newItems[0].quantity = e.target.value === '' ? '' : (e.target.value === '' ? '' : Number(e.target.value)) as any;
                       setItems(newItems);
                     }}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
@@ -594,7 +594,7 @@ export default function SalesPage() {
                     onChange={(e) => {
                       if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) return;
                       const newItems = [...items];
-                      newItems[0].unitPrice = e.target.value === '' ? '' : Number(e.target.value);
+                      newItems[0].unitPrice = e.target.value === '' ? '' : (e.target.value === '' ? '' : Number(e.target.value)) as any;
                       setItems(newItems);
                     }}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
@@ -665,7 +665,7 @@ export default function SalesPage() {
                             toast.error('Only numbers are allowed for Outstanding Credit');
                             return;
                           }
-                          setEditFormData({ ...editFormData, outstanding: e.target.value === '' ? 0 : Number(e.target.value) });
+                          setEditFormData({ ...editFormData, outstanding: (e.target.value === '' ? '' : Number(e.target.value)) as any });
                         }}
                         className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                       />

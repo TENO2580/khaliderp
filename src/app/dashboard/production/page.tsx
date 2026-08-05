@@ -200,7 +200,7 @@ export default function ProductionPage() {
                       type="number"
                       step="0.1"
                       value={formData.waxUsed}
-                      onChange={(e) => setFormData({ ...formData, waxUsed: Number(e.target.value) })}
+                      onChange={(e) => setFormData({ ...formData, waxUsed: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
                       className="mt-1 w-full rounded-xl border border-gray-200 p-2 text-sm bg-white dark:bg-gray-950 dark:border-gray-800"
                     />
                   </div>
@@ -210,7 +210,7 @@ export default function ProductionPage() {
                       type="number"
                       step="0.1"
                       value={formData.fragranceUsed}
-                      onChange={(e) => setFormData({ ...formData, fragranceUsed: Number(e.target.value) })}
+                      onChange={(e) => setFormData({ ...formData, fragranceUsed: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
                       className="mt-1 w-full rounded-xl border border-gray-200 p-2 text-sm bg-white dark:bg-gray-950 dark:border-gray-800"
                     />
                   </div>
@@ -220,7 +220,7 @@ export default function ProductionPage() {
                       type="number"
                       step="0.1"
                       value={formData.colorUsed}
-                      onChange={(e) => setFormData({ ...formData, colorUsed: Number(e.target.value) })}
+                      onChange={(e) => setFormData({ ...formData, colorUsed: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
                       className="mt-1 w-full rounded-xl border border-gray-200 p-2 text-sm bg-white dark:bg-gray-950 dark:border-gray-800"
                     />
                   </div>
@@ -229,7 +229,7 @@ export default function ProductionPage() {
                     <input
                       type="number"
                       value={formData.containerUsed}
-                      onChange={(e) => setFormData({ ...formData, containerUsed: Number(e.target.value) })}
+                      onChange={(e) => setFormData({ ...formData, containerUsed: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
                       className="mt-1 w-full rounded-xl border border-gray-200 p-2 text-sm bg-white dark:bg-gray-950 dark:border-gray-800"
                     />
                   </div>
@@ -238,7 +238,7 @@ export default function ProductionPage() {
                     <input
                       type="number"
                       value={formData.wickUsed}
-                      onChange={(e) => setFormData({ ...formData, wickUsed: Number(e.target.value) })}
+                      onChange={(e) => setFormData({ ...formData, wickUsed: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
                       className="mt-1 w-full rounded-xl border border-gray-200 p-2 text-sm bg-white dark:bg-gray-950 dark:border-gray-800"
                     />
                   </div>
@@ -252,7 +252,7 @@ export default function ProductionPage() {
                   <input
                     type="number"
                     value={formData.labourCost}
-                    onChange={(e) => setFormData({ ...formData, labourCost: Number(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, labourCost: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2 text-sm dark:border-gray-800 dark:bg-gray-950"
                   />
                 </div>
@@ -261,7 +261,7 @@ export default function ProductionPage() {
                   <input
                     type="number"
                     value={formData.gasCost}
-                    onChange={(e) => setFormData({ ...formData, gasCost: Number(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, gasCost: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2 text-sm dark:border-gray-800 dark:bg-gray-950"
                   />
                 </div>
@@ -270,7 +270,7 @@ export default function ProductionPage() {
                   <input
                     type="number"
                     value={formData.electricityCost}
-                    onChange={(e) => setFormData({ ...formData, electricityCost: Number(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, electricityCost: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2 text-sm dark:border-gray-800 dark:bg-gray-950"
                   />
                 </div>
@@ -280,7 +280,7 @@ export default function ProductionPage() {
                     type="number"
                     required
                     value={formData.quantityProduced}
-                    onChange={(e) => setFormData({ ...formData, quantityProduced: Number(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, quantityProduced: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
                     className="mt-1 w-full rounded-xl border border-blue-500 p-2 text-sm dark:bg-gray-950 font-bold"
                   />
                 </div>

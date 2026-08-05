@@ -263,7 +263,7 @@ export default function BatchesPage() {
                     step="0.01"
                     required
                     value={waxInitialQty}
-                    onChange={(e) => setWaxInitialQty(e.target.value === '' ? '' : Number(e.target.value))}
+                    onChange={(e) => setWaxInitialQty(e.target.value === '' ? '' : (e.target.value === '' ? '' : Number(e.target.value)) as any)}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                   />
                 </div>
@@ -274,7 +274,7 @@ export default function BatchesPage() {
                     step="0.01"
                     required
                     value={waxRate}
-                    onChange={(e) => setWaxRate(e.target.value === '' ? '' : Number(e.target.value))}
+                    onChange={(e) => setWaxRate(e.target.value === '' ? '' : (e.target.value === '' ? '' : Number(e.target.value)) as any)}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                   />
                 </div>
@@ -285,7 +285,7 @@ export default function BatchesPage() {
                     step="0.01"
                     required
                     value={waxStock}
-                    onChange={(e) => setWaxStock(e.target.value === '' ? '' : Number(e.target.value))}
+                    onChange={(e) => setWaxStock(e.target.value === '' ? '' : (e.target.value === '' ? '' : Number(e.target.value)) as any)}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                   />
                 </div>
@@ -296,7 +296,7 @@ export default function BatchesPage() {
                     step="0.01"
                     required
                     value={producedQty}
-                    onChange={(e) => setProducedQty(e.target.value === '' ? '' : Number(e.target.value))}
+                    onChange={(e) => setProducedQty(e.target.value === '' ? '' : (e.target.value === '' ? '' : Number(e.target.value)) as any)}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                   />
                 </div>
@@ -306,7 +306,7 @@ export default function BatchesPage() {
                     type="number"
                     step="0.01"
                     value={sellingPrice}
-                    onChange={(e) => setSellingPrice(Number(e.target.value))}
+                    onChange={(e) => setSellingPrice((e.target.value === '' ? '' : Number(e.target.value)) as any)}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                   />
                 </div>

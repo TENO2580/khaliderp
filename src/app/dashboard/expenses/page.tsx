@@ -305,7 +305,7 @@ export default function ExpensesPage() {
                   type="number"
                   required
                   value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, amount: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
                   className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white font-bold"
                 />
               </div>
@@ -395,7 +395,7 @@ export default function ExpensesPage() {
                   type="number"
                   required
                   value={editData.amount}
-                  onChange={(e) => setEditData({ ...editData, amount: Number(e.target.value) })}
+                  onChange={(e) => setEditData({ ...editData, amount: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
                   className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white font-bold"
                 />
               </div>

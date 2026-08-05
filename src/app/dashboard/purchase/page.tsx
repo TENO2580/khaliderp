@@ -162,7 +162,7 @@ export default function PurchasePage() {
                   <input
                     type="number"
                     value={formData.quantity}
-                    onChange={(e) => setFormData({ ...formData, quantity: Number(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, quantity: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                   />
                 </div>
@@ -171,7 +171,7 @@ export default function PurchasePage() {
                   <input
                     type="number"
                     value={formData.unitPrice}
-                    onChange={(e) => setFormData({ ...formData, unitPrice: Number(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, unitPrice: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                   />
                 </div>
