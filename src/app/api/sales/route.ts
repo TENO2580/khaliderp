@@ -82,48 +82,119 @@ export async function POST(req: NextRequest) {
     const { customerId, items, paymentMethod, notes, discount = 0, transportCharge = 0, orderDate, deliveryDate, status } = body;
 
     let subtotal = 0;
-    const orderItemsData = items.map((item: any) => {
-      const itemSubtotal = item.quantity * item.unitPrice - (item.discount || 0);
-      subtotal += itemSubtotal;
-      return {
-        productId: item.productId,
-        batchId: item.batchId || undefined,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        discount: item.discount || 0,
-        subtotal: itemSubtotal,
-        gstRate: item.gstRate || 18,
-        gstAmount: (itemSubtotal * (item.gstRate || 18)) / 100,
-        totalAmount: itemSubtotal + (itemSubtotal * (item.gstRate || 18)) / 100,
-      };
+    const orderItemsData: any[] = [];
+    const batchUpdates: any[] = [];
+
+    // Fetch available batches ordered by oldest first (Strict FIFO)
+    const availableBatches = await prisma.batch.findMany({
+      where: {
+        status: { in: ['IN_PRODUCTION', 'PARTIALLY_SOLD'] },
+        remainingQty: { gt: 0 }
+      },
+      orderBy: { createdAt: 'asc' }
     });
 
-    const totalGst = orderItemsData.reduce((acc: number, cur: any) => acc + cur.gstAmount, 0);
-    const totalAmount = subtotal + totalGst + transportCharge - discount;
+    for (const item of items) {
+      let requiredQty = Number(item.quantity);
+      const productBatches = availableBatches.filter(b => b.productId === item.productId && b.remainingQty > 0);
+      
+      const itemDiscount = Number(item.discount || 0);
+      const discountPerKg = itemDiscount / (requiredQty || 1);
+      
+      if (productBatches.length === 0 && requiredQty > 0) {
+        throw new Error(`Insufficient stock in batches for product ID ${item.productId}`);
+      }
 
-    const order = await prisma.salesOrder.create({
-      data: {
-        orderNumber,
-        customerId,
-        orderDate: orderDate ? new Date(orderDate) : new Date(),
-        deliveryDate: deliveryDate ? new Date(deliveryDate) : undefined,
-        status: status || 'PENDING',
-        subtotal,
-        totalGst,
-        cgst: totalGst / 2,
-        sgst: totalGst / 2,
-        discount,
-        transportCharge,
-        totalAmount,
-        outstanding: totalAmount,
-        paymentMethod: paymentMethod || 'CREDIT',
-        notes: notes ? JSON.stringify(notes) : undefined,
-        createdBy: user.id,
-        items: {
-          create: orderItemsData,
+      for (const batch of productBatches) {
+        if (requiredQty <= 0) break;
+        
+        const takeQty = Math.min(requiredQty, batch.remainingQty);
+        requiredQty -= takeQty;
+        batch.remainingQty -= takeQty;
+        batch.soldQty += takeQty;
+        
+        let newStatus = batch.status;
+        if (batch.remainingQty <= 0) {
+           newStatus = 'FULLY_SOLD';
+        } else if (batch.soldQty > 0) {
+           newStatus = 'PARTIALLY_SOLD';
+        }
+
+        batchUpdates.push({
+          id: batch.id,
+          soldQty: batch.soldQty,
+          remainingQty: batch.remainingQty,
+          status: newStatus
+        });
+
+        const splitDiscount = discountPerKg * takeQty;
+        const itemSubtotal = (takeQty * Number(item.unitPrice)) - splitDiscount;
+        subtotal += itemSubtotal;
+        
+        const gstRate = Number(item.gstRate || 18);
+        const gstAmount = (itemSubtotal * gstRate) / 100;
+        
+        orderItemsData.push({
+          productId: item.productId,
+          batchId: batch.id,
+          quantity: takeQty,
+          unitPrice: Number(item.unitPrice),
+          discount: splitDiscount,
+          gstRate,
+          gstAmount,
+          amount: itemSubtotal + gstAmount,
+        });
+      }
+
+      if (requiredQty > 0) {
+         throw new Error(`Insufficient stock in batches for product ID ${item.productId}. Short by ${requiredQty} KG.`);
+      }
+    }
+
+    const totalGst = orderItemsData.reduce((acc: number, cur: any) => acc + cur.gstAmount, 0);
+    const totalAmount = subtotal + totalGst + Number(transportCharge) - Number(discount);
+
+    // Use a transaction to create the order and update batches atomically
+    const order = await prisma.$transaction(async (tx) => {
+      // 1. Create Sales Order
+      const newOrder = await tx.salesOrder.create({
+        data: {
+          orderNumber,
+          customerId,
+          orderDate: orderDate ? new Date(orderDate) : new Date(),
+          deliveryDate: deliveryDate ? new Date(deliveryDate) : undefined,
+          status: status || 'PENDING',
+          subtotal,
+          totalGst,
+          cgst: totalGst / 2,
+          sgst: totalGst / 2,
+          discount: Number(discount),
+          transportCharge: Number(transportCharge),
+          totalAmount,
+          outstanding: totalAmount,
+          paymentMethod: paymentMethod || 'CREDIT',
+          notes: notes ? JSON.stringify(notes) : undefined,
+          createdBy: user.id,
+          items: {
+            create: orderItemsData,
+          },
         },
-      },
-      include: { customer: true, items: true },
+        include: { customer: true, items: true },
+      });
+
+      // 2. Update Batches
+      for (const update of batchUpdates) {
+        await tx.batch.update({
+          where: { id: update.id },
+          data: {
+            soldQty: update.soldQty,
+            remainingQty: update.remainingQty,
+            status: update.status
+          }
+        });
+      }
+
+      return newOrder;
     });
 
     // Fire Notification asynchronously
@@ -140,7 +211,7 @@ export async function POST(req: NextRequest) {
       createdById: user.id,
     }).catch(console.error);
 
-    return jsonResponse(order, 201, 'Sales Order created');
+    return jsonResponse(order, 201, 'Sales Order created successfully');
   } catch (err: any) {
     return errorResponse(err.message || 'Failed to create sales order', 400);
   }
