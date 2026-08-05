@@ -28,7 +28,122 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     else if (deliveryDate === '') parsedDeliveryDate = null;
 
     const result = await prisma.$transaction(async (tx) => {
-      // First update the order
+      // Fetch the existing order BEFORE updating it, to check status change
+      const existingOrder = await tx.salesOrder.findUnique({
+        where: { id },
+        include: { items: true }
+      });
+      if (!existingOrder) throw new Error("Order not found");
+
+      const isNewlyCancelled = status === 'CANCELLED' && existingOrder.status !== 'CANCELLED';
+      
+      let finalItems = existingOrder.items;
+
+      // Handle Cancelled status
+      if (isNewlyCancelled) {
+        // Revert all wax to batches
+        for (const item of existingOrder.items) {
+          if (!item.batchId) continue;
+          const batch = await tx.batch.findUnique({ where: { id: item.batchId } });
+          if (batch) {
+             await tx.batch.update({
+               where: { id: batch.id },
+               data: {
+                 remainingQty: batch.remainingQty + item.quantity,
+                 soldQty: Math.max(0, batch.soldQty - item.quantity),
+                 status: batch.status === 'FULLY_SOLD' ? 'PARTIALLY_SOLD' : batch.status
+               }
+             });
+          }
+        }
+      } 
+      // If quantity changes, re-allocate using FIFO
+      else if (quantity !== undefined && status !== 'CANCELLED') {
+        const oldTotalQty = existingOrder.items.reduce((acc, item) => acc + item.quantity, 0);
+        let newQty = Number(quantity);
+
+        if (newQty !== oldTotalQty && existingOrder.items.length > 0) {
+          // 1. Revert all existing allocations
+          for (const item of existingOrder.items) {
+            if (!item.batchId) continue;
+            const batch = await tx.batch.findUnique({ where: { id: item.batchId } });
+            if (batch) {
+               await tx.batch.update({
+                 where: { id: batch.id },
+                 data: {
+                   remainingQty: batch.remainingQty + item.quantity,
+                   soldQty: Math.max(0, batch.soldQty - item.quantity),
+                   status: batch.status === 'FULLY_SOLD' ? 'PARTIALLY_SOLD' : batch.status
+                 }
+               });
+            }
+          }
+
+          // 2. Delete old items
+          await tx.salesOrderItem.deleteMany({ where: { orderId: id } });
+
+          // 3. Re-allocate using strict FIFO
+          const productId = existingOrder.items[0].productId;
+          let requiredQty = newQty;
+          
+          const availableBatches = await tx.batch.findMany({
+            where: { remainingQty: { gt: 0 } },
+            orderBy: { purchaseDate: 'asc' }
+          });
+
+          let productBatches = availableBatches.filter(b => 
+            (b.productId === productId || b.productId === null) && b.remainingQty > 0
+          );
+
+          if (productBatches.length === 0 && requiredQty > 0) {
+            throw new Error(`Insufficient stock in batches for product ID ${productId}`);
+          }
+
+          const unitPrice = existingOrder.items[0].unitPrice;
+          const gstRate = existingOrder.items[0].gstRate;
+
+          for (const batch of productBatches) {
+            if (requiredQty <= 0) break;
+            
+            const takeQty = Math.min(requiredQty, batch.remainingQty);
+            requiredQty -= takeQty;
+            
+            await tx.batch.update({
+              where: { id: batch.id },
+              data: {
+                remainingQty: batch.remainingQty - takeQty,
+                soldQty: batch.soldQty + takeQty,
+                status: (batch.remainingQty - takeQty <= 0) ? 'FULLY_SOLD' : 'PARTIALLY_SOLD'
+              }
+            });
+
+            const itemSubtotal = takeQty * Number(unitPrice);
+            const gstAmount = (itemSubtotal * Number(gstRate)) / 100;
+
+            await tx.salesOrderItem.create({
+              data: {
+                orderId: id,
+                productId,
+                batchId: batch.id,
+                quantity: takeQty,
+                unitPrice: Number(unitPrice),
+                discount: 0, // Keep simple for edit re-allocation
+                gstRate: Number(gstRate),
+                gstAmount,
+                amount: itemSubtotal + gstAmount
+              }
+            });
+          }
+
+          if (requiredQty > 0) {
+            throw new Error(`Insufficient stock in batches. Short by ${requiredQty} KG`);
+          }
+
+          finalItems = await tx.salesOrderItem.findMany({ where: { orderId: id } });
+        }
+      }
+
+      // Update the order itself
       const order = await tx.salesOrder.update({
         where: { id },
         data: {
@@ -41,15 +156,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         },
         include: { items: true }
       });
-
-      // If quantity is provided, update the first item
-      if (quantity !== undefined && order.items && order.items.length > 0) {
-        await tx.salesOrderItem.update({
-          where: { id: order.items[0].id },
-          data: { quantity: Number(quantity) }
-        });
-        order.items = await tx.salesOrderItem.findMany({ where: { orderId: order.id } });
-      }
+      order.items = finalItems;
 
       // (FIFO Allocation Engine removed - allocation now happens immediately in POST route)
 

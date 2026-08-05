@@ -105,7 +105,6 @@ export async function POST(req: NextRequest) {
     // Fetch available batches ordered by oldest first (Strict FIFO based on purchaseDate)
     const availableBatches = await prisma.batch.findMany({
       where: {
-        status: { in: ['IN_PRODUCTION', 'COMPLETED', 'PARTIALLY_SOLD'] },
         remainingQty: { gt: 0 }
       },
       orderBy: { purchaseDate: 'asc' }

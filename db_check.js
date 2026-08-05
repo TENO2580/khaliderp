@@ -1,9 +1,6 @@
 const { PrismaClient } = require('@prisma/client'); 
 const p = new PrismaClient(); 
-p.batch.findMany({ orderBy: { purchaseDate: 'asc' } })
-  .then(b => {
-    const res = b.map(x => ({ batch: x.batchNumber, date: x.purchaseDate, db_remaining: x.remainingQty, id: x.id }));
-    console.log(JSON.stringify(res, null, 2));
-  })
+p.salesOrder.findMany({ include: { items: true }, orderBy: { createdAt: 'desc' }, take: 1 })
+  .then(b => console.log(JSON.stringify(b, null, 2)))
   .catch(console.error)
   .finally(() => p.$disconnect());
