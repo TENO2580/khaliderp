@@ -159,7 +159,7 @@ export default function TopNav({ sidebarCollapsed, onSearchOpen, onMobileMenuCli
             </div>
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-sm font-semibold text-white overflow-hidden shadow-sm">
               {user.avatar ? (
-                <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
+                <img loading=" lazy\ src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
               ) : (
                 getInitials(user.name)
               )}

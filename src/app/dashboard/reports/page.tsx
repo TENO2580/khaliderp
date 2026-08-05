@@ -20,11 +20,12 @@ import {
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { toast } from 'sonner';
 import api from '@/lib/api';
+import useSWR from 'swr';
 
+const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState('sales');
-  const [reportData, setReportData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: reportData, isLoading } = useSWR(`/reports?type=${activeTab}`, fetcher);
 
   const reportTabs = [
     { id: 'sales', name: 'Sales Report', icon: DollarSign },
@@ -36,23 +37,6 @@ export default function ReportsPage() {
     { id: 'gst', name: 'GST Audit Report', icon: BarChart3 },
     { id: 'outstanding', name: 'Outstanding Receivables', icon: CreditCard },
   ];
-
-  const fetchReport = useCallback(async () => {
-    setIsLoading(true);
-    setReportData(null); // Clear old data to prevent render crashes on tab switch
-    try {
-      const res = await api.get(`/reports?type=${activeTab}`);
-      setReportData(res.data.data);
-    } catch {
-      setReportData(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [activeTab]);
-
-  useEffect(() => {
-    fetchReport();
-  }, [fetchReport]);
 
   const handleExportCSV = () => {
     if (!reportData?.rows || reportData.rows.length === 0) {

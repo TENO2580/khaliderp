@@ -41,6 +41,8 @@ model User {
   productions   Production[]
   employee      Employee?
 
+  @@index([role])
+  @@index([isActive])
   @@map("users")
 }
 
@@ -219,6 +221,7 @@ model Inventory {
   product        Product         @relation(fields: [productId], references: [id])
   stockMovements StockMovement[]
 
+  @@index([lastUpdated])
   @@map("inventory")
 }
 
@@ -381,6 +384,7 @@ model SalesOrder {
 
   @@index([customerId])
   @@index([status])
+  @@index([paymentStatus])
   @@index([orderDate])
   @@map("sales_orders")
 }

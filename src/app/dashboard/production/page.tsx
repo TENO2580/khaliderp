@@ -6,17 +6,14 @@ import { formatCurrency, formatDate, formatPercent } from '@/lib/utils';
 import { Factory, Flame, Layers, Plus } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import useSWR from 'swr';
+
+const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
 export default function ProductionPage() {
-  const [productions, setProductions] = useState<any[]>([]);
-  const [batches, setBatches] = useState<any[]>([]);
-  const [operators, setOperators] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
 
   // Modal State
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -39,32 +36,29 @@ export default function ProductionPage() {
     notes: '',
   });
 
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const [pRes, bRes, uRes] = await Promise.all([
-        api.get(`/production?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`),
-        api.get('/production/batches/list?limit=100'),
-        api.get('/auth/me'),
-      ]);
-      setProductions(pRes.data.data.data);
-      setTotalPages(pRes.data.data.pagination.totalPages);
-      setTotalItems(pRes.data.data.pagination.total);
-      setBatches(bRes.data.data.data);
-      if (uRes.data.data) {
-        setOperators([uRes.data.data]);
-        setFormData((prev) => ({ ...prev, operatorId: uRes.data.data.id }));
-      }
-    } catch {
-      setProductions([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { data: resData, mutate: mutateProductions, isLoading } = useSWR(
+    `/production?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`,
+    fetcher
+  );
+  const { data: batchesRes } = useSWR('/production/batches/list?limit=100', fetcher);
+  const { data: userRes } = useSWR('/auth/me', fetcher);
+
+  const productions = resData?.data || [];
+  const totalPages = resData?.pagination?.totalPages || 1;
+  const totalItems = resData?.pagination?.total || 0;
+  
+  const batches = batchesRes?.data || [];
+  const operators = userRes ? [userRes] : [];
 
   useEffect(() => {
-    fetchData();
-  }, [page, search, limit]);
+    if (userRes?.id && !formData.operatorId) {
+      setFormData(prev => ({ ...prev, operatorId: userRes.id }));
+    }
+  }, [userRes, formData.operatorId]);
+
+  const fetchData = () => {
+    mutateProductions();
+  };
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

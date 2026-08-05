@@ -7,15 +7,14 @@ import { formatCurrency, customerTypeLabels } from '@/lib/utils';
 import { MessageCircle, MapPin, Phone, Mail, Plus, Filter, Download, Pencil } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import useSWR from 'swr';
+
+const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
 export default function CustomersPage() {
-  const [customers, setCustomers] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -43,23 +42,18 @@ export default function CustomersPage() {
     lastPurchaseDate: '',
   });
 
-  const fetchCustomers = async () => {
-    setIsLoading(true);
-    try {
-      const res = await api.get(`/customers?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`);
-      setCustomers(res.data.data.data);
-      setTotalPages(res.data.data.pagination.totalPages);
-      setTotalItems(res.data.data.pagination.total);
-    } catch {
-      setCustomers([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { data: resData, mutate: mutateCustomers, isLoading } = useSWR(
+    `/customers?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`,
+    fetcher
+  );
 
-  useEffect(() => {
-    fetchCustomers();
-  }, [page, search, limit, startDate, endDate, statusFilter]);
+  const customers = resData?.data || [];
+  const totalPages = resData?.pagination?.totalPages || 1;
+  const totalItems = resData?.pagination?.total || 0;
+
+  const fetchCustomers = () => {
+    mutateCustomers();
+  };
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

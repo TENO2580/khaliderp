@@ -34,25 +34,18 @@ import {
   Legend,
 } from 'recharts';
 
-export default function DashboardPage() {
-  const [kpis, setKpis] = useState<any>(null);
-  const [charts, setCharts] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+import useSWR from 'swr';
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await api.get('/dashboard/stats');
-        setKpis(res.data.data.kpis);
-        setCharts(res.data.data.charts);
-      } catch {
-        console.error('Failed to load dashboard data');
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    fetchData();
-  }, []);
+const fetcher = (url: string) => api.get(url).then(res => res.data.data);
+
+export default function DashboardPage() {
+  const { data, isLoading, error } = useSWR('/dashboard/stats', fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 60000,
+  });
+
+  const kpis = data?.kpis;
+  const charts = data?.charts;
 
   const COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
   const PIE_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];

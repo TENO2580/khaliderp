@@ -52,6 +52,22 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
       skip,
       take: limit,
+      select: {
+        id: true,
+        customerId: true,
+        name: true,
+        ownerName: true,
+        phone: true,
+        district: true,
+        state: true,
+        address: true,
+        lastPurchaseDate: true,
+        nextFollowupDate: true,
+        status: true,
+        notes: true,
+        sellingPrice: true,
+        type: true,
+      }
     }),
     prisma.customer.count({ where }),
   ]);

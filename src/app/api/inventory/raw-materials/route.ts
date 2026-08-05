@@ -10,6 +10,9 @@ export async function GET(req: NextRequest) {
   const search = url.searchParams.get('search') || '';
   const category = url.searchParams.get('category') || '';
 
+  const page = parseInt(url.searchParams.get('page') || '1');
+  const limit = parseInt(url.searchParams.get('limit') || '100');
+  const skip = (page - 1) * limit;
   const where: any = {};
   if (search) {
     where.name = { contains: search, mode: 'insensitive' };
@@ -18,12 +21,32 @@ export async function GET(req: NextRequest) {
     where.category = category;
   }
 
-  const rawMaterials = await prisma.rawMaterial.findMany({
-    where,
-    orderBy: { name: 'asc' },
-  });
+  const [data, total] = await Promise.all([
+    prisma.rawMaterial.findMany({
+      where,
+      orderBy: { name: 'asc' },
+      skip,
+      take: limit,
+      select: {
+        id: true,
+        name: true,
+        category: true,
+        unit: true,
+        currentStock: true,
+        minimumStock: true,
+        reorderLevel: true,
+        unitCost: true,
+        isActive: true,
+        updatedAt: true
+      }
+    }),
+    prisma.rawMaterial.count({ where })
+  ]);
 
-  return jsonResponse({ data: rawMaterials });
+  return jsonResponse({
+    data,
+    pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
+  });
 }
 
 export async function POST(req: NextRequest) {

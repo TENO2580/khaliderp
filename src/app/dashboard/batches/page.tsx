@@ -7,11 +7,11 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import { Edit3 } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import useSWR from 'swr';
+
+const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
 export default function BatchesPage() {
-  const [batches, setBatches] = useState<any[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -34,27 +34,20 @@ export default function BatchesPage() {
   // Edit Modal State
   const [editBatch, setEditBatch] = useState<any>(null);
 
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const [bRes, pRes] = await Promise.all([
-        api.get(`/production/batches/list?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`),
-        api.get('/inventory?limit=100'),
-      ]);
-      setBatches(bRes.data.data.data);
-      setTotalPages(bRes.data.data.pagination.totalPages);
-      setTotalItems(bRes.data.data.pagination.total);
-      setProducts(pRes.data.data.data);
-    } catch {
-      toast.error('Failed to load batch list');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { data: resData, mutate: mutateBatches, isLoading } = useSWR(
+    `/production/batches/list?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`,
+    fetcher
+  );
+  const { data: productsRes } = useSWR('/inventory?limit=100', fetcher);
 
-  useEffect(() => {
-    fetchData();
-  }, [page, search, limit, startDate, endDate, statusFilter]);
+  const batches = resData?.data || [];
+  const totalPages = resData?.pagination?.totalPages || 1;
+  const totalItems = resData?.pagination?.total || 0;
+  const products = productsRes?.data || [];
+
+  const fetchData = () => {
+    mutateBatches();
+  };
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

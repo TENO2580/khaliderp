@@ -56,7 +56,24 @@ export async function GET(req: NextRequest) {
       orderBy: { lastUpdated: 'desc' },
       skip,
       take: limit,
-      include: { product: true },
+      select: {
+        id: true,
+        productId: true,
+        currentStock: true,
+        minimumStock: true,
+        reorderLevel: true,
+        unitCost: true,
+        value: true,
+        lastUpdated: true,
+        product: {
+          select: {
+            name: true,
+            sku: true,
+            category: true,
+            unit: true,
+          }
+        }
+      },
     }),
     prisma.inventory.count(),
   ]);

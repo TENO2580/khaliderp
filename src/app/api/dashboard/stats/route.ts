@@ -154,18 +154,24 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // 2) Top 10 customers by revenue
-    const customersWithSales = await prisma.customer.findMany({
-      include: { salesOrders: { select: { totalAmount: true } } },
+    const topSales = await prisma.salesOrder.groupBy({
+      by: ['customerId'],
+      _sum: { totalAmount: true },
+      orderBy: { _sum: { totalAmount: 'desc' } },
+      take: 10,
     });
-    const topCustomers = customersWithSales
-      .map(c => ({
-        name: c.name,
-        TotalSales: c.salesOrders.reduce((sum, o) => sum + o.totalAmount, 0),
+    const topCustomerIds = topSales.map(s => s.customerId);
+    const topCustomersData = await prisma.customer.findMany({
+      where: { id: { in: topCustomerIds } },
+      select: { id: true, name: true },
+    });
+    const topCustomersMap = new Map(topCustomersData.map(c => [c.id, c.name]));
+    const topCustomers = topSales
+      .map(s => ({
+        name: topCustomersMap.get(s.customerId) || 'Unknown',
+        TotalSales: s._sum.totalAmount || 0,
       }))
-      .filter(c => c.TotalSales > 0)
-      .sort((a, b) => b.TotalSales - a.TotalSales)
-      .slice(0, 10);
+      .filter(c => c.TotalSales > 0);
 
     // 3) Expense breakdown by category
     const expenseByCat = await prisma.expense.groupBy({
@@ -209,6 +215,7 @@ export async function GET(req: NextRequest) {
     const recentBatches = await prisma.batch.findMany({
       take: 5,
       orderBy: { purchaseDate: 'desc' },
+      select: { batchNumber: true, producedQty: true, soldQty: true },
     });
     const productionVsSales = recentBatches
       .map(b => ({

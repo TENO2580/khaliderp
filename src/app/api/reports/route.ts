@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
       case 'sales': {
         const orders = await prisma.salesOrder.findMany({
           orderBy: { orderDate: 'desc' },
-          include: { customer: true },
+          select: { id: true, orderNumber: true, orderDate: true, totalAmount: true, paidAmount: true, outstanding: true, status: true, paymentStatus: true, customer: { select: { name: true } } },
           take: 100,
         });
         const totalRevenue = orders.reduce((s, o) => s + o.totalAmount, 0);
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
 
       case 'customer': {
         const customers = await prisma.customer.findMany({
-          include: { salesOrders: true },
+          select: { id: true, customerId: true, name: true, phone: true, type: true, status: true, outstanding: true, salesOrders: { select: { totalAmount: true } } },
           orderBy: { name: 'asc' },
         });
         const activeCount = customers.filter((c) => c.status === 'ACTIVE').length;
@@ -111,8 +111,8 @@ export async function GET(req: NextRequest) {
 
       case 'inventory': {
         const [products, rawMaterials] = await Promise.all([
-          prisma.inventory.findMany({ include: { product: true } }),
-          prisma.rawMaterial.findMany(),
+          prisma.inventory.findMany({ select: { currentStock: true, unitCost: true, value: true, reorderLevel: true, product: { select: { name: true, unit: true } } } }),
+          prisma.rawMaterial.findMany({ select: { name: true, currentStock: true, unit: true, unitCost: true, reorderLevel: true } }),
         ]);
         const finishedValue = products.reduce((s, p) => s + p.value, 0);
         const rawValue = rawMaterials.reduce((s, r) => s + r.currentStock * r.unitCost, 0);
@@ -146,7 +146,7 @@ export async function GET(req: NextRequest) {
       case 'production': {
         const productions = await prisma.production.findMany({
           orderBy: { date: 'desc' },
-          include: { batch: true, operator: { select: { name: true } } },
+          select: { id: true, productionNumber: true, date: true, shift: true, waxUsed: true, quantityProduced: true, totalCost: true, costPerKg: true, margin: true, batch: { select: { batchNumber: true } }, operator: { select: { name: true } } },
           take: 100,
         });
         const totalQty = productions.reduce((s, p) => s + p.quantityProduced, 0);
@@ -173,7 +173,7 @@ export async function GET(req: NextRequest) {
       case 'gst': {
         const invoices = await prisma.invoice.findMany({
           orderBy: { invoiceDate: 'desc' },
-          include: { customer: true },
+          select: { id: true, invoiceNumber: true, invoiceDate: true, totalAmount: true, totalGst: true, cgst: true, sgst: true, igst: true, customer: { select: { name: true } } },
           take: 100,
         });
         const totalTaxable = invoices.reduce((s, i) => s + (i.totalAmount - i.totalGst), 0);
@@ -202,7 +202,7 @@ export async function GET(req: NextRequest) {
         const customers = await prisma.customer.findMany({
           where: { outstanding: { gt: 0 } },
           orderBy: { outstanding: 'desc' },
-          include: { invoices: { where: { outstanding: { gt: 0 } }, orderBy: { dueDate: 'asc' } } },
+          select: { id: true, customerId: true, name: true, phone: true, outstanding: true, creditLimit: true, invoices: { where: { outstanding: { gt: 0 } }, orderBy: { dueDate: 'asc' }, select: { dueDate: true } } },
         });
         const totalOutstanding = customers.reduce((s, c) => s + c.outstanding, 0);
         return jsonResponse({

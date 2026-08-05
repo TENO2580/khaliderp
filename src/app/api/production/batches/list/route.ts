@@ -41,10 +41,21 @@ export async function GET(req: NextRequest) {
       orderBy: { purchaseDate: 'desc' },
       skip,
       take: limit,
-      include: { 
-        product: true,
+      select: {
+        id: true,
+        batchNumber: true,
+        purchaseDate: true,
+        waxInitialQty: true,
+        waxRate: true,
+        productionCost: true,
+        sellingPrice: true,
+        producedQty: true,
+        remainingQty: true,
+        status: true,
+        product: { select: { name: true } },
         salesOrderItems: {
-          where: { order: { status: 'DELIVERED' } }
+          where: { order: { status: 'DELIVERED' } },
+          select: { quantity: true }
         }
       },
     }),

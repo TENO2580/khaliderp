@@ -51,9 +51,26 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
       skip,
       take: limit,
-      include: {
-        customer: true,
-        items: { include: { product: true } },
+      select: {
+        id: true,
+        orderNumber: true,
+        customerId: true,
+        orderDate: true,
+        deliveryDate: true,
+        totalAmount: true,
+        outstanding: true,
+        status: true,
+        notes: true,
+        customer: { select: { name: true, phone: true } },
+        items: {
+          select: {
+            productId: true,
+            quantity: true,
+            unitPrice: true,
+            gstRate: true,
+            product: { select: { name: true } }
+          }
+        }
       },
     }),
     prisma.salesOrder.count({ where }),

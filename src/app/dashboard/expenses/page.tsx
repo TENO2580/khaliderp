@@ -7,20 +7,17 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import { Receipt, Check, Plus, CreditCard, Edit3, Trash2 } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import useSWR from 'swr';
+
+const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
 export default function ExpensesPage() {
-  const [expenses, setExpenses] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [stats, setStats] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
 
   // Add Expense Modal
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -43,30 +40,29 @@ export default function ExpensesPage() {
     status: '',
   });
 
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const [eRes, cRes, sRes] = await Promise.all([
-        api.get(`/expenses?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`),
-        api.get('/expenses/categories'),
-        api.get('/expenses/stats'),
-      ]);
-      setExpenses(eRes.data.data.data);
-      setTotalPages(eRes.data.data.pagination?.totalPages || 1);      setCategories(cRes.data.data);
-      setStats(sRes.data.data);
-      if (cRes.data.data?.length > 0) {
-        setFormData((prev) => ({ ...prev, categoryId: cRes.data.data[0].id }));
-      }
-    } catch {
-      toast.error('Failed to load expenses');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { data: resData, mutate: mutateExpenses, isLoading } = useSWR(
+    `/expenses?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`,
+    fetcher
+  );
+  const { data: categoriesData } = useSWR('/expenses/categories', fetcher);
+  const { data: statsData } = useSWR('/expenses/stats', fetcher);
+
+  const expenses = resData?.data || [];
+  const totalPages = resData?.pagination?.totalPages || 1;
+  const totalItems = resData?.pagination?.total || 0;
+  
+  const categories = categoriesData || [];
+  const stats = statsData || null;
 
   useEffect(() => {
-    fetchData();
-  }, [page, search, limit, startDate, endDate, statusFilter]);
+    if (categoriesData?.length > 0 && !formData.categoryId) {
+      setFormData(prev => ({ ...prev, categoryId: categoriesData[0].id }));
+    }
+  }, [categoriesData, formData.categoryId]);
+
+  const fetchData = () => {
+    mutateExpenses();
+  };
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -48,7 +48,16 @@ export async function GET(req: NextRequest) {
     prisma.expense.findMany({
       where,
       orderBy: { date: 'desc' },
-      include: { category: true, createdBy: true },
+      select: {
+        id: true,
+        amount: true,
+        date: true,
+        description: true,
+        status: true,
+        receiptUrl: true,
+        category: { select: { id: true, name: true, color: true, icon: true } },
+        createdBy: { select: { id: true, name: true } },
+      },
       skip,
       take: limit,
     }),

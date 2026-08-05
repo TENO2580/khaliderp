@@ -8,18 +8,14 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import { Plus, FileText, CheckCircle2, DollarSign, X } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import useSWR from 'swr';
+
+const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
 export default function SalesPage() {
-  const [orders, setOrders] = useState<any[]>([]);
-  const [customers, setCustomers] = useState<any[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
-  const [batches, setBatches] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -47,31 +43,27 @@ export default function SalesPage() {
     creditNotes: '',
   });
 
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const [oRes, cRes, pRes, bRes] = await Promise.all([
-        api.get(`/sales?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`),
-        api.get('/customers?limit=100'),
-        api.get('/inventory?limit=100'),
-        api.get('/production/batches'),
-      ]);
-      setOrders(oRes.data.data.data);
-      setTotalPages(oRes.data.data.pagination.totalPages);
-      setTotalItems(oRes.data.data.pagination.total);
-      setCustomers(cRes.data.data.data);
-      setProducts(pRes.data.data.data);
-      setBatches(Array.isArray(bRes.data.data) ? bRes.data.data : bRes.data.data?.data || []);
-    } catch {
-      setOrders([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { data: salesRes, mutate: mutateSales, isLoading: isSalesLoading } = useSWR(
+    `/sales?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`,
+    fetcher
+  );
+  const { data: customersRes } = useSWR('/customers?limit=100', fetcher);
+  const { data: productsRes } = useSWR('/inventory?limit=100', fetcher);
+  const { data: batchesRes } = useSWR('/production/batches', fetcher);
 
-  useEffect(() => {
-    fetchData();
-  }, [page, search, limit, startDate, endDate, statusFilter]);
+  const orders = salesRes?.data || [];
+  const totalPages = salesRes?.pagination?.totalPages || 1;
+  const totalItems = salesRes?.pagination?.total || 0;
+  
+  const customers = customersRes?.data || [];
+  const products = productsRes?.data || [];
+  const batches = batchesRes?.data || (Array.isArray(batchesRes) ? batchesRes : []);
+
+  const isLoading = isSalesLoading;
+
+  const fetchData = () => {
+    mutateSales();
+  };
 
   // FIFO Batch Calculation (just for batch tracking)
   useEffect(() => {

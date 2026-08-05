@@ -27,9 +27,30 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
       skip,
       take: limit,
-      include: {
-        batch: { include: { product: true } },
-        operator: true,
+      select: {
+        id: true,
+        productionNumber: true,
+        date: true,
+        batchId: true,
+        operatorId: true,
+        shift: true,
+        waxUsed: true,
+        totalCost: true,
+        quantityProduced: true,
+        costPerKg: true,
+        sellingPrice: true,
+        profit: true,
+        margin: true,
+        notes: true,
+        batch: {
+          select: {
+            batchNumber: true,
+            product: { select: { name: true } }
+          }
+        },
+        operator: {
+          select: { name: true }
+        }
       },
     }),
     prisma.production.count({ where }),
