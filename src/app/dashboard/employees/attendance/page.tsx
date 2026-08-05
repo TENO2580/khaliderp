@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { formatCurrency } from '@/lib/utils';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Lock, Unlock } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { toast } from 'sonner';
@@ -14,6 +14,7 @@ export default function EmployeeAttendancePage() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
   const [rows, setRows] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isEditUnlocked, setIsEditUnlocked] = useState(false);
 
   // Fetch employees list
   useEffect(() => {
@@ -131,6 +132,13 @@ export default function EmployeeAttendancePage() {
             </select>
           </div>
           <button 
+            onClick={() => setIsEditUnlocked(!isEditUnlocked)}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition-colors ${isEditUnlocked ? 'bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'}`}
+          >
+            {isEditUnlocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+            {isEditUnlocked ? 'Lock Rates' : 'Unlock Edit'}
+          </button>
+          <button 
             onClick={handleSave}
             disabled={isLoading}
             className="flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 transition-colors disabled:opacity-50"
@@ -186,12 +194,16 @@ export default function EmployeeAttendancePage() {
                     />
                   </td>
                   <td className="px-4 py-2 text-center">
-                    <input
-                      type="number"
-                      value={row.targetKg || ''}
-                      onChange={(e) => updateRow(row.id, 'targetKg', Number(e.target.value))}
-                      className="w-16 rounded border border-gray-200 bg-transparent px-2 py-1 text-center text-sm focus:border-[#1e3a8a] focus:outline-none dark:border-gray-700"
-                    />
+                    {isEditUnlocked ? (
+                      <input
+                        type="number"
+                        value={row.targetKg || ''}
+                        onChange={(e) => updateRow(row.id, 'targetKg', Number(e.target.value))}
+                        className="w-16 rounded border border-gray-200 bg-transparent px-2 py-1 text-center text-sm focus:border-[#1e3a8a] focus:outline-none dark:border-gray-700"
+                      />
+                    ) : (
+                      <span>{row.targetKg}</span>
+                    )}
                   </td>
                   <td className="px-4 py-2 text-center">
                     <input
@@ -203,7 +215,18 @@ export default function EmployeeAttendancePage() {
                     />
                   </td>
                   <td className="px-4 py-2 text-center">{row.isPresent ? `${efficiency.toFixed(1)}%` : '0.0%'}</td>
-                  <td className="px-4 py-2 text-center font-semibold">₹{salaryDisplay.toFixed(2)}</td>
+                  <td className="px-4 py-2 text-center font-semibold">
+                    {isEditUnlocked && row.isPresent ? (
+                      <input
+                        type="number"
+                        value={row.dailySalary || ''}
+                        onChange={(e) => updateRow(row.id, 'dailySalary', Number(e.target.value))}
+                        className="w-20 rounded border border-gray-200 bg-transparent px-2 py-1 text-center text-sm focus:border-[#1e3a8a] focus:outline-none dark:border-gray-700"
+                      />
+                    ) : (
+                      `₹${salaryDisplay.toFixed(2)}`
+                    )}
+                  </td>
                   <td className="px-4 py-2 text-center">₹{costDisplay.toFixed(2)}</td>
                   <td className="px-4 py-2">
                     <input
