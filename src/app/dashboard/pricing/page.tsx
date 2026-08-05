@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
-import { IndianRupee, Save, TrendingUp, Package, Scale, Battery } from 'lucide-react';
+import { IndianRupee, Save, TrendingUp, Package, Scale, Battery, FileSpreadsheet } from 'lucide-react';
 
 export default function PricingEnginePage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -57,6 +57,74 @@ export default function PricingEnginePage() {
     setProfile({ ...profile, caseVariants: updatedVariants });
   };
 
+  // Live Stock Data Extraction
+  const waxStock = stats?.overview?.waxStock || 0; 
+  const finishedGoods = stats?.overview?.finishedGoods || 0;
+  const monthlySales = stats?.overview?.monthlySales || 0;
+  
+  const totalCostPerKg = profile ? 
+    (Number(profile.waxCost) || 0) + 
+    (Number(profile.otherMaterials) || 0) + 
+    (Number(profile.labourCost) || 0) + 
+    (Number(profile.electricityCost) || 0) + 
+    (Number(profile.energyCost) || 0) + 
+    (Number(profile.transportCost) || 0) : 0;
+
+  const totalVariantCostPerKg = totalCostPerKg + (Number(profile?.packagingOverhead) || 0);
+  const sellingPricePerKg = Number(profile?.sellingPrice) || 0;
+  const profitMarginPerKg = sellingPricePerKg - totalCostPerKg;
+  const profitMarginPercent = sellingPricePerKg > 0 ? (profitMarginPerKg / sellingPricePerKg) * 100 : 0;
+
+  const handleExportCSV = () => {
+    if (!profile || !profile.caseVariants) {
+      toast.error('No data to export');
+      return;
+    }
+
+    const headers = [
+      'Variant Name', 
+      'Weight (KG)', 
+      'Base Prod Cost (₹)', 
+      'Packaging Overhead (₹)',
+      'Total Prod Cost/KG (₹)', 
+      'Total Case Cost (₹)', 
+      'Selling Price (₹)', 
+      'Profit Margin (₹)', 
+      'Profit Margin (%)',
+      'Selling Cost per KG (₹)'
+    ];
+
+    const rows = profile.caseVariants.map((v: any) => {
+      const weight = Number(v.weightKg) || 0;
+      const selling = Number(v.sellingPrice) || 0;
+      const caseCost = weight * totalVariantCostPerKg;
+      const margin = selling - caseCost;
+      const marginPct = selling > 0 ? (margin / selling) * 100 : 0;
+      const sellingCostPerKg = weight > 0 ? selling / weight : 0;
+
+      return [
+        v.name,
+        weight,
+        totalCostPerKg,
+        profile.packagingOverhead,
+        totalVariantCostPerKg,
+        caseCost.toFixed(2),
+        selling,
+        margin.toFixed(2),
+        marginPct.toFixed(2) + '%',
+        sellingCostPerKg.toFixed(2)
+      ].join(',');
+    });
+
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `unit_economics_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    toast.success('Pricing matrix exported as CSV!');
+  };
+
   if (isLoading || !profile) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -65,28 +133,6 @@ export default function PricingEnginePage() {
     );
   }
 
-  // Component 1: 1 KG Base Calculations
-  const totalCostPerKg = 
-    (Number(profile.waxCost) || 0) + 
-    (Number(profile.otherMaterials) || 0) + 
-    (Number(profile.labourCost) || 0) + 
-    (Number(profile.electricityCost) || 0) + 
-    (Number(profile.energyCost) || 0) + 
-    (Number(profile.transportCost) || 0);
-
-  const sellingPricePerKg = Number(profile.sellingPrice) || 0;
-  const profitMarginPerKg = sellingPricePerKg - totalCostPerKg;
-  const profitMarginPercent = sellingPricePerKg > 0 ? (profitMarginPerKg / sellingPricePerKg) * 100 : 0;
-
-  // Live Stock Data Extraction
-  // Wax Stock (raw materials), Candle Stock (finished goods or remaining batch qty)
-  // Reusing dashboard stats: waxStock is probably in raw materials, finishedGoods is in inventory.
-  const waxStock = stats?.overview?.waxStock || 0; 
-  const finishedGoods = stats?.overview?.finishedGoods || 0;
-  const monthlySales = stats?.overview?.monthlySales || 0;
-  
-  const totalVariantCostPerKg = totalCostPerKg + (Number(profile.packagingOverhead) || 0);
-
   return (
     <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto space-y-8 pb-20">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -94,14 +140,23 @@ export default function PricingEnginePage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Unit Economics & Pricing Engine</h1>
           <p className="text-sm text-gray-500 mt-1">Manage 1 KG base costs and SKU profitability</p>
         </div>
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 transition-colors"
-        >
-          <Save className="h-4 w-4" />
-          {isSaving ? 'Saving...' : 'Save Profile'}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 rounded-xl bg-white border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors"
+          >
+            <FileSpreadsheet className="h-4 w-4" />
+            Export CSV
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          >
+            <Save className="h-4 w-4" />
+            {isSaving ? 'Saving...' : 'Save Profile'}
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
