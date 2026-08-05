@@ -119,6 +119,10 @@ export default function ProductionPage() {
         </span>
       ),
     },
+    {
+      header: 'Notes',
+      cell: (p) => <span className="text-xs text-gray-500 max-w-[150px] truncate block" title={p.notes}>{p.notes || '-'}</span>,
+    },
   ];
 
   return (
