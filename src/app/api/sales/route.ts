@@ -216,6 +216,8 @@ export async function POST(req: NextRequest) {
 
     return jsonResponse(order, 201, 'Sales Order created successfully');
   } catch (err: any) {
-    return errorResponse(err.message || 'Failed to create sales order', 400);
+    console.error('Sales Order Error:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
+    const msg = err?.meta?.cause || err?.meta?.target || err?.message || 'Failed to create sales order';
+    return errorResponse(msg, 400, { detail: err.message, code: err.code });
   }
 }

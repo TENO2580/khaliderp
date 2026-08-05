@@ -201,7 +201,9 @@ export default function SalesPage() {
       setIsCreateOpen(false);
       fetchData();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error creating order');
+      const detail = err.response?.data?.errors?.detail || err.response?.data?.message || err.message || 'Error creating order';
+      console.error('Create order error:', err.response?.data || err);
+      toast.error(detail);
     }
   };
 
