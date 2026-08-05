@@ -51,73 +51,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         order.items = await tx.salesOrderItem.findMany({ where: { orderId: order.id } });
       }
 
-      // FIFO Allocation Engine
-      if (status === 'DELIVERED') {
-        for (const item of order.items) {
-          if (item.batchId) continue; // Already allocated
-
-          let qtyToAllocate = item.quantity;
-          const originalQty = item.quantity;
-
-          // Find active batches
-          const allBatches = await tx.batch.findMany({
-            orderBy: { purchaseDate: 'asc' },
-            include: { salesOrderItems: { where: { order: { status: 'DELIVERED' } } } }
-          });
-
-          const batchesWithRemaining = allBatches.map(b => {
-            const sold = b.salesOrderItems.reduce((acc, curr) => acc + curr.quantity, 0);
-            return { ...b, remainingQty: b.producedQty - sold };
-          }).filter(b => b.remainingQty > 0);
-
-          let firstAllocation = true;
-
-          for (const batch of batchesWithRemaining) {
-            if (qtyToAllocate <= 0) break;
-
-            const allocatedQty = Math.min(qtyToAllocate, batch.remainingQty);
-            const ratio = allocatedQty / originalQty;
-
-            const splitDiscount = Number(((item.discount || 0) * ratio).toFixed(2));
-            const splitAmount = Number(((allocatedQty * item.unitPrice) - splitDiscount).toFixed(2));
-            const splitGst = Number((splitAmount * (item.gstRate / 100)).toFixed(2));
-
-            if (firstAllocation) {
-              await tx.salesOrderItem.update({
-                where: { id: item.id },
-                data: {
-                  batchId: batch.id,
-                  quantity: allocatedQty,
-                  discount: splitDiscount,
-                  amount: splitAmount,
-                  gstAmount: splitGst,
-                }
-              });
-              firstAllocation = false;
-            } else {
-              await tx.salesOrderItem.create({
-                data: {
-                  orderId: order.id,
-                  productId: item.productId,
-                  batchId: batch.id,
-                  quantity: allocatedQty,
-                  unitPrice: item.unitPrice,
-                  discount: splitDiscount,
-                  gstRate: item.gstRate,
-                  gstAmount: splitGst,
-                  amount: splitAmount,
-                }
-              });
-            }
-
-            qtyToAllocate -= allocatedQty;
-          }
-          
-          if (qtyToAllocate > 0) {
-             throw new Error(`Not enough inventory to fulfill ${qtyToAllocate} KG of product.`);
-          }
-        }
-      }
+      // (FIFO Allocation Engine removed - allocation now happens immediately in POST route)
 
       // Auto-generate invoice if DELIVERED
       if (status === 'DELIVERED') {
