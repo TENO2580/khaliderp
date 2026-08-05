@@ -139,6 +139,13 @@ export default function SalesPage() {
       toast.error('Please select a customer');
       return;
     }
+    
+    if (editFormData.deliveryDate && editFormData.orderDate) {
+      if (new Date(editFormData.deliveryDate) < new Date(editFormData.orderDate)) {
+        toast.error('Delivery date cannot be earlier than order date');
+        return;
+      }
+    }
     try {
       if (isEdit) {
         await api.put(`/sales/${editId}`, {
@@ -629,6 +636,7 @@ export default function SalesPage() {
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Delivery Date</label>
                   <input
                     type="date"
+                    min={editFormData.orderDate}
                     value={editFormData.deliveryDate}
                     onChange={(e) => setEditFormData({ ...editFormData, deliveryDate: e.target.value })}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
