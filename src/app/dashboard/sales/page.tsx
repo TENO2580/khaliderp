@@ -61,7 +61,7 @@ export default function SalesPage() {
       setTotalItems(oRes.data.data.pagination.total);
       setCustomers(cRes.data.data.data);
       setProducts(pRes.data.data.data);
-      setBatches(bRes.data.data);
+      setBatches(Array.isArray(bRes.data.data) ? bRes.data.data : bRes.data.data?.data || []);
     } catch {
       setOrders([]);
     } finally {
