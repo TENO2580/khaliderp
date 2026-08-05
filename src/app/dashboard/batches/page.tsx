@@ -97,6 +97,27 @@ export default function BatchesPage() {
       cell: (b) => <span className="text-xs text-gray-500">{formatDate(b.purchaseDate)}</span>,
     },
     {
+      header: 'Wax Initial Qty',
+      editableKey: 'waxInitialQty',
+      inlineEditable: true,
+      inputType: 'number',
+      cell: (b) => <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{Number(b.waxInitialQty).toFixed(2)} KG</span>,
+    },
+    {
+      header: 'Wax Rate',
+      editableKey: 'waxRate',
+      inlineEditable: true,
+      inputType: 'number',
+      cell: (b) => <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{formatCurrency(b.waxRate)}</span>,
+    },
+    {
+      header: 'Candle Selling Price',
+      editableKey: 'sellingPrice',
+      inlineEditable: true,
+      inputType: 'number',
+      cell: (b) => <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">{formatCurrency(b.sellingPrice)}</span>,
+    },
+    {
       header: 'Produced',
       editableKey: 'producedQty',
       inlineEditable: true,
@@ -110,6 +131,13 @@ export default function BatchesPage() {
     {
       header: 'REMAINING',
       cell: (b) => <span className="text-xs text-orange-600 font-medium">{Number(b.remainingQty).toFixed(2)} KG</span>,
+    },
+    {
+      header: 'Wax Stock',
+      editableKey: 'waxStock',
+      inlineEditable: true,
+      inputType: 'number',
+      cell: (b) => <span className="text-xs text-blue-600 font-medium">{Number(b.waxStock).toFixed(2)} KG</span>,
     },
     {
       header: 'Completion %',
