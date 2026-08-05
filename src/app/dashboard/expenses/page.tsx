@@ -287,7 +287,7 @@ export default function ExpensesPage() {
                   onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
                   className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                 >
-                  {categories.map((c) => (
+                  {categories.map((c: any) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
                     </option>
@@ -379,7 +379,7 @@ export default function ExpensesPage() {
                   onChange={(e) => setEditData({ ...editData, categoryId: e.target.value })}
                   className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                 >
-                  {categories.map((c) => (
+                  {categories.map((c: any) => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>

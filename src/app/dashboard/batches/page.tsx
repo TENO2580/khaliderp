@@ -18,8 +18,6 @@ export default function BatchesPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
 
   // Modal State
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -164,7 +162,7 @@ export default function BatchesPage() {
         grouped[edit.rowId][edit.key] = edit.value;
       }
       for (const [rowId, fields] of Object.entries(grouped)) {
-        const batch = batches.find((b) => b.id === rowId);
+        const batch = batches.find((b: any) => b.id === rowId);
         if (!batch) continue;
         const updateBody: any = {};
         for (const [key, value] of Object.entries(fields)) {
@@ -232,7 +230,7 @@ export default function BatchesPage() {
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                   >
                     <option value="">-- General / Multi-Product --</option>
-                    {products.map((p) => (
+                    {products.map((p: any) => (
                       <option key={p.id} value={p.product?.id || p.id}>
                         {p.product?.name}
                       </option>

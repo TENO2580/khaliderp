@@ -412,11 +412,7 @@ export default function ReportsPage() {
         {reportTabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => {
-              setIsLoading(true);
-              setReportData(null);
-              setActiveTab(tab.id);
-            }}
+            onClick={() => setActiveTab(tab.id)}
             className={`rounded-xl px-4 py-2 text-xs font-semibold whitespace-nowrap transition-all ${
               activeTab === tab.id
                 ? 'bg-white text-blue-600 shadow-sm dark:bg-gray-800 dark:text-blue-400'

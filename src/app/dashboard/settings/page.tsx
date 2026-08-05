@@ -233,7 +233,7 @@ export default function SettingsPage() {
                       <td colSpan={4} className="p-6 text-center text-gray-500">No users found.</td>
                     </tr>
                   ) : (
-                    users.map((u) => (
+                    users.map((u: any) => (
                       <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                         <td className="p-3 font-medium text-gray-900 dark:text-white">{u.name}</td>
                         <td className="p-3 text-gray-500">{u.email}</td>

@@ -104,7 +104,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
       {/* Logo */}
       <div className="flex h-16 items-center justify-between border-b border-white/40 px-4 dark:border-white/[0.05]">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <img loading=\lazy\
+          <img loading="lazy"
             src="/tripidio-logo.png"
             alt="Tripidio ERP"
             className="h-9 w-auto rounded-lg object-contain bg-black p-1"
@@ -248,7 +248,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
               title="Change Profile Picture"
             >
               {user.avatar ? (
-                <img loading=\lazy\ src={user.avatar} alt={user.name} className={cn("h-full w-full object-cover", isUploading && "opacity-50")} />
+                <img loading="lazy" src={user.avatar} alt={user.name} className={cn("h-full w-full object-cover", isUploading && "opacity-50")} />
               ) : (
                 <span className={cn(isUploading && "opacity-50")}>{user.name.charAt(0)}</span>
               )}

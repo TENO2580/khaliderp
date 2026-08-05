@@ -100,7 +100,7 @@ export default function CustomersPage() {
   const handleExport = () => {
     const csvContent = [
       ['Sl No.', 'Name', 'Location', 'Phone', 'Last Order', 'Next Follow-Up', 'Current Status', 'Notes', 'Last Selling Cost', 'Category'],
-      ...customers.map(c => [
+      ...customers.map((c: any) => [
         c.customerId,
         `"${c.name || ''}"`,
         `"${[c.district, c.state].filter(Boolean).join(', ') || c.address || 'N/A'}"`,

@@ -159,7 +159,7 @@ export default function ProductionPage() {
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                   >
                     <option value="">-- Select Production Batch --</option>
-                    {batches.map((b) => (
+                    {batches.map((b: any) => (
                       <option key={b.id} value={b.id}>
                         {b.batchNumber} ({b.product?.name || 'General Batch'})
                       </option>

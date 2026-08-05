@@ -71,8 +71,8 @@ export default function SalesPage() {
       const qty = Number(items[0].quantity) || 0;
       
       const availableBatches = batches
-        .filter(b => (b.productId === items[0].productId || b.productId === null) && b.remainingQty > 0)
-        .sort((a, b) => new Date(a.purchaseDate).getTime() - new Date(b.purchaseDate).getTime());
+        .filter((b: any) => (b.productId === items[0].productId || b.productId === null) && b.remainingQty > 0)
+        .sort((a: any, b: any) => new Date(a.purchaseDate).getTime() - new Date(b.purchaseDate).getTime());
 
       let remainingToFulfill = qty;
       let usedBatchNumbers: string[] = [];
@@ -84,7 +84,7 @@ export default function SalesPage() {
         remainingToFulfill -= allocated;
       }
       
-      const selectedProduct = products.find(p => (p.product?.id || p.id) === items[0].productId);
+      const selectedProduct = products.find((p: any) => (p.product?.id || p.id) === items[0].productId);
       const typeName = selectedProduct?.product?.name || '';
 
       setEditFormData(prev => {
@@ -161,8 +161,8 @@ export default function SalesPage() {
         let itemsToSend: any[] = [];
         const qty = Number(items[0].quantity) || 0;
         const availableBatches = batches
-          .filter(b => (b.productId === items[0].productId || b.productId === null) && b.remainingQty > 0)
-          .sort((a, b) => new Date(a.purchaseDate).getTime() - new Date(b.purchaseDate).getTime());
+          .filter((b: any) => (b.productId === items[0].productId || b.productId === null) && b.remainingQty > 0)
+          .sort((a: any, b: any) => new Date(a.purchaseDate).getTime() - new Date(b.purchaseDate).getTime());
 
         let remainingToFulfill = qty;
 
@@ -274,7 +274,7 @@ export default function SalesPage() {
       const directKeys = ['totalAmount', 'outstanding', 'status'];
 
       for (const [rowId, fields] of Object.entries(grouped)) {
-        const order = orders.find((o) => o.id === rowId);
+        const order = orders.find((o: any) => o.id === rowId);
         if (!order) continue;
 
         const existingNotes = parseNotes(order.notes);
@@ -515,7 +515,7 @@ export default function SalesPage() {
                     value={customerId}
                     onChange={(val) => setCustomerId(val)}
                     placeholder="-- Choose Customer --"
-                    options={customers.map(c => ({ value: c.id, label: `${c.name} (${c.type})` }))}
+                    options={customers.map((c: any) => ({ value: c.id, label: `${c.name} (${c.type})` }))}
                   />
                 </div>
 
