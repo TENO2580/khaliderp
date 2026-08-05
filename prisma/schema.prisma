@@ -816,3 +816,38 @@ model Setting {
   @@index([group])
   @@map("settings")
 }
+
+// ============================================
+// PRICING & UNIT ECONOMICS
+// ============================================
+
+model CostingProfile {
+  id               String   @id @default(cuid())
+  name             String   @default("Default Pricing")
+  waxCost          Float    @default(154.00)
+  otherMaterials   Float    @default(1.00)
+  labourCost       Float    @default(7.00)
+  electricityCost  Float    @default(2.00)
+  energyCost       Float    @default(1.00) // Gas/Wood
+  transportCost    Float    @default(2.00)
+  packagingOverhead Float   @default(10.00)
+  sellingPrice     Float    @default(195.00)
+  updatedAt        DateTime @updatedAt
+  
+  caseVariants     CaseVariant[]
+
+  @@map("costing_profiles")
+}
+
+model CaseVariant {
+  id               String   @id @default(cuid())
+  profileId        String
+  name             String   // e.g., "2 RS CASE"
+  weightKg         Float    // e.g., 0.72
+  sellingPrice     Float    // e.g., 228.00
+  
+  profile          CostingProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+  @@map("case_variants")
+}

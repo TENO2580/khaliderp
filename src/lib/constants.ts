@@ -71,6 +71,12 @@ export const NAV_ITEMS: NavItem[] = [
     permission: 'expenses:read',
   },
   {
+    title: 'Pricing Engine',
+    href: '/dashboard/pricing',
+    icon: BarChart3,
+    permission: 'settings:read',
+  },
+  {
     title: 'Employees',
     href: '/dashboard/employees',
     icon: UserCog,
