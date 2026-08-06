@@ -29,6 +29,11 @@ export async function GET(req: NextRequest) {
   if (status) {
     where.status = status;
   }
+  
+  const route = url.searchParams.get('route') || '';
+  if (route) {
+    where.route = route;
+  }
 
   if (startDate || endDate) {
     where.createdAt = {};
@@ -61,6 +66,7 @@ export async function GET(req: NextRequest) {
         district: true,
         state: true,
         address: true,
+        route: true,
         lastPurchaseDate: true,
         nextFollowupDate: true,
         status: true,

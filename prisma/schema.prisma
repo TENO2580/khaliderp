@@ -73,6 +73,7 @@ model Customer {
   district        String?
   state           String?
   pincode         String?
+  route           String?        // Field for location-wise classification (e.g., Areekode, Mukkam)
   latitude        Float?
   longitude       Float?
   type            CustomerType   @default(RETAILER)
@@ -97,6 +98,7 @@ model Customer {
   @@index([name])
   @@index([status])
   @@index([type])
+  @@index([route])
   @@map("customers")
 }
 

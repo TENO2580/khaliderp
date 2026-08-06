@@ -33,6 +33,7 @@ export default function CustomersPage() {
     district: '',
     state: 'Tamil Nadu',
     pincode: '',
+    route: '',
     type: 'RETAILER',
     creditLimit: 50000,
     status: 'ACTIVE',
@@ -84,6 +85,7 @@ export default function CustomersPage() {
       district: customer.district || '',
       state: customer.state || 'Tamil Nadu',
       pincode: customer.pincode || '',
+      route: customer.route || '',
       type: customer.type || 'RETAILER',
       creditLimit: customer.creditLimit || 50000,
       status: customer.status || 'ACTIVE',
@@ -281,7 +283,7 @@ export default function CustomersPage() {
         onAddClick={() => {
           setFormData({
             name: '', ownerName: '', phone: '', whatsapp: '', email: '', gstNumber: '',
-            address: '', district: '', state: 'Tamil Nadu', pincode: '', type: 'RETAILER',
+            address: '', district: '', state: 'Tamil Nadu', pincode: '', route: '', type: 'RETAILER',
             creditLimit: 50000, status: 'ACTIVE', notes: '', sellingPrice: 0, nextFollowupDate: '', lastPurchaseDate: ''
           });
           setIsEdit(false);
@@ -387,12 +389,21 @@ export default function CustomersPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Location</label>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Location / District</label>
                   <input
                     type="text"
                     value={formData.district}
                     onChange={(e) => setFormData({ ...formData, district: e.target.value, state: '' })}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Route / Area (e.g. Areekode)</label>
+                  <input
+                    type="text"
+                    value={formData.route}
+                    onChange={(e) => setFormData({ ...formData, route: e.target.value })}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                   />
                 </div>

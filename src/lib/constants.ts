@@ -37,6 +37,7 @@ export const NAV_ITEMS: NavItem[] = [
     permission: 'customers:read',
     children: [
       { title: 'Customer List', href: '/dashboard/customers' },
+      { title: 'Field Routes', href: '/dashboard/routes' },
       { title: 'Stock Alerts', href: '/dashboard/customers/followups' },
     ]
   },
