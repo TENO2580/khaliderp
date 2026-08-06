@@ -858,3 +858,237 @@ model CaseVariant {
   @@index([profileId])
   @@map("case_variants")
 }
+
+// ============================================
+// COMPETITOR INTELLIGENCE MODULE
+// ============================================
+
+model Company {
+  id              String         @id @default(cuid())
+  name            String         @unique
+  website         String?
+  industry        String?
+  country         String?
+  overview        String?
+  businessModel   String?
+  targetCustomers String?
+  estimatedSize   String?
+  marketPosition  String?
+  status          String         @default("PENDING") // PENDING, CRAWLING, COMPLETED, FAILED
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  locations       CompanyLocation[]
+  products        CompanyProduct[]
+  competitors     Competitor[]
+  contactInfo     ContactInformation?
+  socialLinks     SocialLink[]
+  websiteAnalysis WebsiteAnalysis?
+  seoAnalysis     SeoAnalysis?
+  techStack       TechnologyStack[]
+  swot            SwotAnalysis?
+  recommendations Recommendation[]
+  reports         Report[]
+  crawlHistory    CrawlHistory[]
+
+  @@map("ci_companies")
+}
+
+model CompanyLocation {
+  id        String   @id @default(cuid())
+  companyId String
+  type      String   // HEAD_OFFICE, BRANCH, DEALER, WAREHOUSE, FACTORY
+  address   String?
+  city      String?
+  state     String?
+  country   String?
+  latitude  Float?
+  longitude Float?
+  
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("ci_company_locations")
+}
+
+model ProductCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  
+  products    CompanyProduct[]
+  compProducts CompetitorProduct[]
+
+  @@map("ci_product_categories")
+}
+
+model CompanyProduct {
+  id          String          @id @default(cuid())
+  companyId   String
+  categoryId  String?
+  name        String
+  description String?
+  features    String?
+  
+  company     Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category    ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([companyId])
+  @@map("ci_company_products")
+}
+
+model Competitor {
+  id              String   @id @default(cuid())
+  companyId       String
+  name            String
+  website         String?
+  location        String?
+  estimatedSize   String?
+  targetMarket    String?
+  usp             String?
+  strengths       String?
+  weaknesses      String?
+  digitalPresence String?
+  overview        String?
+  
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  products        CompetitorProduct[]
+
+  @@index([companyId])
+  @@map("ci_competitors")
+}
+
+model CompetitorProduct {
+  id           String          @id @default(cuid())
+  competitorId String
+  categoryId   String?
+  name         String
+  
+  competitor   Competitor      @relation(fields: [competitorId], references: [id], onDelete: Cascade)
+  category     ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([competitorId])
+  @@map("ci_competitor_products")
+}
+
+model ContactInformation {
+  id        String   @id @default(cuid())
+  companyId String   @unique
+  phone     String?
+  email     String?
+  address   String?
+  
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("ci_contact_information")
+}
+
+model SocialLink {
+  id        String   @id @default(cuid())
+  companyId String
+  platform  String   // LinkedIn, Facebook, Instagram, YouTube
+  url       String
+  
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("ci_social_links")
+}
+
+model WebsiteAnalysis {
+  id             String   @id @default(cuid())
+  companyId      String   @unique
+  score          Float?
+  loadTime       Float?
+  mobileFriendly Boolean?
+  hasSsl         Boolean?
+  
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("ci_website_analysis")
+}
+
+model SeoAnalysis {
+  id               String   @id @default(cuid())
+  companyId        String   @unique
+  title            String?
+  metaDescription  String?
+  keywords         String?
+  h1Count          Int?
+  internalLinks    Int?
+  externalLinks    Int?
+  schemaPresent    Boolean?
+  blogCount        Int?
+  score            Float?
+  
+  company          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("ci_seo_analysis")
+}
+
+model TechnologyStack {
+  id        String   @id @default(cuid())
+  companyId String
+  category  String   // CMS, Framework, Hosting, Analytics, Payment, CDN
+  name      String
+  
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("ci_technology_stack")
+}
+
+model SwotAnalysis {
+  id            String   @id @default(cuid())
+  companyId     String   @unique
+  strengths     String // Stored as JSON string array
+  weaknesses    String // Stored as JSON string array
+  opportunities String // Stored as JSON string array
+  threats       String // Stored as JSON string array
+  
+  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("ci_swot_analysis")
+}
+
+model Recommendation {
+  id          String   @id @default(cuid())
+  companyId   String
+  type        String   // STRATEGIC, MARKETING, PRODUCT, SEO
+  description String
+  impact      String   // HIGH, MEDIUM, LOW
+  
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("ci_recommendations")
+}
+
+model Report {
+  id          String   @id @default(cuid())
+  companyId   String
+  generatedBy String?
+  format      String   // PDF, EXCEL, PPT, WORD
+  url         String?  // Storage URL
+  createdAt   DateTime @default(now())
+  
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("ci_reports")
+}
+
+model CrawlHistory {
+  id           String   @id @default(cuid())
+  companyId    String
+  url          String
+  status       String   // SUCCESS, FAILED
+  pagesCrawled Int
+  duration     Float    // seconds
+  createdAt    DateTime @default(now())
+  
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("ci_crawl_history")
+}

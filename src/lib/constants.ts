@@ -11,6 +11,8 @@ import {
   Settings,
   Bell,
   Truck,
+  Globe,
+  Lightbulb,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -88,6 +90,12 @@ export const NAV_ITEMS: NavItem[] = [
     href: '/dashboard/reports',
     icon: BarChart3,
     permission: 'reports:read',
+  },
+  {
+    title: 'Intelligence',
+    href: '/dashboard/intelligence',
+    icon: Lightbulb,
+    permission: 'dashboard:read', // Giving default access to those with dashboard access for now
   },
   {
     title: 'Settings',
