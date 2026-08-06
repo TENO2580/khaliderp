@@ -38,16 +38,21 @@ export async function GET(req: NextRequest) {
       }
 
       case 'customer': {
-        const customers = await prisma.customer.findMany({
-          select: { id: true, customerId: true, name: true, phone: true, type: true, status: true, outstanding: true, salesOrders: { select: { totalAmount: true } } },
-          orderBy: { name: 'asc' },
-        });
-        const activeCount = customers.filter((c) => c.status === 'ACTIVE').length;
-        const leadCount = customers.filter((c) => c.status === 'LEAD').length;
-        const inactiveCount = customers.filter((c) => c.status === 'INACTIVE' || c.status === 'LOST').length;
-        const totalOutstanding = customers.reduce((s, c) => s + c.outstanding, 0);
+        const [customers, activeCount, leadCount, totalCount, outAgg] = await Promise.all([
+          prisma.customer.findMany({
+            select: { id: true, customerId: true, name: true, phone: true, type: true, status: true, outstanding: true, salesOrders: { select: { totalAmount: true } } },
+            orderBy: { name: 'asc' },
+            take: 100, // Limit to prevent massive database egress
+          }),
+          prisma.customer.count({ where: { status: 'ACTIVE' } }),
+          prisma.customer.count({ where: { status: 'LEAD' } }),
+          prisma.customer.count(),
+          prisma.customer.aggregate({ _sum: { outstanding: true } })
+        ]);
+        const inactiveCount = totalCount - activeCount - leadCount;
+        const totalOutstanding = outAgg._sum.outstanding || 0;
         return jsonResponse({
-          summary: { total: customers.length, active: activeCount, leads: leadCount, inactive: inactiveCount, totalOutstanding },
+          summary: { total: totalCount, active: activeCount, leads: leadCount, inactive: inactiveCount, totalOutstanding },
           rows: customers.map((c) => ({
             id: c.id,
             customerId: c.customerId,
@@ -95,7 +100,8 @@ export async function GET(req: NextRequest) {
           _sum: { amount: true },
           _count: true,
         });
-        const categories = await prisma.expenseCategory.findMany();
+        const catIds = expensesByCategory.map((e) => e.categoryId);
+        const categories = catIds.length > 0 ? await prisma.expenseCategory.findMany({ where: { id: { in: catIds } } }) : [];
         const catMap = Object.fromEntries(categories.map((c) => [c.id, c.name]));
         const totalExpenses = expensesByCategory.reduce((s, e) => s + (e._sum.amount || 0), 0);
         return jsonResponse({
@@ -110,12 +116,13 @@ export async function GET(req: NextRequest) {
       }
 
       case 'inventory': {
-        const [products, rawMaterials] = await Promise.all([
-          prisma.inventory.findMany({ select: { currentStock: true, unitCost: true, value: true, reorderLevel: true, product: { select: { name: true, unit: true } } } }),
-          prisma.rawMaterial.findMany({ select: { name: true, currentStock: true, unit: true, unitCost: true, reorderLevel: true } }),
+        const [products, rawMaterials, invAgg] = await Promise.all([
+          prisma.inventory.findMany({ take: 100, select: { currentStock: true, unitCost: true, value: true, reorderLevel: true, product: { select: { name: true, unit: true } } } }),
+          prisma.rawMaterial.findMany({ take: 100, select: { name: true, currentStock: true, unit: true, unitCost: true, reorderLevel: true } }),
+          prisma.inventory.aggregate({ _sum: { value: true } })
         ]);
-        const finishedValue = products.reduce((s, p) => s + p.value, 0);
-        const rawValue = rawMaterials.reduce((s, r) => s + r.currentStock * r.unitCost, 0);
+        const finishedValue = invAgg._sum.value || 0;
+        const rawValue = rawMaterials.reduce((s, r) => s + r.currentStock * r.unitCost, 0); // Note: Approximation for top 100 raw materials
         return jsonResponse({
           summary: { finishedGoodsValue: finishedValue, rawMaterialValue: rawValue, totalValue: finishedValue + rawValue },
           rows: [

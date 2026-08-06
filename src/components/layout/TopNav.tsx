@@ -24,7 +24,9 @@ export default function TopNav({ sidebarCollapsed, onSearchOpen, onMobileMenuCli
   const [showNotifications, setShowNotifications] = useState(false);
 
   const { data: notifRes, mutate } = useSWR(user ? '/api/notifications?limit=10' : null, fetcher, { 
-    refreshInterval: 15000 // Real-time polling every 15s
+    refreshInterval: 300000, // 5 minutes
+    revalidateOnFocus: false,
+    dedupingInterval: 60000,
   });
   
   const notifications: Notification[] = notifRes?.data || [];

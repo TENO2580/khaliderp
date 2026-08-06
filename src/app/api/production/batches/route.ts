@@ -7,24 +7,19 @@ export async function GET(req: NextRequest) {
   const { user, error } = await authenticateRequest(req);
   if (error) return error;
 
+  const url = new URL(req.url);
+  const limit = parseInt(url.searchParams.get('limit') || '50');
+
   const batches = await prisma.batch.findMany({
     orderBy: { purchaseDate: 'desc' },
+    take: limit,
     include: { 
       product: true, 
       productions: true,
-      salesOrderItems: {
-        where: { order: { status: { not: 'CANCELLED' } } }
-      }
     },
   });
 
-  const processed = batches.map(b => {
-    // Omit salesOrderItems from response payload if not needed
-    const { salesOrderItems, ...rest } = b;
-    return { ...rest };
-  });
-
-  return jsonResponse({ data: processed });
+  return jsonResponse({ data: batches });
 }
 
 export async function POST(req: NextRequest) {

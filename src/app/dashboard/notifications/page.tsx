@@ -15,7 +15,9 @@ export default function NotificationsPage() {
   const endpoint = `/api/notifications?limit=50${filter === 'UNREAD' ? '&unread=true' : ''}${moduleFilter !== 'ALL' ? `&module=${moduleFilter}` : ''}`;
   
   const { data: notifRes, mutate } = useSWR(endpoint, fetcher, { 
-    refreshInterval: 15000 
+    refreshInterval: 300000,
+    revalidateOnFocus: false,
+    dedupingInterval: 60000,
   });
   
   const notifications: Notification[] = notifRes?.data || [];
