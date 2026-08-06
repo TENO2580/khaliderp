@@ -875,6 +875,13 @@ model Company {
   estimatedSize   String?
   marketPosition  String?
   status          String         @default("PENDING") // PENDING, CRAWLING, COMPLETED, FAILED
+  crawlSchedule   String         @default("NONE") // NONE, DAILY, WEEKLY, MONTHLY
+  revenueRange    String?
+  employeesCount  Int?
+  fundingNews     String?
+  acquisitions    String?
+  expansionPlans  String?
+  lastCrawledAt   DateTime?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
@@ -890,6 +897,14 @@ model Company {
   recommendations Recommendation[]
   reports         Report[]
   crawlHistory    CrawlHistory[]
+  priceHistory    ProductPriceHistory[]
+  marketing       MarketingIntelligence?
+  customer        CustomerIntelligence?
+  socialMedia     SocialMediaIntelligence[]
+  changes         ChangeDetectionEvent[]
+  alerts          CompetitorAlert[]
+  strategies      AIStrategy[]
+  gapAnalysis     GapAnalysis?
 
   @@map("ci_companies")
 }
@@ -932,6 +947,7 @@ model CompanyProduct {
   
   company     Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
   category    ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  priceHistory ProductPriceHistory[]
 
   @@index([companyId])
   @@map("ci_company_products")
@@ -1091,4 +1107,120 @@ model CrawlHistory {
 
   @@index([companyId])
   @@map("ci_crawl_history")
+}
+
+model ProductPriceHistory {
+  id          String   @id @default(cuid())
+  productId   String
+  companyId   String
+  price       Float
+  currency    String   @default("USD")
+  discount    Float?
+  date        DateTime @default(now())
+  
+  product     CompanyProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  company     Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([companyId])
+  @@map("ci_product_price_history")
+}
+
+model MarketingIntelligence {
+  id              String   @id @default(cuid())
+  companyId       String   @unique
+  campaigns       String   // JSON string array
+  contentFreq     String?
+  leadMagnets     String   // JSON string array
+  referralProgram Boolean  @default(false)
+  loyaltyProgram  Boolean  @default(false)
+  adLandingPages  String   // JSON string array
+  
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("ci_marketing_intelligence")
+}
+
+model CustomerIntelligence {
+  id              String   @id @default(cuid())
+  companyId       String   @unique
+  sentimentScore  Float?
+  topComplaints   String   // JSON string array
+  topCompliments  String   // JSON string array
+  trendingTopics  String   // JSON string array
+  wordCloud       String   // JSON string
+  
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("ci_customer_intelligence")
+}
+
+model SocialMediaIntelligence {
+  id              String   @id @default(cuid())
+  companyId       String
+  platform        String   // LinkedIn, Twitter, etc.
+  followers       Int?
+  engagementRate  Float?
+  postFreq        String?
+  growthTrend     String?
+  date            DateTime @default(now())
+  
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("ci_social_media_intelligence")
+}
+
+model ChangeDetectionEvent {
+  id          String   @id @default(cuid())
+  companyId   String
+  type        String   // PRICE_CHANGE, NEW_PRODUCT, WEBSITE_REDESIGN, etc.
+  description String
+  detectedAt  DateTime @default(now())
+  
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("ci_change_detection_events")
+}
+
+model CompetitorAlert {
+  id          String   @id @default(cuid())
+  companyId   String
+  type        String
+  message     String
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("ci_competitor_alerts")
+}
+
+model AIStrategy {
+  id          String   @id @default(cuid())
+  companyId   String
+  type        String   // PRICING, MARKETING, SALES, etc.
+  strategy    String   // Detailed text/markdown
+  createdAt   DateTime @default(now())
+  
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("ci_ai_strategies")
+}
+
+model GapAnalysis {
+  id                 String   @id @default(cuid())
+  companyId          String   @unique
+  missingFeatures    String   // JSON array
+  pricingDifferences String   // Detailed text
+  marketingGaps      String   // Detailed text
+  recommendations    String   // JSON array
+  updatedAt          DateTime @updatedAt
+  
+  company            Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("ci_gap_analysis")
 }

@@ -1,10 +1,28 @@
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from crawler.engine import run_crawler
+from crawler.engine import run_crawler, check_scheduled_crawls
 import uvicorn
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Competitor Intelligence API")
+scheduler = AsyncIOScheduler()
+
+@app.on_event("startup")
+def start_scheduler():
+    logger.info("Starting APScheduler")
+    # Check for scheduled crawls every hour
+    scheduler.add_job(check_scheduled_crawls, "interval", hours=1)
+    scheduler.start()
+
+@app.on_event("shutdown")
+def stop_scheduler():
+    logger.info("Shutting down APScheduler")
+    scheduler.shutdown()
 
 class AnalyzeRequest(BaseModel):
     company_name: str
