@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
 
     formattedData.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
-    return jsonResponse({ data: formattedData }, 200, 'Routes fetched successfully');
+    return jsonResponse(formattedData, 200, 'Routes fetched successfully');
   } catch (err: any) {
     return errorResponse(err.message || 'Failed to fetch routes', 500);
   }
