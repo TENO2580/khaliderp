@@ -17,19 +17,25 @@ if not DATABASE_URL:
 
 # We will use SQLAlchemy to update the DB directly from python
 def get_db_connection():
-    # Convert prisma postgresql:// to sqlalchemy postgresql://
-    # E.g. postgresql://user:pass@host/db
     if not DATABASE_URL:
         return None
     url = DATABASE_URL
     if url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql://", 1)
     
-    # Handle pgbouncer/transaction mode if directUrl is needed, but we'll try the main one
     direct_url = os.environ.get("DIRECT_URL", url)
     if direct_url.startswith("postgres://"):
         direct_url = direct_url.replace("postgres://", "postgresql://", 1)
         
+    import urllib.parse
+    parsed = urllib.parse.urlparse(direct_url)
+    query = urllib.parse.parse_qs(parsed.query)
+    query.pop('pgbouncer', None)
+    if 'supabase.com' in parsed.hostname:
+        query['sslmode'] = ['require']
+    new_query = urllib.parse.urlencode(query, doseq=True)
+    direct_url = parsed._replace(query=new_query).geturl()
+
     engine = create_engine(direct_url)
     return engine.connect()
 
