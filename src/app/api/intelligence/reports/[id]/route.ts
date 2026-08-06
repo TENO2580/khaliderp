@@ -12,7 +12,7 @@ export async function GET(
       include: {
         locations: true,
         products: {
-          include: { category: true }
+          include: { category: true, priceHistory: { orderBy: { date: 'desc' } } }
         },
         competitors: {
           include: { products: true }
@@ -24,6 +24,13 @@ export async function GET(
         techStack: true,
         swot: true,
         recommendations: true,
+        marketing: true,
+        customer: true,
+        socialMedia: { orderBy: { date: 'desc' } },
+        changes: { orderBy: { detectedAt: 'desc' } },
+        alerts: { orderBy: { createdAt: 'desc' } },
+        strategies: true,
+        gapAnalysis: true
       }
     });
 

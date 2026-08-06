@@ -67,9 +67,12 @@ export default function IntelligenceReport() {
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList className="flex flex-wrap h-auto justify-start">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="financials">Financials</TabsTrigger>
           <TabsTrigger value="products">Products ({data.products?.length || 0})</TabsTrigger>
+          <TabsTrigger value="marketing">Marketing & Customer</TabsTrigger>
           <TabsTrigger value="competitors">Competitors ({data.competitors?.length || 0})</TabsTrigger>
           <TabsTrigger value="swot">SWOT Analysis</TabsTrigger>
+          <TabsTrigger value="strategy">Strategy & Gaps</TabsTrigger>
           <TabsTrigger value="seo">SEO & Tech</TabsTrigger>
         </TabsList>
         
@@ -119,6 +122,34 @@ export default function IntelligenceReport() {
           </div>
         </TabsContent>
 
+        <TabsContent value="financials" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Financial & Organizational Intelligence</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="border p-4 rounded-lg bg-muted/20">
+                  <h4 className="font-semibold text-sm mb-1 text-muted-foreground">Est. Revenue</h4>
+                  <p className="text-xl font-bold">{data.revenueRange || "Unknown"}</p>
+                </div>
+                <div className="border p-4 rounded-lg bg-muted/20">
+                  <h4 className="font-semibold text-sm mb-1 text-muted-foreground">Employees</h4>
+                  <p className="text-xl font-bold">{data.employeesCount || "Unknown"}</p>
+                </div>
+                <div className="border p-4 rounded-lg bg-muted/20">
+                  <h4 className="font-semibold text-sm mb-1 text-muted-foreground">Funding</h4>
+                  <p className="text-xl font-bold">{data.fundingNews || "No recent news"}</p>
+                </div>
+                <div className="border p-4 rounded-lg bg-muted/20">
+                  <h4 className="font-semibold text-sm mb-1 text-muted-foreground">Acquisitions</h4>
+                  <p className="text-xl font-bold">{data.acquisitions || "None detected"}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="products">
           <Card>
             <CardHeader>
@@ -143,6 +174,61 @@ export default function IntelligenceReport() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="marketing" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Marketing Intelligence</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {data.marketing ? (
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-semibold text-sm">Campaigns</h4>
+                      <p className="text-sm text-muted-foreground">{data.marketing.campaigns ? JSON.parse(data.marketing.campaigns).join(', ') : "None"}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-sm">Lead Magnets</h4>
+                      <p className="text-sm text-muted-foreground">{data.marketing.leadMagnets ? JSON.parse(data.marketing.leadMagnets).join(', ') : "None"}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-sm">Content Frequency</h4>
+                      <p className="text-sm text-muted-foreground">{data.marketing.contentFreq}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Marketing intelligence not available.</p>
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Customer Intelligence</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {data.customer ? (
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-semibold text-sm">Sentiment Score</h4>
+                      <p className="text-xl font-bold text-blue-500">{data.customer.sentimentScore}/100</p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-sm">Top Compliments</h4>
+                      <p className="text-sm text-muted-foreground">{data.customer.topCompliments ? JSON.parse(data.customer.topCompliments).join(', ') : "None"}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-sm text-red-500">Top Complaints</h4>
+                      <p className="text-sm text-muted-foreground">{data.customer.topComplaints ? JSON.parse(data.customer.topComplaints).join(', ') : "None"}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Customer intelligence not available.</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
         <TabsContent value="swot">
           <Card>
             <CardHeader>
@@ -157,6 +243,55 @@ export default function IntelligenceReport() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="strategy" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Gap Analysis (vs Our ERP)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {data.gapAnalysis ? (
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-semibold text-sm">Missing Features</h4>
+                      <p className="text-sm text-muted-foreground">{data.gapAnalysis.missingFeatures ? JSON.parse(data.gapAnalysis.missingFeatures).join(', ') : "None"}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-sm">Marketing Gaps</h4>
+                      <p className="text-sm text-muted-foreground">{data.gapAnalysis.marketingGaps}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-sm text-green-500">Recommendations for Us</h4>
+                      <p className="text-sm text-muted-foreground">{data.gapAnalysis.recommendations ? JSON.parse(data.gapAnalysis.recommendations).join(', ') : "None"}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Gap analysis not available.</p>
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>AI Strategic Playbook</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {data.strategies && data.strategies.length > 0 ? (
+                  <div className="space-y-4">
+                    {data.strategies.map((strat: any) => (
+                      <div key={strat.id} className="border p-4 rounded-lg">
+                        <h4 className="font-semibold text-sm capitalize">{strat.type.toLowerCase()} Strategy</h4>
+                        <p className="text-sm text-muted-foreground mt-1">{strat.strategy}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No AI strategies generated.</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="seo">
