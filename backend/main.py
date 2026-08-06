@@ -13,6 +13,19 @@ class AnalyzeRequest(BaseModel):
     country: Optional[str] = None
     company_id: str # ID from Next.js Prisma DB
 
+@app.get("/api/debug")
+async def debug_db():
+    from crawler.engine import get_db_connection
+    try:
+        conn = get_db_connection()
+        if conn:
+            conn.close()
+            return {"status": "success"}
+        return {"status": "failed", "error": "conn is None"}
+    except Exception as e:
+        import traceback
+        return {"status": "exception", "error": str(e), "traceback": traceback.format_exc()}
+
 @app.post("/api/analyze")
 async def analyze_company(req: AnalyzeRequest, background_tasks: BackgroundTasks):
     # This endpoint receives a request from Next.js, and starts the background crawling
