@@ -174,6 +174,29 @@ export default function IntelligenceReport() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="competitors" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Identified Competitors</CardTitle>
+              <CardDescription>Competitors extracted from intelligence gathering.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {data.competitors && data.competitors.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {data.competitors.map((c: any) => (
+                    <div key={c.id} className="border p-4 rounded-lg">
+                      <h4 className="font-semibold">{c.name}</h4>
+                      <p className="text-sm text-muted-foreground mt-2">{c.website}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No direct competitors identified.</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="marketing" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
