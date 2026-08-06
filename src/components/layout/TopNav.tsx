@@ -27,34 +27,6 @@ export default function TopNav({ sidebarCollapsed, onSearchOpen, onMobileMenuCli
   const notifications: Notification[] = [];
   const unreadCount = 0;
 
-  const handleMarkAsRead = async (id: string) => {
-    // Optimistic update
-    mutate({
-      ...notifRes,
-      data: notifications.map(n => n.id === id ? { ...n, isRead: true } : n),
-      pagination: { ...notifRes?.pagination, unreadCount: Math.max(0, unreadCount - 1) }
-    }, false);
-    
-    try {
-      await axios.patch(`/api/notifications/${id}`, { action: 'read' });
-    } catch (e) {
-      mutate();
-    }
-  };
-
-  const handleMarkAllRead = async () => {
-    mutate({
-      ...notifRes,
-      data: notifications.map(n => ({ ...n, isRead: true })),
-      pagination: { ...notifRes?.pagination, unreadCount: 0 }
-    }, false);
-    
-    try {
-      await axios.patch('/api/notifications', { action: 'markAllRead' });
-    } catch (e) {
-      mutate();
-    }
-  };
 
   return (
     <header
