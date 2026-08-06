@@ -3,11 +3,12 @@ import { prisma } from '@/lib/db';
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const company = await prisma.company.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         locations: true,
         products: {
@@ -39,11 +40,12 @@ export async function GET(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     await prisma.company.delete({
-      where: { id: params.id }
+      where: { id }
     });
     return NextResponse.json({ success: true });
   } catch (error) {
