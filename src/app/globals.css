@@ -198,5 +198,6 @@ input[type="number"] {
   }
   html {
     @apply font-sans;
+    font-size: var(--app-base-font-size, 16px);
   }
 }

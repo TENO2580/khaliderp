@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Settings, Shield, Building, Database, Save, RotateCcw, UserCircle } from 'lucide-react';
+import { Settings, Shield, Building, Database, Save, RotateCcw, UserCircle, Monitor } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import { formatDate } from '@/lib/utils';
@@ -32,7 +32,15 @@ export default function SettingsPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
 
+  // Customization state
+  const [customization, setCustomization] = useState({ font: 'roboto', size: 'medium' });
+
   useEffect(() => {
+    setCustomization({
+      font: localStorage.getItem('app-font') || 'roboto',
+      size: localStorage.getItem('app-font-size') || 'medium'
+    });
+
     if (activeTab === 'permissions') {
       setIsLoadingUsers(true);
       api.get('/users')
@@ -47,6 +55,15 @@ export default function SettingsPage() {
         });
     }
   }, [activeTab]);
+
+  const handleCustomizationSave = () => {
+    localStorage.setItem('app-font', customization.font);
+    localStorage.setItem('app-font-size', customization.size);
+    document.documentElement.style.setProperty('--app-font-family', `var(--font-${customization.font})`);
+    const sizeMap: Record<string, string> = { small: '14px', medium: '16px', large: '18px' };
+    document.documentElement.style.setProperty('--app-base-font-size', sizeMap[customization.size] || '16px');
+    toast.success('Display customization updated!');
+  };
 
   return (
     <div className="space-y-6">
@@ -86,6 +103,16 @@ export default function SettingsPage() {
           }`}
         >
           <Database className="h-4 w-4" /> Backup & Restore
+        </button>
+        <button
+          onClick={() => setActiveTab('customization')}
+          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
+            activeTab === 'customization'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-gray-500 hover:text-gray-900 dark:hover:text-white'
+          }`}
+        >
+          <Monitor className="h-4 w-4" /> Customization
         </button>
       </div>
 
@@ -283,6 +310,53 @@ export default function SettingsPage() {
               className="flex items-center gap-2 rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-800 dark:text-gray-300"
             >
               <RotateCcw className="h-4 w-4" /> Restore Database
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Customization Tab */}
+      {activeTab === 'customization' && (
+        <div className="max-w-xl rounded-2xl border border-gray-200/80 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 space-y-6">
+          <div>
+            <h3 className="text-base font-bold text-gray-900 dark:text-white">Display Preferences</h3>
+            <p className="text-xs text-gray-500">Customize typography and text scaling for your ERP session.</p>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Font Family</label>
+              <select
+                value={customization.font}
+                onChange={(e) => setCustomization({ ...customization, font: e.target.value })}
+                className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white font-semibold"
+              >
+                <option value="roboto">Roboto (Salesforce Style)</option>
+                <option value="inter">Inter (Modern & Clean)</option>
+                <option value="open-sans">Open Sans (Classic & Readable)</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Font Size</label>
+              <select
+                value={customization.size}
+                onChange={(e) => setCustomization({ ...customization, size: e.target.value })}
+                className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white font-semibold"
+              >
+                <option value="small">Small (14px)</option>
+                <option value="medium">Medium (16px)</option>
+                <option value="large">Large (18px)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="pt-4 flex justify-end">
+            <button
+              onClick={handleCustomizationSave}
+              className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm"
+            >
+              <Save className="h-4 w-4" /> Save Preferences
             </button>
           </div>
         </div>
