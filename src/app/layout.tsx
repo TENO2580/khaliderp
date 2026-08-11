@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Roboto, Inter, Open_Sans } from 'next/font/google';
+import { Roboto, Inter, Open_Sans, Geist, Nunito } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 import { cn } from "@/lib/utils";
@@ -20,6 +20,16 @@ const openSans = Open_Sans({
   variable: '--font-open-sans',
 });
 
+const geist = Geist({
+  subsets: ['latin'],
+  variable: '--font-geist',
+});
+
+const nunito = Nunito({
+  subsets: ['latin'],
+  variable: '--font-nunito',
+});
+
 export const metadata: Metadata = {
   title: 'Tripidio ERP — Cloud Manufacturing & Enterprise System',
   description: 'Enterprise Cloud ERP System for Lakshmi Candles',
@@ -31,7 +41,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={cn(roboto.variable, inter.variable, openSans.variable, "font-sans")}>
+    <html lang="en" suppressHydrationWarning className={cn(roboto.variable, inter.variable, openSans.variable, geist.variable, nunito.variable, "font-sans")}>
       <body className={`font-sans antialiased bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100`}>
         <Providers>{children}</Providers>
       </body>

@@ -13,7 +13,7 @@ export function CustomizationLoader() {
     }
     const size = localStorage.getItem('app-font-size');
     if (size) {
-      const sizeMap: Record<string, string> = { small: '14px', medium: '16px', large: '18px' };
+      const sizeMap: Record<string, string> = { xs: '12px', small: '14px', medium: '16px', large: '18px', xl: '20px' };
       document.documentElement.style.setProperty('--app-base-font-size', sizeMap[size] || '16px');
     }
   }, []);

@@ -60,7 +60,7 @@ export default function SettingsPage() {
     localStorage.setItem('app-font', customization.font);
     localStorage.setItem('app-font-size', customization.size);
     document.documentElement.style.setProperty('--app-font-family', `var(--font-${customization.font})`);
-    const sizeMap: Record<string, string> = { small: '14px', medium: '16px', large: '18px' };
+    const sizeMap: Record<string, string> = { xs: '12px', small: '14px', medium: '16px', large: '18px', xl: '20px' };
     document.documentElement.style.setProperty('--app-base-font-size', sizeMap[customization.size] || '16px');
     toast.success('Display customization updated!');
   };
@@ -334,6 +334,8 @@ export default function SettingsPage() {
                 <option value="roboto">Roboto (Salesforce Style)</option>
                 <option value="inter">Inter (Modern & Clean)</option>
                 <option value="open-sans">Open Sans (Classic & Readable)</option>
+                <option value="geist">Geist (Tech & Sharp)</option>
+                <option value="nunito">Nunito (Friendly & Soft)</option>
               </select>
             </div>
             
@@ -344,9 +346,11 @@ export default function SettingsPage() {
                 onChange={(e) => setCustomization({ ...customization, size: e.target.value })}
                 className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white font-semibold"
               >
+                <option value="xs">Extra Small (12px)</option>
                 <option value="small">Small (14px)</option>
                 <option value="medium">Medium (16px)</option>
                 <option value="large">Large (18px)</option>
+                <option value="xl">Extra Large (20px)</option>
               </select>
             </div>
           </div>
