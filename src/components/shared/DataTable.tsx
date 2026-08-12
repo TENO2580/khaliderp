@@ -29,6 +29,7 @@ export interface ColumnPreference {
 
 export interface TablePreferences {
   density: 'compact' | 'comfortable' | 'spacious';
+  layout?: 'auto' | 'full';
   columns: ColumnPreference[];
 }
 
@@ -104,6 +105,7 @@ export default function DataTable<T extends { id?: string }>({
 
   const defaultPrefs: TablePreferences = useMemo(() => ({
     density: 'comfortable',
+    layout: 'full',
     columns: columns.map((c, i) => ({
       header: c.header,
       visible: true,
@@ -127,7 +129,7 @@ export default function DataTable<T extends { id?: string }>({
           if (savedCol) return savedCol;
           return { header: c.header, visible: true, order: 999 + i, pinned: (c.header.toUpperCase() === 'ACTIONS' ? 'left' : null) as 'left' | null };
         });
-        setPrefs({ density: parsed.density || 'comfortable', columns: mergedColumns });
+        setPrefs({ density: parsed.density || 'comfortable', layout: parsed.layout || 'full', columns: mergedColumns });
       } else {
         setPrefs(defaultPrefs);
       }
@@ -444,7 +446,7 @@ export default function DataTable<T extends { id?: string }>({
       </div>
 
       <div className="flex-1 overflow-x-auto w-full relative">
-        <table className="w-full min-w-max text-left text-sm text-gray-600 dark:text-gray-400">
+        <table className={cn("min-w-max text-left text-sm text-gray-600 dark:text-gray-400", prefs.layout === 'auto' ? 'w-auto' : 'w-full')}>
           <thead className="sticky top-0 z-30 bg-gray-50 text-xs uppercase font-semibold tracking-wider text-gray-500 dark:bg-gray-950 dark:text-gray-400 shadow-sm border-b border-gray-200 dark:border-gray-800">
             <tr>
               {reorderedColumns.map((col, idx) => (
@@ -611,23 +613,53 @@ export default function DataTable<T extends { id?: string }>({
             </button>
           </div>
           
-          <div className="p-4 border-b border-gray-200 dark:border-gray-800">
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">Display Density</label>
-            <div className="flex gap-2">
-              {(['compact', 'comfortable', 'spacious'] as const).map(d => (
+          <div className="p-4 border-b border-gray-200 dark:border-gray-800 space-y-4">
+            <div>
+              <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">Display Density</label>
+              <div className="flex gap-2">
+                {(['compact', 'comfortable', 'spacious'] as const).map(d => (
+                  <button
+                    key={d}
+                    onClick={() => savePrefs({...prefs, density: d})}
+                    className={cn(
+                      "flex-1 py-1.5 px-2 rounded-lg text-xs font-medium border capitalize transition-colors",
+                      prefs.density === d 
+                        ? "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300" 
+                        : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-800"
+                    )}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">Table Width</label>
+              <div className="flex gap-2">
                 <button
-                  key={d}
-                  onClick={() => savePrefs({...prefs, density: d})}
+                  onClick={() => savePrefs({...prefs, layout: 'full'})}
                   className={cn(
-                    "flex-1 py-1.5 px-2 rounded-lg text-xs font-medium border capitalize transition-colors",
-                    prefs.density === d 
+                    "flex-1 py-1.5 px-2 rounded-lg text-xs font-medium border transition-colors",
+                    prefs.layout !== 'auto'
                       ? "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300" 
                       : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-800"
                   )}
                 >
-                  {d}
+                  Fill Screen
                 </button>
-              ))}
+                <button
+                  onClick={() => savePrefs({...prefs, layout: 'auto'})}
+                  className={cn(
+                    "flex-1 py-1.5 px-2 rounded-lg text-xs font-medium border transition-colors",
+                    prefs.layout === 'auto'
+                      ? "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300" 
+                      : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-800"
+                  )}
+                >
+                  Fit Content
+                </button>
+              </div>
             </div>
           </div>
 
