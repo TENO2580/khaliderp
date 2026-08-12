@@ -200,3 +200,47 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     return errorResponse(err.message || 'Failed to update sales order', 400);
   }
 }
+
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { user, error } = await authenticateRequest(req);
+  if (error) return error;
+
+  try {
+    const { id } = await params;
+    
+    await prisma.$transaction(async (tx) => {
+      const existingOrder = await tx.salesOrder.findUnique({
+        where: { id },
+        include: { items: true }
+      });
+      if (!existingOrder) throw new Error("Order not found");
+
+      // Revert batch quantities if not already cancelled
+      if (existingOrder.status !== 'CANCELLED') {
+        for (const item of existingOrder.items) {
+          if (!item.batchId) continue;
+          const batch = await tx.batch.findUnique({ where: { id: item.batchId } });
+          if (batch) {
+             await tx.batch.update({
+               where: { id: batch.id },
+               data: {
+                 remainingQty: batch.remainingQty + item.quantity,
+                 soldQty: Math.max(0, batch.soldQty - item.quantity),
+                 status: batch.status === 'FULLY_SOLD' ? 'PARTIALLY_SOLD' : batch.status
+               }
+             });
+          }
+        }
+      }
+
+      // Invoice and Payment relations should have onDelete: Cascade in schema, or we manually delete them if not
+      await tx.salesOrder.delete({
+        where: { id }
+      });
+    });
+
+    return jsonResponse(null, 200, 'Sales order deleted successfully');
+  } catch (err: any) {
+    return errorResponse(err.message || 'Failed to delete sales order', 400);
+  }
+}

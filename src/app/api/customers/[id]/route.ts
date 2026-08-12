@@ -38,3 +38,20 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     return errorResponse(err.message || 'Failed to update customer', 400);
   }
 }
+
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { user, error } = await authenticateRequest(req);
+  if (error) return error;
+
+  try {
+    const { id } = await params;
+    
+    await prisma.customer.delete({
+      where: { id },
+    });
+
+    return jsonResponse(null, 200, 'Customer deleted successfully');
+  } catch (err: any) {
+    return errorResponse(err.message || 'Failed to delete customer', 400);
+  }
+}

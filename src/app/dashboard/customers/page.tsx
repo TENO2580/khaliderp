@@ -4,7 +4,10 @@ import React, { useEffect, useState } from 'react';
 import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, customerTypeLabels } from '@/lib/utils';
-import { MessageCircle, MapPin, Phone, Mail, Plus, Filter, Download, Pencil } from 'lucide-react';
+import { 
+  Users, Search, Plus, Filter, Download, Building, MapPin, 
+  Phone, Mail, Calendar, TrendingUp, AlertCircle, Edit, History, Pencil, Trash2 
+} from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import useSWR from 'swr';
@@ -237,13 +240,22 @@ export default function CustomersPage() {
     {
       header: 'Actions',
       cell: (c) => (
-        <button
-          onClick={() => handleEditClick(c)}
-          className="rounded-lg p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/50"
-          title="Edit Customer"
-        >
-          <Pencil className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handleEditClick(c)}
+            className="rounded-lg p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/50"
+            title="Edit Customer"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => handleDelete(c.id)}
+            className="rounded-lg p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/50"
+            title="Delete Customer"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
       ),
     },
   ];
@@ -270,6 +282,17 @@ export default function CustomersPage() {
       fetchCustomers();
     } catch (err: any) {
       toast.error(err.message || 'Failed to save');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this customer? This action cannot be undone.')) return;
+    try {
+      await api.delete(`/customers/${id}`);
+      toast.success('Customer deleted successfully');
+      fetchCustomers();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to delete customer');
     }
   };
 

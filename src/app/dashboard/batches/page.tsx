@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { Edit3 } from 'lucide-react';
+import { Edit3, Trash2 } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import useSWR from 'swr';
@@ -81,6 +81,17 @@ export default function BatchesPage() {
       fetchData();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Error updating batch');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this batch? This action cannot be undone.')) return;
+    try {
+      await api.delete(`/production/batches/${id}`);
+      toast.success('Batch deleted successfully');
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Cannot delete batch (might be used in sales)');
     }
   };
 
@@ -174,12 +185,20 @@ export default function BatchesPage() {
     {
       header: 'Action',
       cell: (b) => (
-        <button
-          onClick={() => setEditBatch({ ...b, purchaseDate: new Date(b.purchaseDate).toISOString().split('T')[0] })}
-          className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-blue-600 dark:hover:bg-gray-800"
-        >
-          <Edit3 className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setEditBatch({ ...b, purchaseDate: new Date(b.purchaseDate).toISOString().split('T')[0] })}
+            className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-blue-600 dark:hover:bg-gray-800"
+          >
+            <Edit3 className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => handleDelete(b.id)}
+            className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-600 dark:hover:bg-gray-800"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
       ),
     },
   ];
