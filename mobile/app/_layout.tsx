@@ -7,6 +7,7 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { useAuthStore } from '../store/authStore';
+import { useThemeStore } from '../store/themeStore';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -23,6 +24,7 @@ export default function RootLayout() {
   });
 
   const { isHydrated, hydrate } = useAuthStore();
+  const hydrateTheme = useThemeStore((state) => state.hydrateTheme);
   const [appIsReady, setAppIsReady] = useState(false);
 
   useEffect(() => {
@@ -30,8 +32,9 @@ export default function RootLayout() {
   }, [error]);
 
   useEffect(() => {
-    // Start hydrating auth state
+    // Start hydrating auth state and theme state
     hydrate();
+    hydrateTheme();
   }, []);
 
   useEffect(() => {
@@ -49,7 +52,7 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
+  const effectiveTheme = useThemeStore((state) => state.getEffectiveTheme());
   const segments = useSegments();
   const router = useRouter();
   const { user, isHydrated } = useAuthStore();
@@ -70,7 +73,7 @@ function RootLayoutNav() {
   }, [user, segments, isHydrated]);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={effectiveTheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="(erp)" options={{ headerShown: false }} />

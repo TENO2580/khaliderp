@@ -2,6 +2,8 @@ import React, { useState, useCallback, memo } from 'react';
 import { View, Text, StyleSheet, ScrollView, FlatList, TouchableOpacity, Alert, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Feather } from '@expo/vector-icons';
+import { useThemeStore } from '../store/themeStore';
+import SkeletonList from './SkeletonList';
 
 export interface Column {
   key: string;
@@ -18,9 +20,10 @@ interface DataTableProps {
   showActions?: boolean;
   onEdit?: (item: any) => void;
   onDelete?: (item: any) => void;
+  isLoading?: boolean;
 }
 
-const DataTableRow = memo(({ item, index, columns, showActions, defaultWidth, onRowPress, onEdit, onDelete }: any) => {
+const DataTableRow = memo(({ item, index, columns, showActions, defaultWidth, onRowPress, onEdit, onDelete, styles, colors }: any) => {
   return (
     <TouchableOpacity 
       style={[styles.row, index % 2 === 1 && styles.rowAlternate]} 
@@ -30,10 +33,10 @@ const DataTableRow = memo(({ item, index, columns, showActions, defaultWidth, on
       {showActions && (
         <View style={[styles.cell, { width: 50, flexDirection: 'row', alignItems: 'center', gap: 12 }]}>
           <TouchableOpacity onPress={() => onEdit && onEdit(item)}>
-            <Feather name="edit-2" size={14} color="#94A3B8" />
+            <Feather name="edit-2" size={14} color={colors.textSecondary} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => onDelete && onDelete(item)}>
-            <Feather name="trash-2" size={14} color="#EF4444" />
+            <Feather name="trash-2" size={14} color={colors.danger} />
           </TouchableOpacity>
         </View>
       )}
@@ -57,7 +60,10 @@ const DataTableRow = memo(({ item, index, columns, showActions, defaultWidth, on
   );
 });
 
-export function DataTable({ columns, data, onRowPress, keyExtractor, showActions, onEdit, onDelete }: DataTableProps) {
+export function DataTable({ columns, data, onRowPress, keyExtractor, showActions, onEdit, onDelete, isLoading }: DataTableProps) {
+  const colors = useThemeStore((state) => state.getColors());
+  const styles = getStyles(colors);
+  
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [showPicker, setShowPicker] = useState(false);
@@ -92,8 +98,10 @@ export function DataTable({ columns, data, onRowPress, keyExtractor, showActions
       onRowPress={onRowPress} 
       onEdit={onEdit} 
       onDelete={onDelete} 
+      styles={styles}
+      colors={colors}
     />
-  ), [columns, showActions, defaultWidth, onRowPress, onEdit, onDelete]);
+  ), [columns, showActions, defaultWidth, onRowPress, onEdit, onDelete, styles, colors]);
 
   const renderPagination = () => (
     <View style={styles.paginationContainer}>
@@ -101,7 +109,7 @@ export function DataTable({ columns, data, onRowPress, keyExtractor, showActions
         <Text style={styles.paginationText}>Rows:</Text>
         <TouchableOpacity style={styles.limitBtn} onPress={() => setShowPicker(true)}>
           <Text style={styles.limitBtnText}>{limit}</Text>
-          <Feather name="chevron-down" size={14} color="#94A3B8" />
+          <Feather name="chevron-down" size={14} color={colors.textSecondary} />
         </TouchableOpacity>
         <Text style={styles.paginationText}>
           Pg <Text style={styles.paginationTextBold}>{page}</Text> of <Text style={styles.paginationTextBold}>{totalPages}</Text>
@@ -117,14 +125,14 @@ export function DataTable({ columns, data, onRowPress, keyExtractor, showActions
           disabled={page <= 1}
           onPress={() => setPage(p => Math.max(1, p - 1))}
         >
-          <Feather name="chevron-left" size={18} color={page <= 1 ? "#475569" : "#94A3B8"} />
+          <Feather name="chevron-left" size={18} color={page <= 1 ? colors.border : colors.textSecondary} />
         </TouchableOpacity>
         <TouchableOpacity 
           style={[styles.pageBtn, page >= totalPages && styles.pageBtnDisabled]}
           disabled={page >= totalPages}
           onPress={() => setPage(p => Math.min(totalPages, p + 1))}
         >
-          <Feather name="chevron-right" size={18} color={page >= totalPages ? "#475569" : "#94A3B8"} />
+          <Feather name="chevron-right" size={18} color={page >= totalPages ? colors.border : colors.textSecondary} />
         </TouchableOpacity>
       </View>
 
@@ -150,10 +158,21 @@ export function DataTable({ columns, data, onRowPress, keyExtractor, showActions
     </View>
   );
 
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <View style={{ width: totalWidth, flex: 1 }}>
+          {renderHeader()}
+          <SkeletonList rows={5} />
+        </View>
+      </View>
+    );
+  }
+
   if (data.length === 0) {
     return (
       <View style={styles.emptyState}>
-        <Ionicons name="folder-open-outline" size={48} color="#475569" />
+        <Ionicons name="folder-open-outline" size={48} color={colors.textSecondary} />
         <Text style={styles.emptyStateText}>No data available.</Text>
       </View>
     );
@@ -182,20 +201,20 @@ export function DataTable({ columns, data, onRowPress, keyExtractor, showActions
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: {
-    backgroundColor: '#121212',
+    backgroundColor: colors.background,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#1E1E1E',
+    borderColor: colors.border,
     overflow: 'hidden',
     flex: 1,
   },
   headerRow: {
     flexDirection: 'row',
-    backgroundColor: '#1E1E1E',
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E1E1E',
+    borderBottomColor: colors.border,
     paddingVertical: 8,
   },
   headerCell: {
@@ -203,39 +222,39 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerText: {
-    color: '#94A3B8',
+    color: colors.textSecondary,
     fontSize: 12,
     fontWeight: 'bold',
   },
   row: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#1E1E1E',
-    backgroundColor: '#121212',
+    borderBottomColor: colors.border,
+    backgroundColor: colors.background,
     paddingVertical: 10,
   },
   rowAlternate: {
-    backgroundColor: '#1E1E1E',
+    backgroundColor: colors.surface,
   },
   cell: {
     paddingHorizontal: 16,
     justifyContent: 'center',
   },
   cellText: {
-    color: '#F8FAFC',
+    color: colors.text,
     fontSize: 13,
   },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 40,
-    backgroundColor: '#121212',
+    backgroundColor: colors.background,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#1E1E1E',
+    borderColor: colors.border,
   },
   emptyStateText: {
-    color: '#94A3B8',
+    color: colors.textSecondary,
     marginTop: 16,
     fontSize: 14,
   },
@@ -246,8 +265,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderTopWidth: 1,
-    borderTopColor: '#1E1E1E',
-    backgroundColor: '#1E1E1E',
+    borderTopColor: colors.border,
+    backgroundColor: colors.surface,
   },
   paginationLeft: {
     flexDirection: 'row',
@@ -255,34 +274,34 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   paginationText: {
-    color: '#94A3B8',
+    color: colors.textSecondary,
     fontSize: 11,
   },
   paginationTextBold: {
-    color: '#F8FAFC',
+    color: colors.text,
     fontWeight: 'bold',
   },
   limitBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E1E1E',
+    backgroundColor: colors.surface,
     paddingHorizontal: 6,
     paddingVertical: 4,
     borderRadius: 6,
     gap: 2,
   },
   limitBtnText: {
-    color: '#F8FAFC',
+    color: colors.text,
     fontSize: 11,
   },
   totalBadge: {
-    backgroundColor: '#1E1E1E',
+    backgroundColor: colors.surface,
     paddingHorizontal: 6,
     paddingVertical: 4,
     borderRadius: 6,
   },
   totalBadgeText: {
-    color: '#94A3B8',
+    color: colors.textSecondary,
     fontSize: 11,
     fontWeight: 'bold',
   },
@@ -295,8 +314,8 @@ const styles = StyleSheet.create({
     padding: 6,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#1E1E1E',
-    backgroundColor: '#121212',
+    borderColor: colors.border,
+    backgroundColor: colors.background,
   },
   pageBtnDisabled: {
     opacity: 0.5,
@@ -308,29 +327,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pickerContainer: {
-    backgroundColor: '#1E1E1E',
+    backgroundColor: colors.surface,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#1E1E1E',
     width: 200,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   pickerItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E1E1E',
+    borderBottomColor: colors.border,
+    alignItems: 'center',
   },
   pickerItemActive: {
-    backgroundColor: '#1E1E1E',
+    backgroundColor: colors.tint + '20',
   },
   pickerItemText: {
-    color: '#94A3B8',
-    fontSize: 14,
-    textAlign: 'center',
+    color: colors.text,
+    fontSize: 16,
   },
   pickerItemTextActive: {
-    color: '#3B82F6',
+    color: colors.tint,
     fontWeight: 'bold',
-  },
+  }
 });

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import { useThemeStore } from '../store/themeStore';
 
 export interface SearchableDropdownProps<T> {
   data: T[];
@@ -34,6 +35,8 @@ export default function SearchableDropdown<T>({
   searchPlaceholder = 'Search...',
   disabled = false,
 }: SearchableDropdownProps<T>) {
+  const colors = useThemeStore((state) => state.getColors());
+  const styles = getStyles(colors);
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -66,7 +69,7 @@ export default function SearchableDropdown<T>({
         <Text style={[styles.triggerText, !selectedItem && styles.placeholderText]} numberOfLines={1}>
           {selectedItem ? labelExtractor(selectedItem) : placeholder}
         </Text>
-        <Feather name="chevron-down" size={20} color="#9CA3AF" />
+        <Feather name="chevron-down" size={20} color={colors.textSecondary} />
       </TouchableOpacity>
 
       <Modal
@@ -83,16 +86,16 @@ export default function SearchableDropdown<T>({
             <View style={styles.header}>
               <Text style={styles.headerTitle}>{placeholder}</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
-                <Ionicons name="close" size={24} color="#6B7280" />
+                <Ionicons name="close" size={24} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
             <View style={styles.searchContainer}>
-              <Feather name="search" size={18} color="#9CA3AF" style={styles.searchIcon} />
+              <Feather name="search" size={18} color={colors.textSecondary} style={styles.searchIcon} />
               <TextInput
                 style={styles.searchInput}
                 placeholder={searchPlaceholder}
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.textSecondary}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 autoCorrect={false}
@@ -120,7 +123,7 @@ export default function SearchableDropdown<T>({
                       {labelExtractor(item)}
                     </Text>
                     {isSelected && (
-                      <Feather name="check" size={20} color="#2563EB" />
+                      <Feather name="check" size={20} color={colors.tint} />
                     )}
                   </TouchableOpacity>
                 );
@@ -138,35 +141,35 @@ export default function SearchableDropdown<T>({
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   trigger: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 12,
     minHeight: 48,
   },
   triggerDisabled: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.surface,
     opacity: 0.7,
   },
   triggerText: {
     fontSize: 14,
-    color: '#111827',
+    color: colors.text,
     flex: 1,
     marginRight: 8,
   },
   placeholderText: {
-    color: '#9CA3AF',
+    color: colors.textSecondary,
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -175,12 +178,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.surface,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#111827',
+    color: colors.text,
   },
   closeButton: {
     padding: 4,
@@ -188,7 +191,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.surface,
     margin: 16,
     paddingHorizontal: 12,
     borderRadius: 8,
@@ -200,7 +203,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 15,
-    color: '#111827',
+    color: colors.text,
     height: '100%',
   },
   listContainer: {
@@ -213,21 +216,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.surface,
   },
   itemRowSelected: {
-    backgroundColor: '#EFF6FF',
+    backgroundColor: colors.tint + '15',
     marginHorizontal: -16,
     paddingHorizontal: 16,
   },
   itemText: {
     fontSize: 15,
-    color: '#374151',
+    color: colors.text,
     flex: 1,
     marginRight: 16,
   },
   itemTextSelected: {
-    color: '#1E3A8A',
+    color: colors.tint,
     fontWeight: '600',
   },
   emptyContainer: {

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useThemeStore } from '../../../store/themeStore';
 import { StyleSheet, View, ActivityIndicator, TouchableOpacity, TextInput, Modal, ScrollView, Alert, KeyboardAvoidingView, Platform, InteractionManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/Themed';
@@ -11,6 +12,11 @@ import { DataTable, Column } from '../../../components/DataTable';
 import { getCachedData, setCachedData } from '../../../lib/cache';
 import SkeletonList from '../../../components/SkeletonList';
 import SearchableDropdown from '../../../components/SearchableDropdown';
+import FilterPanel from '../../../components/FilterPanel';
+import ActiveFilters from '../../../components/ActiveFilters';
+import { useFilterStore } from '../../../store/filterStore';
+import DatePickerField from '../../../components/DatePicker';
+import { formatDate } from '../../../lib/utils';
 
 interface Order {
   id: string;
@@ -44,6 +50,8 @@ const PAYMENT_METHODS = [
 const ORDER_STATUSES = ['PENDING', 'CONFIRMED', 'IN_PRODUCTION', 'READY', 'DISPATCHED', 'DELIVERED', 'CANCELLED', 'RETURNED'];
 
 export default function SalesScreen() {
+  const colors = useThemeStore((state) => state.getColors());
+  const styles = getStyles(colors);
   const [orders, setOrders] = useState<Order[]>(getCachedData('sales') || []);
   const [invoices, setInvoices] = useState<any[]>(getCachedData('sales_invoices') || []);
   const [activeTab, setActiveTab] = useState<'orders' | 'invoices'>('orders');
@@ -56,6 +64,11 @@ export default function SalesScreen() {
   const [isInteracting, setIsInteracting] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
+  
+  const [search, setSearch] = useState('');
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
+  const filterState = useFilterStore(state => state.filters['sales']);
+  const filters = filterState || {};
 
   // Modal State
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -327,9 +340,9 @@ export default function SalesScreen() {
         <TextInput 
           value={value?.toString() || ''} 
           onChangeText={onChangeText} 
-          style={[style, { borderBottomWidth: 1, borderBottomColor: '#CBD5E1', paddingVertical: 2, paddingHorizontal: 4, backgroundColor: '#F8FAFC', borderRadius: 4, minWidth: 60 }]} 
+          style={[style, { borderBottomWidth: 1, borderBottomColor: colors.textSecondary, paddingVertical: 2, paddingHorizontal: 4, backgroundColor: colors.text, borderRadius: 4, minWidth: 60 }]} 
           placeholder={placeholder}
-          placeholderTextColor="#94A3B8"
+          placeholderTextColor={colors.textSecondary}
         />
       );
     }
@@ -338,12 +351,18 @@ export default function SalesScreen() {
 
   const fetchData = async () => {
     try {
+      const queryParams = new URLSearchParams({ limit: '500' });
+      if (search) queryParams.append('search', search);
+      if (filters.status) queryParams.append('status', filters.status);
+      if (filters.startDate) queryParams.append('startDate', filters.startDate);
+      if (filters.endDate) queryParams.append('endDate', filters.endDate);
+
       const [salesRes, custRes, prodRes, batchRes, invRes] = await Promise.all([
-        api.get('/sales?limit=500'),
+        api.get(`/sales?${queryParams.toString()}`),
         api.get('/customers?limit=500'),
         api.get('/inventory?limit=500'),
         api.get('/production/batches'),
-        api.get('/sales/invoices/list?limit=500')
+        api.get(`/sales/invoices/list?limit=500${search ? `&search=${search}` : ''}`)
       ]);
       const ordersList = salesRes.data.data?.data || salesRes.data.data || [];
       setOrders(ordersList);
@@ -548,7 +567,7 @@ export default function SalesScreen() {
       case 'CONFIRMED': return '#3B82F6';
       case 'DELIVERED': return '#10B981';
       case 'CANCELLED': return '#EF4444';
-      default: return '#64748B';
+      default: return colors.textSecondary;
     }
   };
 
@@ -556,7 +575,7 @@ export default function SalesScreen() {
     { key: 'actions', title: 'Actions', width: 80, render: (item) => (
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <TouchableOpacity style={styles.actionBtn} onPress={() => handleOpenEdit(item)}>
-            <Feather name="edit-2" size={14} color="#9CA3AF" />
+            <Feather name="edit-2" size={14} color={colors.textSecondary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionBtn} onPress={() => {
             Alert.alert('Delete Order', `Are you sure you want to delete order ${item.orderNumber}?`, [
@@ -571,13 +590,13 @@ export default function SalesScreen() {
               }},
             ]);
           }}>
-            <Feather name="trash-2" size={14} color="#EF4444" />
+            <Feather name="trash-2" size={14} color={colors.danger} />
           </TouchableOpacity>
         </View>
       )
     },
     { key: 'customer', title: 'Customer', width: 140, render: (item) => <Text style={[styles.cellText, {fontWeight: 'bold'}]} numberOfLines={1}>{item.customer?.name || 'Unknown'}</Text> },
-    { key: 'orderDate', title: 'Order Date', width: 100, render: (item) => <Text style={styles.cellText}>{new Date(item.orderDate).toLocaleDateString()}</Text> },
+    { key: 'orderDate', title: 'Order Date', width: 100, render: (item) => <Text style={styles.cellText}>{formatDate(item.orderDate)}</Text> },
     { key: 'quantity', title: 'Qty (KG)', width: 80, render: (item) => {
         const qty = item.items?.reduce((sum: number, i: any) => sum + i.quantity, 0) || 0;
         return <Text style={styles.cellText}>{qty.toFixed(2)}</Text>;
@@ -585,7 +604,7 @@ export default function SalesScreen() {
     },
     { key: 'totalAmount', title: 'Total Amount', width: 120, render: (item) => <Text style={styles.cellText}>₹{item.totalAmount?.toLocaleString()}</Text> },
     { key: 'outstanding', title: 'Outstanding', width: 100, render: (item) => (
-        <Text style={[styles.cellText, { color: item.outstanding > 0 ? '#EF4444' : '#64748B', fontWeight: item.outstanding > 0 ? 'bold' : 'normal' }]}>
+        <Text style={[styles.cellText, { color: item.outstanding > 0 ? '#EF4444' : colors.textSecondary, fontWeight: item.outstanding > 0 ? 'bold' : 'normal' }]}>
           ₹{item.outstanding?.toLocaleString()}
         </Text>
       )
@@ -611,7 +630,7 @@ export default function SalesScreen() {
       </TouchableOpacity>
     ) },
     { key: 'customer', title: 'Customer', width: 140, render: (item) => <Text style={[styles.cellText, {fontWeight: 'bold'}]} numberOfLines={1}>{item.customerName || item.customer?.name || 'Unknown'}</Text> },
-    { key: 'date', title: 'Date', width: 100, render: (item) => <Text style={styles.cellText}>{new Date(item.invoiceDate).toLocaleDateString()}</Text> },
+    { key: 'date', title: 'Date', width: 100, render: (item) => <Text style={styles.cellText}>{formatDate(item.invoiceDate)}</Text> },
     { key: 'taxable', title: 'Taxable Amt', width: 100, render: (item) => <Text style={styles.cellText}>₹{(item.taxableAmount || (item.totalAmount - (item.gstAmount || 0))).toLocaleString()}</Text> },
     { key: 'cgst', title: 'CGST', width: 80, render: (item) => <Text style={styles.cellText}>₹{(item.cgstTotal || ((item.gstAmount || 0) / 2)).toLocaleString()}</Text> },
     { key: 'sgst', title: 'SGST', width: 80, render: (item) => <Text style={styles.cellText}>₹{(item.sgstTotal || ((item.gstAmount || 0) / 2)).toLocaleString()}</Text> },
@@ -638,7 +657,7 @@ export default function SalesScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color="#9CA3AF" />
+            <Ionicons name="arrow-back" size={24} color={colors.textSecondary} />
           </TouchableOpacity>
           <View>
             <Text style={styles.pageTitle}>Sales & Orders</Text>
@@ -652,31 +671,54 @@ export default function SalesScreen() {
 
       <View style={styles.actionBar}>
         <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#94A3B8" />
+          <Ionicons name="search" size={20} color={colors.textSecondary} />
           <TextInput 
             style={styles.searchInput} 
-            placeholder={activeTab === 'orders' ? "Search orders..." : "Search invoices..."} 
-            placeholderTextColor="#64748B"
+            placeholder={activeTab === 'orders' ? "Search orders..." : "Search invoices..."}
+            placeholderTextColor={colors.textSecondary}
+            value={search}
+            onChangeText={setSearch}
+            onSubmitEditing={fetchData}
           />
         </View>
-        <TouchableOpacity style={styles.actionIconBtn}>
-          <Feather name="filter" size={20} color="#9CA3AF" />
+        <TouchableOpacity style={styles.actionIconBtn} onPress={() => setIsFilterVisible(true)}>
+          <Feather name="filter" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
 
+      <ActiveFilters 
+        module="sales"
+        config={[
+          { key: 'status', label: 'Order Status', type: 'select', options: ORDER_STATUSES.map(s => ({ label: s, value: s })) },
+          { key: 'dateRange', label: 'Date', type: 'date-range' }
+        ]}
+        onFiltersChanged={fetchData}
+      />
+
+      <FilterPanel
+        module="sales"
+        visible={isFilterVisible}
+        onClose={() => setIsFilterVisible(false)}
+        onApply={fetchData}
+        config={[
+          { key: 'status', label: 'Order Status', type: 'select', options: ORDER_STATUSES.map(s => ({ label: s, value: s })) },
+          { key: 'dateRange', label: 'Date Range', type: 'date-range' }
+        ]}
+      />
+
       <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
-        <View style={{ flexDirection: 'row', backgroundColor: '#1E1E1E', borderRadius: 8, padding: 4 }}>
+        <View style={{ flexDirection: 'row', backgroundColor: colors.surface, borderRadius: 8, padding: 4 }}>
           <TouchableOpacity 
             style={{ flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 6, backgroundColor: activeTab === 'orders' ? '#2996A8' : 'transparent' }}
             onPress={() => setActiveTab('orders')}
           >
-            <Text style={{ fontWeight: 'bold', color: activeTab === 'orders' ? '#FFFFFF' : '#94A3B8' }}>Orders</Text>
+            <Text style={{ fontWeight: 'bold', color: activeTab === 'orders' ? colors.text : colors.textSecondary }}>Orders</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={{ flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 6, backgroundColor: activeTab === 'invoices' ? '#2996A8' : 'transparent' }}
             onPress={() => setActiveTab('invoices')}
           >
-            <Text style={{ fontWeight: 'bold', color: activeTab === 'invoices' ? '#FFFFFF' : '#94A3B8' }}>GST Invoices</Text>
+            <Text style={{ fontWeight: 'bold', color: activeTab === 'invoices' ? colors.text : colors.textSecondary }}>GST Invoices</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -693,10 +735,10 @@ export default function SalesScreen() {
 
       {/* INVOICE PREVIEW MODAL */}
       <Modal visible={isInvoicePreviewVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setIsInvoicePreviewVisible(false)}>
-        <SafeAreaView style={[styles.modalContainer, { backgroundColor: '#F8FAFC' }]} edges={['top']}>
-          <View style={[styles.modalHeader, { backgroundColor: '#FFFFFF', borderBottomColor: '#E2E8F0' }]}>
+        <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.text }]} edges={['top']}>
+          <View style={[styles.modalHeader, { backgroundColor: colors.text, borderBottomColor: colors.border }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={[styles.modalTitle, { color: '#0F172A', fontSize: 16 }]}>Tax Invoice</Text>
+              <Text style={[styles.modalTitle, { color: colors.background, fontSize: 16 }]}>Tax Invoice</Text>
               <View style={{ backgroundColor: '#DBEAFE', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
                 <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#1D4ED8', fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' }}>
                   {selectedInvoice?.invoiceNumber}
@@ -704,26 +746,26 @@ export default function SalesScreen() {
               </View>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <TouchableOpacity onPress={() => setIsInvoiceEditMode(!isInvoiceEditMode)} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: isInvoiceEditMode ? '#DBEAFE' : '#F1F5F9', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
-                <Feather name={isInvoiceEditMode ? "check" : "edit-2"} size={12} color={isInvoiceEditMode ? "#1D4ED8" : "#475569"} />
-                <Text style={{ fontSize: 10, fontWeight: 'bold', color: isInvoiceEditMode ? "#1D4ED8" : "#475569" }}>{isInvoiceEditMode ? 'Done' : 'Edit'}</Text>
+              <TouchableOpacity onPress={() => setIsInvoiceEditMode(!isInvoiceEditMode)} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: isInvoiceEditMode ? '#DBEAFE' : colors.text, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+                <Feather name={isInvoiceEditMode ? "check" : "edit-2"} size={12} color={isInvoiceEditMode ? "#1D4ED8" : colors.textSecondary} />
+                <Text style={{ fontSize: 10, fontWeight: 'bold', color: isInvoiceEditMode ? "#1D4ED8" : colors.textSecondary }}>{isInvoiceEditMode ? 'Done' : 'Edit'}</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={handleExportInvoice} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#2563EB', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
-                <Feather name="printer" size={12} color="#FFFFFF" />
-                <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#FFFFFF' }}>Print / PDF</Text>
+                <Feather name="printer" size={12} color={colors.text} />
+                <Text style={{ fontSize: 10, fontWeight: 'bold', color: colors.text }}>Print / PDF</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setIsInvoicePreviewVisible(false)} style={{ padding: 2 }}>
-                <Ionicons name="close" size={24} color="#64748B" />
+                <Ionicons name="close" size={24} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
           </View>
           
           <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
             {selectedInvoice && (
-              <View style={{ backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}>
+              <View style={{ backgroundColor: colors.text, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}>
                 
                 {/* Header Section */}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', paddingBottom: 16, marginBottom: 16 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 16, marginBottom: 16 }}>
                   <View style={{ flex: 1, paddingRight: 8 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                       <View style={{ width: 24, height: 24, borderRadius: 6, backgroundColor: '#2563EB', alignItems: 'center', justifyContent: 'center' }}>
@@ -731,77 +773,77 @@ export default function SalesScreen() {
                       </View>
                       <Text style={{ fontSize: 16, fontWeight: '900', color: '#1E3A8A' }}>LAKSHMI CANDLES</Text>
                     </View>
-                    <Text style={{ fontSize: 10, color: '#64748B', marginBottom: 2 }}>124 Industrial Estate, Guindy, Chennai</Text>
-                    <Text style={{ fontSize: 10, color: '#64748B', marginBottom: 4 }}>Tamil Nadu - 600032 | +91 9876543210</Text>
+                    <Text style={{ fontSize: 10, color: colors.textSecondary, marginBottom: 2 }}>124 Industrial Estate, Guindy, Chennai</Text>
+                    <Text style={{ fontSize: 10, color: colors.textSecondary, marginBottom: 4 }}>Tamil Nadu - 600032 | +91 9876543210</Text>
                     <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#1E40AF' }}>GSTIN: 33AABCT0000A1ZA</Text>
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
                     <View style={{ borderWidth: 1, borderColor: '#1E3A8A', backgroundColor: '#EFF6FF', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginBottom: 8 }}>
                       <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#1E3A8A' }}>TAX INVOICE</Text>
                     </View>
-                    <Text style={{ fontSize: 10, color: '#475569', marginBottom: 2 }}>Date: {new Date(selectedInvoice.invoiceDate).toLocaleDateString()}</Text>
-                    <Text style={{ fontSize: 10, color: '#475569' }}>Order Ref: {selectedInvoice.orderNumber}</Text>
+                    <Text style={{ fontSize: 10, color: colors.textSecondary, marginBottom: 2 }}>Date: {formatDate(selectedInvoice.invoiceDate)}</Text>
+                    <Text style={{ fontSize: 10, color: colors.textSecondary }}>Order Ref: {selectedInvoice.orderNumber}</Text>
                   </View>
                 </View>
 
                 {/* Buyer Details */}
-                <View style={{ backgroundColor: '#F8FAFC', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 16, flexDirection: 'row' }}>
+                <View style={{ backgroundColor: colors.text, padding: 12, borderRadius: 8, borderWidth: 1, borderColor: colors.border, marginBottom: 16, flexDirection: 'row' }}>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#64748B', marginBottom: 4 }}>BILL TO:</Text>
-                    <EditableText isEdit={isInvoiceEditMode} value={editableInvoice?.customerName} onChangeText={(t: string) => updateEditableInvoice('customerName', t)} style={{ fontSize: 14, fontWeight: 'bold', color: '#0F172A', marginBottom: 2 }} placeholder="Customer Name" />
-                    {(editableInvoice?.customerAddress || isInvoiceEditMode) ? <EditableText isEdit={isInvoiceEditMode} value={editableInvoice?.customerAddress} onChangeText={(t: string) => updateEditableInvoice('customerAddress', t)} style={{ fontSize: 11, color: '#475569' }} placeholder="Address" /> : null}
+                    <Text style={{ fontSize: 10, fontWeight: 'bold', color: colors.textSecondary, marginBottom: 4 }}>BILL TO:</Text>
+                    <EditableText isEdit={isInvoiceEditMode} value={editableInvoice?.customerName} onChangeText={(t: string) => updateEditableInvoice('customerName', t)} style={{ fontSize: 14, fontWeight: 'bold', color: colors.background, marginBottom: 2 }} placeholder="Customer Name" />
+                    {(editableInvoice?.customerAddress || isInvoiceEditMode) ? <EditableText isEdit={isInvoiceEditMode} value={editableInvoice?.customerAddress} onChangeText={(t: string) => updateEditableInvoice('customerAddress', t)} style={{ fontSize: 11, color: colors.textSecondary }} placeholder="Address" /> : null}
                     {(editableInvoice?.customerPhone || isInvoiceEditMode) ? (
                       <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
-                        {!isInvoiceEditMode && <Text style={{ fontSize: 11, color: '#475569' }}>Phone: </Text>}
-                        <EditableText isEdit={isInvoiceEditMode} value={editableInvoice?.customerPhone} onChangeText={(t: string) => updateEditableInvoice('customerPhone', t)} style={{ fontSize: 11, color: '#475569' }} placeholder="Phone" />
+                        {!isInvoiceEditMode && <Text style={{ fontSize: 11, color: colors.textSecondary }}>Phone: </Text>}
+                        <EditableText isEdit={isInvoiceEditMode} value={editableInvoice?.customerPhone} onChangeText={(t: string) => updateEditableInvoice('customerPhone', t)} style={{ fontSize: 11, color: colors.textSecondary }} placeholder="Phone" />
                       </View>
                     ) : null}
                   </View>
                   <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                    <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#64748B', marginBottom: 4 }}>TAX DETAILS:</Text>
+                    <Text style={{ fontSize: 10, fontWeight: 'bold', color: colors.textSecondary, marginBottom: 4 }}>TAX DETAILS:</Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      {!isInvoiceEditMode && <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#0F172A' }}>GSTIN: </Text>}
-                      <EditableText isEdit={isInvoiceEditMode} value={editableInvoice?.customerGst} onChangeText={(t: string) => updateEditableInvoice('customerGst', t)} style={{ fontSize: 11, fontWeight: 'bold', color: '#0F172A' }} placeholder="GSTIN" />
+                      {!isInvoiceEditMode && <Text style={{ fontSize: 11, fontWeight: 'bold', color: colors.background }}>GSTIN: </Text>}
+                      <EditableText isEdit={isInvoiceEditMode} value={editableInvoice?.customerGst} onChangeText={(t: string) => updateEditableInvoice('customerGst', t)} style={{ fontSize: 11, fontWeight: 'bold', color: colors.background }} placeholder="GSTIN" />
                     </View>
-                    <Text style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>State: 33 (Tamil Nadu)</Text>
+                    <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>State: 33 (Tamil Nadu)</Text>
                   </View>
                 </View>
 
                 {/* Items Table */}
-                <View style={{ borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 8, overflow: 'hidden', marginBottom: 16 }}>
-                  <View style={{ flexDirection: 'row', backgroundColor: '#F1F5F9', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', paddingVertical: 8, paddingHorizontal: 8 }}>
-                    <Text style={{ flex: 2, fontSize: 10, fontWeight: 'bold', color: '#475569' }}>ITEM</Text>
-                    <Text style={{ flex: 1, fontSize: 10, fontWeight: 'bold', color: '#475569', textAlign: 'center' }}>QTY</Text>
-                    <Text style={{ flex: 1.5, fontSize: 10, fontWeight: 'bold', color: '#475569', textAlign: 'right' }}>RATE</Text>
-                    <Text style={{ flex: 1.5, fontSize: 10, fontWeight: 'bold', color: '#475569', textAlign: 'right' }}>TOTAL</Text>
+                <View style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 8, overflow: 'hidden', marginBottom: 16 }}>
+                  <View style={{ flexDirection: 'row', backgroundColor: colors.text, borderBottomWidth: 1, borderBottomColor: colors.border, paddingVertical: 8, paddingHorizontal: 8 }}>
+                    <Text style={{ flex: 2, fontSize: 10, fontWeight: 'bold', color: colors.textSecondary }}>ITEM</Text>
+                    <Text style={{ flex: 1, fontSize: 10, fontWeight: 'bold', color: colors.textSecondary, textAlign: 'center' }}>QTY</Text>
+                    <Text style={{ flex: 1.5, fontSize: 10, fontWeight: 'bold', color: colors.textSecondary, textAlign: 'right' }}>RATE</Text>
+                    <Text style={{ flex: 1.5, fontSize: 10, fontWeight: 'bold', color: colors.textSecondary, textAlign: 'right' }}>TOTAL</Text>
                   </View>
                   
                   {editableInvoice?.items?.map((item: any, idx: number) => (
-                    <View key={idx} style={{ flexDirection: 'row', borderBottomWidth: idx === editableInvoice.items.length - 1 ? 0 : 1, borderBottomColor: '#E2E8F0', paddingVertical: 8, paddingHorizontal: 8 }}>
+                    <View key={idx} style={{ flexDirection: 'row', borderBottomWidth: idx === editableInvoice.items.length - 1 ? 0 : 1, borderBottomColor: colors.border, paddingVertical: 8, paddingHorizontal: 8 }}>
                       <View style={{ flex: 2 }}>
-                        <EditableText isEdit={isInvoiceEditMode} value={item.name} onChangeText={(t: string) => updateEditableItem(idx, 'name', t)} style={{ fontSize: 11, fontWeight: 'bold', color: '#0F172A' }} placeholder="Item Name" />
+                        <EditableText isEdit={isInvoiceEditMode} value={item.name} onChangeText={(t: string) => updateEditableItem(idx, 'name', t)} style={{ fontSize: 11, fontWeight: 'bold', color: colors.background }} placeholder="Item Name" />
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
-                          {!isInvoiceEditMode && <Text style={{ fontSize: 9, color: '#64748B' }}>HSN: </Text>}
-                          <EditableText isEdit={isInvoiceEditMode} value={item.hsn} onChangeText={(t: string) => updateEditableItem(idx, 'hsn', t)} style={{ fontSize: 9, color: '#64748B' }} placeholder="HSN Code" />
+                          {!isInvoiceEditMode && <Text style={{ fontSize: 9, color: colors.textSecondary }}>HSN: </Text>}
+                          <EditableText isEdit={isInvoiceEditMode} value={item.hsn} onChangeText={(t: string) => updateEditableItem(idx, 'hsn', t)} style={{ fontSize: 9, color: colors.textSecondary }} placeholder="HSN Code" />
                         </View>
                       </View>
                       <View style={{ flex: 1, alignItems: 'center' }}>
-                        <EditableText isEdit={isInvoiceEditMode} value={item.qty} onChangeText={(t: string) => updateEditableItem(idx, 'qty', t)} style={{ fontSize: 11, color: '#0F172A', textAlign: 'center' }} placeholder="Qty" />
+                        <EditableText isEdit={isInvoiceEditMode} value={item.qty} onChangeText={(t: string) => updateEditableItem(idx, 'qty', t)} style={{ fontSize: 11, color: colors.background, textAlign: 'center' }} placeholder="Qty" />
                       </View>
                       <View style={{ flex: 1.5, alignItems: 'flex-end', flexDirection: 'row', justifyContent: 'flex-end' }}>
-                        {!isInvoiceEditMode && <Text style={{ fontSize: 11, color: '#0F172A' }}>₹</Text>}
-                        <EditableText isEdit={isInvoiceEditMode} value={item.price} onChangeText={(t: string) => updateEditableItem(idx, 'price', t)} style={{ fontSize: 11, color: '#0F172A', textAlign: 'right' }} placeholder="Rate" />
+                        {!isInvoiceEditMode && <Text style={{ fontSize: 11, color: colors.background }}>₹</Text>}
+                        <EditableText isEdit={isInvoiceEditMode} value={item.price} onChangeText={(t: string) => updateEditableItem(idx, 'price', t)} style={{ fontSize: 11, color: colors.background, textAlign: 'right' }} placeholder="Rate" />
                       </View>
                       <View style={{ flex: 1.5, alignItems: 'flex-end', flexDirection: 'row', justifyContent: 'flex-end' }}>
-                        {!isInvoiceEditMode && <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#0F172A' }}>₹</Text>}
-                        <EditableText isEdit={isInvoiceEditMode} value={item.total} onChangeText={(t: string) => updateEditableItem(idx, 'total', t)} style={{ fontSize: 11, fontWeight: 'bold', color: '#0F172A', textAlign: 'right' }} placeholder="Total" />
+                        {!isInvoiceEditMode && <Text style={{ fontSize: 11, fontWeight: 'bold', color: colors.background }}>₹</Text>}
+                        <EditableText isEdit={isInvoiceEditMode} value={item.total} onChangeText={(t: string) => updateEditableItem(idx, 'total', t)} style={{ fontSize: 11, fontWeight: 'bold', color: colors.background, textAlign: 'right' }} placeholder="Total" />
                       </View>
                     </View>
                   ))}
                   
                   {(!editableInvoice?.items || editableInvoice.items.length === 0) && (
                     <View style={{ padding: 16, alignItems: 'center' }}>
-                      <Text style={{ fontSize: 12, color: '#94A3B8' }}>No items found.</Text>
+                      <Text style={{ fontSize: 12, color: colors.textSecondary }}>No items found.</Text>
                     </View>
                   )}
                 </View>
@@ -815,30 +857,30 @@ export default function SalesScreen() {
                     <Text style={{ fontSize: 9, color: '#1E40AF' }}>IFSC: HDFC0000123</Text>
                   </View>
                   
-                  <View style={{ flex: 1, backgroundColor: '#F8FAFC', padding: 10, borderRadius: 8, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                  <View style={{ flex: 1, backgroundColor: colors.text, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                      <Text style={{ fontSize: 10, color: '#475569' }}>Taxable Amt:</Text>
+                      <Text style={{ fontSize: 10, color: colors.textSecondary }}>Taxable Amt:</Text>
                       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        {!isInvoiceEditMode && <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#0F172A' }}>₹</Text>}
-                        <EditableText isEdit={isInvoiceEditMode} value={editableInvoice?.taxableAmount} onChangeText={(t: string) => updateEditableInvoice('taxableAmount', t)} style={{ fontSize: 10, fontWeight: 'bold', color: '#0F172A', textAlign: 'right' }} placeholder="0" />
+                        {!isInvoiceEditMode && <Text style={{ fontSize: 10, fontWeight: 'bold', color: colors.background }}>₹</Text>}
+                        <EditableText isEdit={isInvoiceEditMode} value={editableInvoice?.taxableAmount} onChangeText={(t: string) => updateEditableInvoice('taxableAmount', t)} style={{ fontSize: 10, fontWeight: 'bold', color: colors.background, textAlign: 'right' }} placeholder="0" />
                       </View>
                     </View>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                      <Text style={{ fontSize: 10, color: '#475569' }}>CGST (9%):</Text>
+                      <Text style={{ fontSize: 10, color: colors.textSecondary }}>CGST (9%):</Text>
                       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        {!isInvoiceEditMode && <Text style={{ fontSize: 10, color: '#0F172A' }}>₹</Text>}
-                        <EditableText isEdit={isInvoiceEditMode} value={editableInvoice?.cgstTotal} onChangeText={(t: string) => updateEditableInvoice('cgstTotal', t)} style={{ fontSize: 10, color: '#0F172A', textAlign: 'right' }} placeholder="0" />
+                        {!isInvoiceEditMode && <Text style={{ fontSize: 10, color: colors.background }}>₹</Text>}
+                        <EditableText isEdit={isInvoiceEditMode} value={editableInvoice?.cgstTotal} onChangeText={(t: string) => updateEditableInvoice('cgstTotal', t)} style={{ fontSize: 10, color: colors.background, textAlign: 'right' }} placeholder="0" />
                       </View>
                     </View>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, borderBottomWidth: 1, borderBottomColor: '#E2E8F0', paddingBottom: 6 }}>
-                      <Text style={{ fontSize: 10, color: '#475569' }}>SGST (9%):</Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 6 }}>
+                      <Text style={{ fontSize: 10, color: colors.textSecondary }}>SGST (9%):</Text>
                       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        {!isInvoiceEditMode && <Text style={{ fontSize: 10, color: '#0F172A' }}>₹</Text>}
-                        <EditableText isEdit={isInvoiceEditMode} value={editableInvoice?.sgstTotal} onChangeText={(t: string) => updateEditableInvoice('sgstTotal', t)} style={{ fontSize: 10, color: '#0F172A', textAlign: 'right' }} placeholder="0" />
+                        {!isInvoiceEditMode && <Text style={{ fontSize: 10, color: colors.background }}>₹</Text>}
+                        <EditableText isEdit={isInvoiceEditMode} value={editableInvoice?.sgstTotal} onChangeText={(t: string) => updateEditableInvoice('sgstTotal', t)} style={{ fontSize: 10, color: colors.background, textAlign: 'right' }} placeholder="0" />
                       </View>
                     </View>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#0F172A' }}>TOTAL:</Text>
+                      <Text style={{ fontSize: 11, fontWeight: 'bold', color: colors.background }}>TOTAL:</Text>
                       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         {!isInvoiceEditMode && <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#2563EB' }}>₹</Text>}
                         <EditableText isEdit={isInvoiceEditMode} value={editableInvoice?.totalAmount} onChangeText={(t: string) => updateEditableInvoice('totalAmount', t)} style={{ fontSize: 12, fontWeight: 'bold', color: '#2563EB', textAlign: 'right' }} placeholder="0" />
@@ -860,111 +902,114 @@ export default function SalesScreen() {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{isEdit ? 'Edit Sales Order' : 'Create Sales Order'}</Text>
             <TouchableOpacity onPress={() => setIsModalVisible(false)}>
-              <Ionicons name="close" size={24} color="#9CA3AF" />
+              <Ionicons name="close" size={24} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
           
           <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalContent}>
             
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Select Customer *</Text>
-              <SearchableDropdown
-                data={customers}
-                value={customerId}
-                onSelect={setCustomerId}
-                placeholder="Search and select customer"
-                searchPlaceholder="Search customers by name..."
-              />
-            </View>
-
-            {!isEdit && (
-              <View style={styles.formGroup}>
-                <Text style={styles.label}>Payment Terms</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pillContainer}>
-                  {PAYMENT_METHODS.map((pm) => (
-                    <TouchableOpacity 
-                      key={pm.value} 
-                      style={[styles.pill, paymentMethod === pm.value && styles.pillActive]}
-                      onPress={() => setPaymentMethod(pm.value)}
-                    >
-                      <Text style={[styles.pillText, paymentMethod === pm.value && styles.pillTextActive]}>{pm.label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+            <View style={styles.formRow}>
+              <View style={[styles.formGroup, { flex: 1 }]}>
+                <Text style={styles.label}>Select Customer *</Text>
+                <SearchableDropdown
+                  data={customers}
+                  value={customerId}
+                  onSelect={setCustomerId}
+                  labelExtractor={(c) => c.type ? `${c.name} (${c.type})` : c.name}
+                  placeholder="Select Customer"
+                  searchPlaceholder="Search customers by name..."
+                />
               </View>
-            )}
-
-            <View style={styles.divider} />
-
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Product Type</Text>
-              <TextInput style={styles.input} value={formData.type} onChangeText={(t) => setFormData({...formData, type: t})} placeholder="e.g. Spiral Candles" placeholderTextColor="#64748B" />
+              <View style={[styles.formGroup, { flex: 1 }]}>
+                {!isEdit && (
+                  <>
+                    <Text style={styles.label}>Payment Terms</Text>
+                    <SearchableDropdown
+                      data={PAYMENT_METHODS}
+                      value={paymentMethod}
+                      onSelect={setPaymentMethod}
+                      keyExtractor={(item) => item.value}
+                      labelExtractor={(item) => item.label}
+                      placeholder="Select Terms"
+                    />
+                  </>
+                )}
+              </View>
             </View>
 
             <View style={styles.formRow}>
               <View style={[styles.formGroup, { flex: 1 }]}>
-                <Text style={styles.label}>Quantity (KG) *</Text>
-                <TextInput style={styles.input} value={formData.quantity} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, quantity: t})} placeholder="10" placeholderTextColor="#64748B" />
+                <Text style={styles.label}>Product Type</Text>
+                <TextInput style={styles.input} value={formData.type} onChangeText={(t) => setFormData({...formData, type: t})} placeholder="e.g. Spiral Candles" placeholderTextColor={colors.textSecondary} />
               </View>
               <View style={[styles.formGroup, { flex: 1 }]}>
-                <Text style={styles.label}>Selling Price (₹) *</Text>
-                <TextInput style={styles.input} value={formData.sellingCost} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, sellingCost: t})} placeholder="350" placeholderTextColor="#64748B" />
+                <Text style={styles.label}>Quantity (KG) *</Text>
+                <TextInput style={styles.input} value={formData.quantity} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, quantity: t})} placeholder="10" placeholderTextColor={colors.textSecondary} />
               </View>
             </View>
             
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Unit Production Cost (₹)</Text>
-              <TextInput style={styles.input} value={formData.productionCost} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, productionCost: t})} placeholder="Optional" placeholderTextColor="#64748B" />
-            </View>
-
-            {/* Calculated Preview */}
-            <View style={styles.previewBox}>
-              <View style={styles.previewRow}>
-                <Text style={styles.previewLabel}>Total Selling Amount:</Text>
-                <Text style={styles.previewValue}>₹{totalSellingCost.toLocaleString()}</Text>
+            <View style={styles.formRow}>
+              <View style={[styles.formGroup, { flex: 1 }]}>
+                <Text style={styles.label}>Unit Production Cost (₹)</Text>
+                <TextInput style={styles.input} value={formData.productionCost} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, productionCost: t})} placeholder="Optional" placeholderTextColor={colors.textSecondary} />
               </View>
-              <View style={styles.previewRow}>
-                <Text style={styles.previewLabel}>Margin:</Text>
-                <Text style={[styles.previewValue, { color: '#10B981' }]}>{marginStr || '-'}</Text>
+              <View style={[styles.formGroup, { flex: 1 }]}>
+                <Text style={styles.label}>Unit Selling Price (₹) *</Text>
+                <TextInput style={styles.input} value={formData.sellingCost} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, sellingCost: t})} placeholder="350" placeholderTextColor={colors.textSecondary} />
               </View>
             </View>
-
-            <View style={styles.divider} />
 
             <View style={styles.formRow}>
               <View style={[styles.formGroup, { flex: 1 }]}>
-                <Text style={styles.label}>Order Date *</Text>
-                <TextInput style={styles.input} value={formData.orderDate} onChangeText={(t) => setFormData({...formData, orderDate: t})} placeholder="YYYY-MM-DD" placeholderTextColor="#64748B" />
+                <Text style={styles.label}>Total Selling Amount (₹)</Text>
+                <TextInput style={[styles.input, { opacity: 0.8 }]} value={totalSellingCost ? totalSellingCost.toString() : '0'} editable={false} />
               </View>
               <View style={[styles.formGroup, { flex: 1 }]}>
-                <Text style={styles.label}>Delivery Date</Text>
-                <TextInput style={styles.input} value={formData.deliveryDate} onChangeText={(t) => setFormData({...formData, deliveryDate: t})} placeholder="YYYY-MM-DD" placeholderTextColor="#64748B" />
+                <Text style={styles.label}>Margin % & Amount</Text>
+                <TextInput style={[styles.input, { opacity: 0.8, color: '#10B981' }]} value={marginStr || '-'} editable={false} />
               </View>
             </View>
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Status</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pillContainer}>
-                {ORDER_STATUSES.map(status => (
-                  <TouchableOpacity 
-                    key={status} 
-                    style={[styles.pill, formData.status === status && styles.pillActive]}
-                    onPress={() => setFormData({...formData, status})}
-                  >
-                    <Text style={[styles.pillText, formData.status === status && styles.pillTextActive]}>{status.replace('_', ' ')}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
+            <View style={styles.formRow}>
+              <View style={[styles.formGroup, { flex: 1 }]}>
+                <DatePickerField
+                  label="Order Date *"
+                  value={formData.orderDate}
+                  onChange={(d) => setFormData({...formData, orderDate: d})}
+                  placeholder="Select order date"
+                />
+              </View>
+              <View style={[styles.formGroup, { flex: 1 }]}>
+                <DatePickerField
+                  label="Delivery Date"
+                  value={formData.deliveryDate}
+                  onChange={(d) => setFormData({...formData, deliveryDate: d})}
+                  placeholder="Select delivery date"
+                />
+              </View>
             </View>
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Outstanding Credit (₹)</Text>
-              <TextInput style={styles.input} value={formData.outstanding} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, outstanding: t})} placeholder="0" placeholderTextColor="#64748B" />
+            <View style={styles.formRow}>
+              <View style={[styles.formGroup, { flex: 1 }]}>
+                <Text style={styles.label}>Status</Text>
+                <SearchableDropdown
+                  data={ORDER_STATUSES}
+                  value={formData.status}
+                  onSelect={(s) => setFormData({...formData, status: s})}
+                  keyExtractor={(item) => item as string}
+                  labelExtractor={(item) => (item as string).replace('_', ' ')}
+                  placeholder="Select status"
+                />
+              </View>
+              <View style={[styles.formGroup, { flex: 1 }]}>
+                <Text style={styles.label}>Outstanding Credit (₹)</Text>
+                <TextInput style={styles.input} value={formData.outstanding} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, outstanding: t})} placeholder="0" placeholderTextColor={colors.textSecondary} />
+              </View>
             </View>
 
             <View style={styles.formGroup}>
               <Text style={styles.label}>Credit Notes</Text>
-              <TextInput style={styles.input} value={formData.creditNotes} onChangeText={(t) => setFormData({...formData, creditNotes: t})} placeholder="e.g. Will pay next Friday" placeholderTextColor="#64748B" />
+              <TextInput style={styles.input} value={formData.creditNotes} onChangeText={(t) => setFormData({...formData, creditNotes: t})} placeholder="e.g. Will pay next Friday" placeholderTextColor={colors.textSecondary} />
             </View>
 
             <View style={{ height: 40 }} />
@@ -984,51 +1029,51 @@ export default function SalesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
+const getStyles = (colors: any) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   backBtn: { padding: 4, marginLeft: -4 },
-  pageTitle: { fontSize: 20, fontWeight: 'bold', color: '#F8FAFC' },
-  pageSubtitle: { fontSize: 12, color: '#94A3B8', marginTop: 2 },
+  pageTitle: { fontSize: 20, fontWeight: 'bold', color: colors.text },
+  pageSubtitle: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
   newButton: { backgroundColor: '#2996A8', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
-  newButtonText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
+  newButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
   actionBar: { flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 12, gap: 12 },
-  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#1E1E1E', borderRadius: 8, paddingHorizontal: 12, height: 36, gap: 8 },
-  searchInput: { flex: 1, color: '#F8FAFC', fontSize: 14, height: '100%' },
-  actionIconBtn: { width: 36, height: 36, backgroundColor: '#1E1E1E', borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 8, paddingHorizontal: 12, height: 36, gap: 8 },
+  searchInput: { flex: 1, color: colors.text, fontSize: 14, height: '100%' },
+  actionIconBtn: { width: 36, height: 36, backgroundColor: colors.surface, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   tableWrapper: { flex: 1, paddingHorizontal: 16, paddingBottom: 80 },
-  cellText: { color: '#F8FAFC', fontSize: 14 },
+  cellText: { color: colors.text, fontSize: 14 },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, alignSelf: 'flex-start' },
   statusText: { fontSize: 10, fontWeight: 'bold' },
   actionBtn: { padding: 8 },
   
   // Modal Styles
-  modalContainer: { flex: 1, backgroundColor: '#121212' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#1E1E1E', backgroundColor: '#121212' },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#F8FAFC' },
+  modalContainer: { flex: 1, backgroundColor: colors.background },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: colors.surface, backgroundColor: colors.background },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', color: colors.text },
   modalScroll: { flex: 1 },
   modalContent: { padding: 20 },
   formGroup: { marginBottom: 20 },
   formRow: { flexDirection: 'row', gap: 16, marginBottom: 0 },
-  label: { fontSize: 12, fontWeight: 'bold', color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
-  input: { backgroundColor: '#1E1E1E', borderRadius: 12, padding: 16, color: '#F8FAFC', fontSize: 16, borderWidth: 1, borderColor: '#27272A' },
+  label: { fontSize: 12, fontWeight: 'bold', color: colors.textSecondary, marginBottom: 8 },
+  input: { backgroundColor: colors.surface, borderRadius: 12, padding: 16, color: colors.text, fontSize: 16, borderWidth: 1, borderColor: colors.border },
   pillContainer: { flexDirection: 'row' },
-  pill: { backgroundColor: '#1E1E1E', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, marginRight: 8, borderWidth: 1, borderColor: '#27272A' },
+  pill: { backgroundColor: colors.surface, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, marginRight: 8, borderWidth: 1, borderColor: colors.border },
   pillActive: { backgroundColor: '#2996A8', borderColor: '#2996A8' },
-  pillText: { color: '#94A3B8', fontSize: 14, fontWeight: 'bold' },
-  pillTextActive: { color: '#FFFFFF' },
-  divider: { height: 1, backgroundColor: '#1E1E1E', marginVertical: 20 },
+  pillText: { color: colors.textSecondary, fontSize: 14, fontWeight: 'bold' },
+  pillTextActive: { color: '#fff' },
+  divider: { height: 1, backgroundColor: colors.surface, marginVertical: 20 },
   
-  previewBox: { backgroundColor: '#1E1E1E', padding: 16, borderRadius: 12, marginTop: 4, borderWidth: 1, borderColor: '#27272A' },
+  previewBox: { backgroundColor: colors.surface, padding: 16, borderRadius: 12, marginTop: 4, borderWidth: 1, borderColor: colors.border },
   previewRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  previewLabel: { color: '#94A3B8', fontSize: 14 },
-  previewValue: { color: '#F8FAFC', fontSize: 16, fontWeight: 'bold' },
+  previewLabel: { color: colors.textSecondary, fontSize: 14 },
+  previewValue: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
   
-  modalFooter: { flexDirection: 'row', padding: 20, borderTopWidth: 1, borderTopColor: '#1E1E1E', backgroundColor: '#121212', gap: 12 },
-  cancelBtn: { flex: 1, padding: 16, borderRadius: 12, backgroundColor: '#1E1E1E', alignItems: 'center' },
-  cancelBtnText: { color: '#F8FAFC', fontSize: 16, fontWeight: 'bold' },
-  saveBtn: { flex: 2, padding: 16, borderRadius: 12, backgroundColor: '#2996A8', alignItems: 'center' },
-  saveBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
+  modalFooter: { flexDirection: 'row', padding: 20, borderTopWidth: 1, borderTopColor: colors.surface, backgroundColor: colors.background, gap: 12 },
+  cancelBtn: { flex: 1, padding: 16, borderRadius: 12, backgroundColor: colors.surface, alignItems: 'center' },
+  cancelBtnText: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
+  saveBtn: { flex: 2, padding: 16, borderRadius: 12, backgroundColor: '#2563EB', alignItems: 'center' },
+  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });

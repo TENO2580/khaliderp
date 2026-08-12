@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useThemeStore } from '../../../store/themeStore';
 import { StyleSheet, View, TouchableOpacity, TextInput, Modal, ScrollView, Alert, KeyboardAvoidingView, Platform, InteractionManager, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/Themed';
@@ -10,8 +11,15 @@ import { getCachedData, setCachedData } from '../../../lib/cache';
 import SkeletonList from '../../../components/SkeletonList';
 import SearchableDropdown from '../../../components/SearchableDropdown';
 import { useAuthStore } from '../../../store/authStore';
+import FilterPanel from '../../../components/FilterPanel';
+import ActiveFilters from '../../../components/ActiveFilters';
+import { useFilterStore } from '../../../store/filterStore';
+import DatePickerField from '../../../components/DatePicker';
+import { formatDate } from '../../../lib/utils';
 
 export default function ProductionScreen() {
+  const colors = useThemeStore((state) => state.getColors());
+  const styles = getStyles(colors);
   const [productions, setProductions] = useState<any[]>(getCachedData('production_runs') || []);
   const [batches, setBatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(!getCachedData('production_runs'));
@@ -19,6 +27,11 @@ export default function ProductionScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
   const { user } = useAuthStore();
+
+  const [search, setSearch] = useState('');
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
+  const filterState = useFilterStore(state => state.filters['production']);
+  const filters = filterState || {};
 
   // Modal State
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -45,11 +58,26 @@ export default function ProductionScreen() {
 
   const fetchData = async () => {
     try {
+      const queryParams = new URLSearchParams({ limit: '500' });
+      if (search) queryParams.append('search', search);
+
       const [prodRes, batchRes] = await Promise.all([
-        api.get('/production?limit=500'),
+        api.get(`/production?${queryParams.toString()}`),
         api.get('/production/batches/list?limit=500')
       ]);
-      const prodList = prodRes.data.data.data || prodRes.data.data || [];
+      let prodList = prodRes.data.data.data || prodRes.data.data || [];
+      
+      // Local filtering for shift if present
+      if (filters.shift) {
+        prodList = prodList.filter((p: any) => p.shift === filters.shift);
+      }
+      // Local filtering for date range if backend doesn't support it but user requested it
+      if (filters.startDate) {
+        prodList = prodList.filter((p: any) => new Date(p.date) >= new Date(filters.startDate));
+      }
+      if (filters.endDate) {
+        prodList = prodList.filter((p: any) => new Date(p.date) <= new Date(filters.endDate));
+      }
       const batchList = batchRes.data.data.data || batchRes.data.data || [];
       setProductions(Array.isArray(prodList) ? prodList : []);
       setBatches(Array.isArray(batchList) ? batchList : []);
@@ -127,11 +155,11 @@ export default function ProductionScreen() {
   };
 
   const columns: Column[] = [
-    { key: 'productionNumber', title: 'Prod #', width: 90, render: (item) => <Text style={[styles.cellText, { color: '#3B82F6', fontWeight: 'bold' }]}>{item.productionNumber}</Text> },
+    { key: 'productionNumber', title: 'Prod #', width: 90, render: (item) => <Text style={[styles.cellText, { color: colors.tint, fontWeight: 'bold' }]}>{item.productionNumber}</Text> },
     { key: 'date', title: 'Date & Shift', width: 100, render: (item) => (
         <View>
-          <Text style={styles.cellText}>{new Date(item.date).toLocaleDateString()}</Text>
-          <Text style={[styles.cellText, { color: '#9CA3AF', fontSize: 10 }]}>{item.shift} Shift</Text>
+          <Text style={styles.cellText}>{formatDate(item.date)}</Text>
+          <Text style={[styles.cellText, { color: colors.textSecondary, fontSize: 10 }]}>{item.shift} Shift</Text>
         </View>
       )
     },
@@ -144,7 +172,7 @@ export default function ProductionScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color="#9CA3AF" />
+            <Ionicons name="arrow-back" size={24} color={colors.textSecondary} />
           </TouchableOpacity>
           <View>
             <Text style={styles.pageTitle}>Production</Text>
@@ -158,17 +186,40 @@ export default function ProductionScreen() {
 
       <View style={styles.actionBar}>
         <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#94A3B8" />
+          <Ionicons name="search" size={20} color={colors.textSecondary} />
           <TextInput 
             style={styles.searchInput} 
-            placeholder="Search production #..." 
-            placeholderTextColor="#64748B"
+            placeholder="Search production runs..." 
+            placeholderTextColor={colors.textSecondary}
+            value={search}
+            onChangeText={setSearch}
+            onSubmitEditing={fetchData}
           />
         </View>
-        <TouchableOpacity style={styles.actionIconBtn}>
-          <Feather name="filter" size={20} color="#9CA3AF" />
+        <TouchableOpacity style={styles.actionIconBtn} onPress={() => setIsFilterVisible(true)}>
+          <Feather name="filter" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
+
+      <ActiveFilters 
+        module="production"
+        config={[
+          { key: 'shift', label: 'Shift', type: 'select', options: [{label: 'DAY', value: 'DAY'}, {label: 'NIGHT', value: 'NIGHT'}] },
+          { key: 'dateRange', label: 'Date', type: 'date-range' }
+        ]}
+        onFiltersChanged={fetchData}
+      />
+
+      <FilterPanel
+        module="production"
+        visible={isFilterVisible}
+        onClose={() => setIsFilterVisible(false)}
+        onApply={fetchData}
+        config={[
+          { key: 'shift', label: 'Shift', type: 'select', options: [{label: 'DAY', value: 'DAY'}, {label: 'NIGHT', value: 'NIGHT'}] },
+          { key: 'dateRange', label: 'Date Range', type: 'date-range' }
+        ]}
+      />
 
       <View style={styles.tableWrapper}>
         {isInteracting || (loading && !refreshing && productions.length === 0) ? (
@@ -184,7 +235,7 @@ export default function ProductionScreen() {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Log Daily Production Run</Text>
             <TouchableOpacity onPress={() => setIsModalVisible(false)}>
-              <Ionicons name="close" size={24} color="#9CA3AF" />
+              <Ionicons name="close" size={24} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
           
@@ -205,13 +256,11 @@ export default function ProductionScreen() {
 
             <View style={styles.formRow}>
               <View style={[styles.formGroup, {flex: 1, marginRight: 8}]}>
-                <Text style={styles.label}>Date *</Text>
-                <TextInput
-                  style={styles.input}
+                <DatePickerField
+                  label="Date *"
                   value={formData.date}
-                  onChangeText={(text) => setFormData({...formData, date: text})}
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor="#6B7280"
+                  onChange={(d) => setFormData({...formData, date: d})}
+                  placeholder="Select date"
                 />
               </View>
               <View style={[styles.formGroup, {flex: 1, marginLeft: 8}]}>
@@ -389,38 +438,38 @@ export default function ProductionScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 15 },
   headerLeft: { flexDirection: 'row', alignItems: 'center' },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#1F2937', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.text, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   pageTitle: { fontSize: 24, fontWeight: 'bold', color: '#FFF' },
-  pageSubtitle: { fontSize: 14, color: '#9CA3AF', marginTop: 4 },
+  pageSubtitle: { fontSize: 14, color: colors.textSecondary, marginTop: 4 },
   newButton: { backgroundColor: '#2996A8', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
   newButtonText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
   actionBar: { flexDirection: 'row', paddingHorizontal: 20, marginBottom: 15, gap: 12 },
-  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#1F2937', borderRadius: 12, paddingHorizontal: 12, height: 44 },
+  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.text, borderRadius: 12, paddingHorizontal: 12, height: 44 },
   searchInput: { flex: 1, color: '#FFF', marginLeft: 8, fontSize: 14 },
-  actionIconBtn: { width: 44, height: 44, backgroundColor: '#1F2937', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  actionIconBtn: { width: 44, height: 44, backgroundColor: colors.text, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   tableWrapper: { flex: 1, paddingHorizontal: 20 },
-  cellText: { color: '#D1D5DB', fontSize: 13 },
+  cellText: { color: colors.border, fontSize: 13 },
   modalContainer: { flex: 1, backgroundColor: '#000' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#1F2937' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: colors.text },
   modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#FFF' },
   modalScroll: { flex: 1 },
   modalContent: { padding: 20, paddingBottom: 100 },
   formRow: { flexDirection: 'row', justifyContent: 'space-between' },
   formGroup: { marginBottom: 16 },
-  label: { color: '#D1D5DB', fontSize: 13, fontWeight: '600', marginBottom: 8 },
-  input: { backgroundColor: '#1F2937', color: '#FFF', borderRadius: 12, padding: 12, fontSize: 14, borderWidth: 1, borderColor: '#374151' },
-  sectionTitle: { color: '#9CA3AF', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', marginTop: 8, marginBottom: 16, letterSpacing: 1 },
+  label: { color: colors.border, fontSize: 13, fontWeight: '600', marginBottom: 8 },
+  input: { backgroundColor: colors.text, color: '#FFF', borderRadius: 12, padding: 12, fontSize: 14, borderWidth: 1, borderColor: colors.text },
+  sectionTitle: { color: colors.textSecondary, fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', marginTop: 8, marginBottom: 16, letterSpacing: 1 },
   chipContainer: { flexDirection: 'row', gap: 8 },
-  chip: { flex: 1, backgroundColor: '#1F2937', paddingVertical: 10, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#374151' },
+  chip: { flex: 1, backgroundColor: colors.text, paddingVertical: 10, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: colors.text },
   chipActive: { backgroundColor: '#2996A820', borderColor: '#2996A8' },
-  chipText: { color: '#9CA3AF', fontWeight: '600', fontSize: 13 },
+  chipText: { color: colors.textSecondary, fontWeight: '600', fontSize: 13 },
   chipTextActive: { color: '#2996A8' },
   modalFooter: { flexDirection: 'row', gap: 12, marginTop: 24 },
-  cancelBtn: { flex: 1, padding: 16, borderRadius: 12, backgroundColor: '#1F2937', alignItems: 'center' },
+  cancelBtn: { flex: 1, padding: 16, borderRadius: 12, backgroundColor: colors.text, alignItems: 'center' },
   cancelBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
   saveBtn: { flex: 2, padding: 16, borderRadius: 12, backgroundColor: '#2996A8', alignItems: 'center' },
   saveBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },

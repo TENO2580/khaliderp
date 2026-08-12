@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useThemeStore } from '../../../store/themeStore';
 import { StyleSheet, View, ActivityIndicator, TouchableOpacity, TextInput, Modal, ScrollView, Alert, KeyboardAvoidingView, Platform, InteractionManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/Themed';
@@ -9,6 +10,8 @@ import { DataTable, Column } from '../../../components/DataTable';
 import { getCachedData, setCachedData } from '../../../lib/cache';
 import SkeletonList from '../../../components/SkeletonList';
 import SearchableDropdown from '../../../components/SearchableDropdown';
+import DatePickerField from '../../../components/DatePicker';
+import { formatDate } from '../../../lib/utils';
 
 interface Batch {
   id: string;
@@ -28,6 +31,8 @@ interface Batch {
 }
 
 export default function BatchesScreen() {
+  const colors = useThemeStore((state) => state.getColors());
+  const styles = getStyles(colors);
   const [batches, setBatches] = useState<Batch[]>(getCachedData('production') || []);
   const [products, setProducts] = useState<any[]>(getCachedData('production_products') || []);
   const [loading, setLoading] = useState(!getCachedData('production'));
@@ -164,13 +169,13 @@ export default function BatchesScreen() {
   };
 
   const getStatusColor = (status: string) => {
-    return status === 'COMPLETED' ? '#10B981' : '#3B82F6';
+    return status === 'COMPLETED' ? '#10B981' : colors.tint;
   };
 
   const columns: Column[] = [
     { key: 'actions', title: 'Actions', width: 70, render: (item) => (
         <TouchableOpacity style={styles.actionBtn} onPress={() => handleOpenEdit(item)}>
-          <Feather name="edit-2" size={16} color="#9CA3AF" />
+          <Feather name="edit-2" size={16} color={colors.textSecondary} />
         </TouchableOpacity>
       )
     },
@@ -194,7 +199,7 @@ export default function BatchesScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color="#9CA3AF" />
+            <Ionicons name="arrow-back" size={24} color={colors.textSecondary} />
           </TouchableOpacity>
           <View>
             <Text style={styles.pageTitle}>Batches</Text>
@@ -208,15 +213,15 @@ export default function BatchesScreen() {
 
       <View style={styles.actionBar}>
         <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#94A3B8" />
+          <Ionicons name="search" size={20} color={colors.textSecondary} />
           <TextInput 
             style={styles.searchInput} 
             placeholder="Search batch number..." 
-            placeholderTextColor="#64748B"
+            placeholderTextColor={colors.textSecondary}
           />
         </View>
         <TouchableOpacity style={styles.actionIconBtn}>
-          <Feather name="filter" size={20} color="#9CA3AF" />
+          <Feather name="filter" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
 
@@ -234,7 +239,7 @@ export default function BatchesScreen() {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{isEdit ? 'Edit Batch' : 'Generate Batch Code'}</Text>
             <TouchableOpacity onPress={() => setIsModalVisible(false)}>
-              <Ionicons name="close" size={24} color="#9CA3AF" />
+              <Ionicons name="close" size={24} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
           
@@ -255,36 +260,40 @@ export default function BatchesScreen() {
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Purchase Date *</Text>
-              <TextInput style={styles.input} value={formData.purchaseDate} onChangeText={(t) => setFormData({...formData, purchaseDate: t})} placeholder="YYYY-MM-DD" placeholderTextColor="#64748B" />
+              <DatePickerField
+                label="Purchase Date *"
+                value={formData.purchaseDate}
+                onChange={(d) => setFormData({...formData, purchaseDate: d})}
+                placeholder="Select purchase date"
+              />
             </View>
 
             <View style={styles.formRow}>
               <View style={[styles.formGroup, { flex: 1 }]}>
                 <Text style={styles.label}>Wax Initial Qty *</Text>
-                <TextInput style={styles.input} value={formData.waxInitialQty} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, waxInitialQty: t})} placeholder="KG" placeholderTextColor="#64748B" />
+                <TextInput style={styles.input} value={formData.waxInitialQty} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, waxInitialQty: t})} placeholder="KG" placeholderTextColor={colors.textSecondary} />
               </View>
               <View style={[styles.formGroup, { flex: 1 }]}>
                 <Text style={styles.label}>Wax Rate (₹) *</Text>
-                <TextInput style={styles.input} value={formData.waxRate} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, waxRate: t})} placeholder="0.00" placeholderTextColor="#64748B" />
+                <TextInput style={styles.input} value={formData.waxRate} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, waxRate: t})} placeholder="0.00" placeholderTextColor={colors.textSecondary} />
               </View>
             </View>
 
             {!isEdit && (
               <View style={styles.formGroup}>
                 <Text style={styles.label}>Initial Wax Stock (KG) *</Text>
-                <TextInput style={styles.input} value={formData.waxStock} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, waxStock: t})} placeholder="KG" placeholderTextColor="#64748B" />
+                <TextInput style={styles.input} value={formData.waxStock} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, waxStock: t})} placeholder="KG" placeholderTextColor={colors.textSecondary} />
               </View>
             )}
 
             <View style={styles.formRow}>
               <View style={[styles.formGroup, { flex: 1 }]}>
                 <Text style={styles.label}>Candles Produced</Text>
-                <TextInput style={styles.input} value={formData.producedQty} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, producedQty: t})} placeholder="KG" placeholderTextColor="#64748B" />
+                <TextInput style={styles.input} value={formData.producedQty} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, producedQty: t})} placeholder="KG" placeholderTextColor={colors.textSecondary} />
               </View>
               <View style={[styles.formGroup, { flex: 1 }]}>
                 <Text style={styles.label}>Selling Price (₹)</Text>
-                <TextInput style={styles.input} value={formData.sellingPrice} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, sellingPrice: t})} placeholder="0.00" placeholderTextColor="#64748B" />
+                <TextInput style={styles.input} value={formData.sellingPrice} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, sellingPrice: t})} placeholder="0.00" placeholderTextColor={colors.textSecondary} />
               </View>
             </View>
 
@@ -293,7 +302,7 @@ export default function BatchesScreen() {
                 <View style={styles.formRow}>
                   <View style={[styles.formGroup, { flex: 1 }]}>
                     <Text style={styles.label}>Candles Sold (KG)</Text>
-                    <TextInput style={styles.input} value={formData.soldQty} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, soldQty: t})} placeholder="KG" placeholderTextColor="#64748B" />
+                    <TextInput style={styles.input} value={formData.soldQty} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, soldQty: t})} placeholder="KG" placeholderTextColor={colors.textSecondary} />
                   </View>
                 </View>
 
@@ -334,45 +343,45 @@ export default function BatchesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
+const getStyles = (colors: any) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   backBtn: { padding: 4, marginLeft: -4 },
-  pageTitle: { fontSize: 20, fontWeight: 'bold', color: '#F8FAFC' },
-  pageSubtitle: { fontSize: 12, color: '#94A3B8', marginTop: 2 },
+  pageTitle: { fontSize: 20, fontWeight: 'bold', color: colors.text },
+  pageSubtitle: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
   newButton: { backgroundColor: '#2996A8', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
-  newButtonText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
+  newButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
   actionBar: { flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 12, gap: 12 },
-  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#1E1E1E', borderRadius: 8, paddingHorizontal: 12, height: 36, gap: 8 },
-  searchInput: { flex: 1, color: '#F8FAFC', fontSize: 14, height: '100%' },
-  actionIconBtn: { width: 36, height: 36, backgroundColor: '#1E1E1E', borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 8, paddingHorizontal: 12, height: 36, gap: 8 },
+  searchInput: { flex: 1, color: colors.text, fontSize: 14, height: '100%' },
+  actionIconBtn: { width: 36, height: 36, backgroundColor: colors.surface, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   tableWrapper: { flex: 1, paddingHorizontal: 16, paddingBottom: 80 },
-  cellText: { color: '#F8FAFC', fontSize: 14 },
+  cellText: { color: colors.text, fontSize: 14 },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, alignSelf: 'flex-start' },
   statusText: { fontSize: 10, fontWeight: 'bold' },
   actionBtn: { padding: 8 },
   
   // Modal Styles
-  modalContainer: { flex: 1, backgroundColor: '#121212' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#1E1E1E', backgroundColor: '#121212' },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#F8FAFC' },
+  modalContainer: { flex: 1, backgroundColor: colors.background },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: colors.surface, backgroundColor: colors.background },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', color: colors.text },
   modalScroll: { flex: 1 },
   modalContent: { padding: 20 },
   formGroup: { marginBottom: 20 },
   formRow: { flexDirection: 'row', gap: 16, marginBottom: 0 },
-  label: { fontSize: 12, fontWeight: 'bold', color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
-  input: { backgroundColor: '#1E1E1E', borderRadius: 12, padding: 16, color: '#F8FAFC', fontSize: 16, borderWidth: 1, borderColor: '#27272A' },
+  label: { fontSize: 12, fontWeight: 'bold', color: colors.textSecondary, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
+  input: { backgroundColor: colors.surface, borderRadius: 12, padding: 16, color: colors.text, fontSize: 16, borderWidth: 1, borderColor: colors.border },
   pillContainer: { flexDirection: 'row' },
-  pill: { backgroundColor: '#1E1E1E', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, marginRight: 8, borderWidth: 1, borderColor: '#27272A' },
+  pill: { backgroundColor: colors.surface, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, marginRight: 8, borderWidth: 1, borderColor: colors.border },
   pillActive: { backgroundColor: '#2996A8', borderColor: '#2996A8' },
-  pillText: { color: '#94A3B8', fontSize: 14, fontWeight: 'bold' },
-  pillTextActive: { color: '#FFFFFF' },
+  pillText: { color: colors.textSecondary, fontSize: 14, fontWeight: 'bold' },
+  pillTextActive: { color: '#fff' },
   
-  modalFooter: { flexDirection: 'row', padding: 20, borderTopWidth: 1, borderTopColor: '#1E1E1E', backgroundColor: '#121212', gap: 12 },
-  cancelBtn: { flex: 1, padding: 16, borderRadius: 12, backgroundColor: '#1E1E1E', alignItems: 'center' },
-  cancelBtnText: { color: '#F8FAFC', fontSize: 16, fontWeight: 'bold' },
+  modalFooter: { flexDirection: 'row', padding: 20, borderTopWidth: 1, borderTopColor: colors.surface, backgroundColor: colors.background, gap: 12 },
+  cancelBtn: { flex: 1, padding: 16, borderRadius: 12, backgroundColor: colors.surface, alignItems: 'center' },
+  cancelBtnText: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
   saveBtn: { flex: 2, padding: 16, borderRadius: 12, backgroundColor: '#2996A8', alignItems: 'center' },
-  saveBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
+  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });

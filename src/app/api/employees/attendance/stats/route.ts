@@ -2,6 +2,9 @@ import { NextRequest } from 'next/server';
 import { jsonResponse, authenticateRequest, errorResponse } from '@/lib/middleware-server';
 import prisma from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
+
 export async function GET(req: NextRequest) {
   const { user, error } = await authenticateRequest(req);
   if (error) return error;

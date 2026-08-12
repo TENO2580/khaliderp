@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useThemeStore } from '../../../store/themeStore';
 import { StyleSheet, View, ScrollView, ActivityIndicator, TouchableOpacity, InteractionManager, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/Themed';
@@ -8,6 +9,8 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { getCachedData, setCachedData } from '../../../lib/cache';
 
 export default function AnalyticsScreen() {
+  const colors = useThemeStore((state) => state.getColors());
+  const styles = getStyles(colors);
   const [data, setData] = useState<any>(getCachedData('analytics') || null);
   const [loading, setLoading] = useState(!getCachedData('analytics'));
   const [isInteracting, setIsInteracting] = useState(true);
@@ -42,7 +45,7 @@ export default function AnalyticsScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color="#9CA3AF" />
+            <Ionicons name="arrow-back" size={24} color={colors.textSecondary} />
           </TouchableOpacity>
           <View>
             <Text style={styles.pageTitle}>Analytics</Text>
@@ -54,18 +57,18 @@ export default function AnalyticsScreen() {
       {isInteracting || loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color="#2996A8" /></View>
       ) : !kpis ? (
-        <View style={styles.center}><Text style={{ color: '#94A3B8' }}>Failed to load analytics.</Text></View>
+        <View style={styles.center}><Text style={{ color: colors.textSecondary }}>Failed to load analytics.</Text></View>
       ) : (
         <ScrollView style={styles.scrollContent} contentContainerStyle={{ paddingBottom: 110 }}>
           {/* KPI Summary */}
           <Text style={styles.sectionTitle}>Key Performance Indicators</Text>
           <View style={styles.grid}>
-            <KPICard title="Today's Sales" value={formatCurrency(kpis.todaysSales)} icon="cash-outline" color="#10B981" />
-            <KPICard title="Today's Profit" value={formatCurrency(kpis.todaysProfit)} icon="trending-up-outline" color="#10B981" />
-            <KPICard title="Monthly Sales" value={formatCurrency(kpis.monthlySales)} icon="bar-chart-outline" color="#2996A8" change={kpis.salesChange} />
-            <KPICard title="Monthly Profit" value={formatCurrency(kpis.monthlyProfit)} icon="analytics-outline" color="#8B5CF6" />
-            <KPICard title="Monthly Expenses" value={formatCurrency(kpis.monthlyExpenses)} icon="wallet-outline" color="#EF4444" change={kpis.expenseChange} />
-            <KPICard title="Gross Margin" value={`${kpis.grossMargin}%`} icon="pie-chart-outline" color="#F59E0B" />
+            <KPICard title="Today's Sales" value={formatCurrency(kpis.todaysSales)} icon="cash-outline" color="#10B981" styles={styles} colors={colors} />
+            <KPICard title="Today's Profit" value={formatCurrency(kpis.todaysProfit)} icon="trending-up-outline" color="#10B981" styles={styles} colors={colors} />
+            <KPICard title="Monthly Sales" value={formatCurrency(kpis.monthlySales)} icon="bar-chart-outline" color="#2996A8" change={kpis.salesChange} styles={styles} colors={colors} />
+            <KPICard title="Monthly Profit" value={formatCurrency(kpis.monthlyProfit)} icon="analytics-outline" color="#8B5CF6" styles={styles} colors={colors} />
+            <KPICard title="Monthly Expenses" value={formatCurrency(kpis.monthlyExpenses)} icon="wallet-outline" color={colors.danger} change={kpis.expenseChange} styles={styles} colors={colors} />
+            <KPICard title="Gross Margin" value={`${kpis.grossMargin}%`} icon="pie-chart-outline" color="#F59E0B" styles={styles} colors={colors} />
           </View>
 
           <Text style={styles.sectionTitle}>Operations</Text>
@@ -83,7 +86,7 @@ export default function AnalyticsScreen() {
             <KPICard title="Wax Stock" value={`${kpis.currentWaxStock} KG`} icon="water-outline" color="#06B6D4" />
             <KPICard title="Finished Goods" value={`${kpis.finishedGoodsStock} KG`} icon="cube-outline" color="#EC4899" />
             <KPICard title="Inventory Value" value={formatCurrency(kpis.inventoryValue)} icon="pricetag-outline" color="#10B981" />
-            <KPICard title="Outstanding Credit" value={formatCurrency(kpis.outstandingCredit)} icon="alert-circle-outline" color="#EF4444" />
+            <KPICard title="Outstanding Credit" value={formatCurrency(kpis.outstandingCredit)} icon="alert-circle-outline" color={colors.danger} />
           </View>
 
           {/* Charts Data as Tables */}
@@ -134,7 +137,7 @@ export default function AnalyticsScreen() {
   );
 }
 
-const KPICard = ({ title, value, icon, color, change }: any) => (
+const KPICard = ({ title, value, icon, color, change, styles, colors }: any) => (
   <View style={styles.card}>
     <View style={[styles.iconWrapper, { backgroundColor: color + '20' }]}>
       <Ionicons name={icon} size={20} color={color} />
@@ -142,45 +145,45 @@ const KPICard = ({ title, value, icon, color, change }: any) => (
     <Text style={styles.cardValue}>{value}</Text>
     <Text style={styles.cardTitle}>{title}</Text>
     {change !== undefined && change !== null && (
-      <Text style={[styles.changeText, { color: change >= 0 ? '#10B981' : '#EF4444' }]}>
+      <Text style={[styles.changeText, { color: change >= 0 ? '#10B981' : colors.danger }]}>
         {change >= 0 ? '↑' : '↓'} {Math.abs(change)}% vs last month
       </Text>
     )}
   </View>
 );
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
+const getStyles = (colors: any) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8,
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   backBtn: { padding: 4, marginLeft: -4 },
-  pageTitle: { fontSize: 20, fontWeight: 'bold', color: '#F8FAFC' },
-  pageSubtitle: { fontSize: 12, color: '#94A3B8', marginTop: 2 },
+  pageTitle: { fontSize: 20, fontWeight: 'bold', color: colors.text },
+  pageSubtitle: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
   scrollContent: { paddingHorizontal: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#F8FAFC', marginBottom: 12, marginTop: 16 },
+  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: colors.text, marginBottom: 12, marginTop: 16 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 8 },
   card: {
-    width: '48%', backgroundColor: '#1E1E1E', borderRadius: 12, padding: 14, marginBottom: 12,
-    borderWidth: 1, borderColor: '#27272A',
+    width: '48%', backgroundColor: colors.surface, borderRadius: 12, padding: 14, marginBottom: 12,
+    borderWidth: 1, borderColor: colors.border,
   },
   iconWrapper: {
     width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginBottom: 8,
   },
-  cardValue: { fontSize: 16, fontWeight: 'bold', color: '#F8FAFC', marginBottom: 2 },
-  cardTitle: { fontSize: 11, color: '#94A3B8' },
+  cardValue: { fontSize: 16, fontWeight: 'bold', color: colors.text, marginBottom: 2 },
+  cardTitle: { fontSize: 11, color: colors.textSecondary },
   changeText: { fontSize: 10, marginTop: 4 },
   trendContainer: {
-    backgroundColor: '#1E1E1E', borderRadius: 12, borderWidth: 1, borderColor: '#27272A',
+    backgroundColor: colors.surface, borderRadius: 12, borderWidth: 1, borderColor: colors.border,
     marginBottom: 12, overflow: 'hidden',
   },
   trendRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#27272A',
+    paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border,
   },
-  trendLabel: { color: '#94A3B8', fontSize: 13, flex: 1 },
-  trendValue: { color: '#F8FAFC', fontSize: 13, fontWeight: 'bold' },
+  trendLabel: { color: colors.textSecondary, fontSize: 13, flex: 1 },
+  trendValue: { color: colors.text, fontSize: 13, fontWeight: 'bold' },
 });

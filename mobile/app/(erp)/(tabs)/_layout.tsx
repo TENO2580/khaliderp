@@ -1,4 +1,5 @@
 import React from 'react';
+import { useThemeStore } from '../../../store/themeStore';
 import { Tabs, useRouter, usePathname } from 'expo-router';
 import { View, ScrollView, TouchableOpacity, StyleSheet, Text } from 'react-native';
 import { 
@@ -32,6 +33,8 @@ function getLucideIcon(iconName: string, color: string) {
 }
 
 function CustomTabBar() {
+  const colors = useThemeStore((state) => state.getColors());
+  const styles = getStyles(colors);
   const { user } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
@@ -76,9 +79,9 @@ function CustomTabBar() {
               onPress={() => router.navigate(tab.href as any)}
             >
               <View style={isActive ? styles.activeIconBg : styles.inactiveIconBg}>
-                {getLucideIcon(tab.icon, isActive ? '#2996A8' : '#94A3B8')}
+                {getLucideIcon(tab.icon, isActive ? '#2996A8' : colors.textSecondary)}
               </View>
-              <Text style={[styles.tabLabel, { color: isActive ? '#2996A8' : '#94A3B8' }]}>
+              <Text style={[styles.tabLabel, { color: isActive ? '#2996A8' : colors.textSecondary }]}>
                 {tab.title}
               </Text>
             </TouchableOpacity>
@@ -90,6 +93,8 @@ function CustomTabBar() {
 }
 
 export default function TabsLayout() {
+  const colors = useThemeStore((state) => state.getColors());
+  const styles = getStyles(colors);
   return (
     <Tabs tabBar={(props) => <CustomTabBar />} screenOptions={{ headerShown: false }}>
       <Tabs.Screen name="index" />
@@ -111,14 +116,14 @@ export default function TabsLayout() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   tabBarWrapper: {
     position: 'absolute',
     bottom: 12,
     left: 20,
     right: 20,
     height: 56,
-    backgroundColor: '#1E1E1E', // Dark grey from screenshot
+    backgroundColor: colors.surface, // Dark grey from screenshot
     borderRadius: 28,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
@@ -126,7 +131,7 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 10,
     borderWidth: 1,
-    borderColor: '#27272A',
+    borderColor: colors.border,
     overflow: 'hidden',
   },
   scrollContent: {

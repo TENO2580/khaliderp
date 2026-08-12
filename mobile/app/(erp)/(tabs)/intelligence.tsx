@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useThemeStore } from '../../../store/themeStore';
 import { StyleSheet, View, FlatList, ActivityIndicator, TouchableOpacity, RefreshControl, Linking, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/Themed';
@@ -20,6 +21,8 @@ interface Company {
 }
 
 export default function IntelligenceScreen() {
+  const colors = useThemeStore((state) => state.getColors());
+  const styles = getStyles(colors);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -85,7 +88,7 @@ export default function IntelligenceScreen() {
   if (loading && !refreshing) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#9CA3AF" />
+        <ActivityIndicator size="large" color={colors.textSecondary} />
       </View>
     );
   }
@@ -95,7 +98,7 @@ export default function IntelligenceScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color="#9CA3AF" />
+            <Ionicons name="arrow-back" size={24} color={colors.textSecondary} />
           </TouchableOpacity>
           <View>
             <Text style={styles.pageTitle}>Intelligence</Text>
@@ -109,18 +112,18 @@ export default function IntelligenceScreen() {
 
       <View style={styles.actionBar}>
         <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#94A3B8" />
+          <Ionicons name="search" size={20} color={colors.textSecondary} />
           <TextInput 
             style={styles.searchInput} 
             placeholder="Search market data..." 
-            placeholderTextColor="#64748B"
+            placeholderTextColor={colors.textSecondary}
           />
         </View>
         <TouchableOpacity style={styles.actionIconBtn}>
-          <Feather name="filter" size={20} color="#9CA3AF" />
+          <Feather name="filter" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionIconBtn}>
-          <Ionicons name="swap-vertical" size={20} color="#9CA3AF" />
+          <Ionicons name="swap-vertical" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
 
@@ -130,11 +133,11 @@ export default function IntelligenceScreen() {
         renderItem={renderItem}
         contentContainerStyle={styles.listContainer}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3B82F6" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.tint} />
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Ionicons name="bulb-outline" size={48} color="#475569" />
+            <Ionicons name="bulb-outline" size={48} color={colors.textSecondary} />
             <Text style={styles.emptyStateText}>No market intelligence data yet.</Text>
           </View>
         }
@@ -143,9 +146,9 @@ export default function IntelligenceScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
+const getStyles = (colors: any) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -166,11 +169,11 @@ const styles = StyleSheet.create({
   pageTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#F8FAFC',
+    color: colors.text,
   },
   pageSubtitle: {
     fontSize: 12,
-    color: '#94A3B8',
+    color: colors.textSecondary,
     marginTop: 2,
   },
   newButton: {
@@ -180,7 +183,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   newButtonText: {
-    color: '#F8FAFC',
+    color: colors.text,
     fontWeight: 'bold',
     fontSize: 14,
   },
@@ -194,7 +197,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E1E1E',
+    backgroundColor: colors.surface,
     borderRadius: 8,
     paddingHorizontal: 12,
     height: 40,
@@ -202,29 +205,29 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    color: '#F8FAFC',
+    color: colors.text,
     fontSize: 14,
     height: '100%',
   },
   actionIconBtn: {
     width: 40,
     height: 40,
-    backgroundColor: '#1E1E1E',
+    backgroundColor: colors.surface,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   listContainer: { paddingHorizontal: 16, paddingBottom: 110 },
-  card: { backgroundColor: '#1E1E1E', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#27272A' },
+  card: { backgroundColor: colors.surface, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: colors.border },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 },
-  companyName: { fontSize: 18, fontWeight: 'bold', color: '#F8FAFC', flex: 1 },
+  companyName: { fontSize: 18, fontWeight: 'bold', color: colors.text, flex: 1 },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, marginLeft: 8 },
   statusText: { fontSize: 10, fontWeight: 'bold' },
-  industry: { fontSize: 14, color: '#94A3B8', marginBottom: 16 },
+  industry: { fontSize: 14, color: colors.textSecondary, marginBottom: 16 },
   cardDetails: { flexDirection: 'row', gap: 16 },
-  detailBox: { backgroundColor: '#121212', padding: 12, borderRadius: 12, flex: 1, alignItems: 'center', borderWidth: 1, borderColor: '#27272A' },
-  detailNumber: { fontSize: 18, fontWeight: 'bold', color: '#3B82F6', marginBottom: 4 },
-  detailLabel: { fontSize: 12, color: '#94A3B8' },
+  detailBox: { backgroundColor: colors.background, padding: 12, borderRadius: 12, flex: 1, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
+  detailNumber: { fontSize: 18, fontWeight: 'bold', color: colors.tint, marginBottom: 4 },
+  detailLabel: { fontSize: 12, color: colors.textSecondary },
   emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
-  emptyStateText: { color: '#94A3B8', marginTop: 16, fontSize: 16 },
+  emptyStateText: { color: colors.textSecondary, marginTop: 16, fontSize: 16 },
 });

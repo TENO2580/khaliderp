@@ -1,8 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
+import { useThemeStore } from '../store/themeStore';
 
 export default function SkeletonList({ rows = 5 }: { rows?: number }) {
   const animatedValue = useRef(new Animated.Value(0.3)).current;
+  const colors = useThemeStore((state) => state.getColors());
+  const styles = getStyles(colors);
 
   useEffect(() => {
     Animated.loop(
@@ -39,7 +42,7 @@ export default function SkeletonList({ rows = 5 }: { rows?: number }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: {
     padding: 16,
   },
@@ -48,7 +51,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E1E1E',
+    borderBottomColor: colors.border,
   },
   columnWrapper: {
     flex: 1,
@@ -56,7 +59,7 @@ const styles = StyleSheet.create({
   },
   skeletonBlock: {
     height: 16,
-    backgroundColor: '#27272A',
+    backgroundColor: colors.border,
     borderRadius: 8,
   },
 });

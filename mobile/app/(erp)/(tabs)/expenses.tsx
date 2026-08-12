@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useThemeStore } from '../../../store/themeStore';
 import { StyleSheet, View, ActivityIndicator, TouchableOpacity, TextInput, Modal, ScrollView, Alert, KeyboardAvoidingView, Platform, InteractionManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/Themed';
@@ -9,7 +10,11 @@ import { DataTable, Column } from '../../../components/DataTable';
 import { getCachedData, setCachedData } from '../../../lib/cache';
 import SkeletonList from '../../../components/SkeletonList';
 import SearchableDropdown from '../../../components/SearchableDropdown';
-
+import FilterPanel from '../../../components/FilterPanel';
+import ActiveFilters from '../../../components/ActiveFilters';
+import { useFilterStore } from '../../../store/filterStore';
+import DatePickerField from '../../../components/DatePicker';
+import { formatDate } from '../../../lib/utils';
 interface Expense {
   id: string;
   amount: number;
@@ -32,12 +37,19 @@ const PAYMENT_METHODS = ['CASH', 'BANK TRANSFER', 'UPI', 'CHEQUE', 'NEFT', 'RTGS
 const EXPENSE_STATUSES = ['PENDING', 'APPROVED', 'REJECTED'];
 
 export default function ExpensesScreen() {
+  const colors = useThemeStore((state) => state.getColors());
+  const styles = getStyles(colors);
   const [expenses, setExpenses] = useState<Expense[]>(getCachedData('expenses') || []);
   const [categories, setCategories] = useState<any[]>(getCachedData('expenses_categories') || []);
   const [loading, setLoading] = useState(!getCachedData('expenses'));
   const [isInteracting, setIsInteracting] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
+
+  const [search, setSearch] = useState('');
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
+  const filterState = useFilterStore(state => state.filters['expenses']);
+  const filters = filterState || {};
 
   // Modal State
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -56,8 +68,14 @@ export default function ExpensesScreen() {
 
   const fetchData = async () => {
     try {
+      const queryParams = new URLSearchParams({ limit: '500' });
+      if (search) queryParams.append('search', search);
+      if (filters.status) queryParams.append('status', filters.status);
+      if (filters.startDate) queryParams.append('startDate', filters.startDate);
+      if (filters.endDate) queryParams.append('endDate', filters.endDate);
+
       const [expRes, catRes] = await Promise.all([
-        api.get('/expenses?limit=500'),
+        api.get(`/expenses?${queryParams.toString()}`),
         api.get('/expenses/categories')
       ]);
       const expensesList = Array.isArray(expRes.data?.data?.data) ? expRes.data.data.data : (Array.isArray(expRes.data?.data) ? expRes.data.data : []);
@@ -96,7 +114,7 @@ export default function ExpensesScreen() {
       case 'PENDING': return '#F59E0B';
       case 'APPROVED': return '#10B981';
       case 'REJECTED': return '#EF4444';
-      default: return '#94A3B8';
+      default: return colors.textSecondary;
     }
   };
 
@@ -181,7 +199,7 @@ export default function ExpensesScreen() {
     { key: 'actions', title: 'Actions', width: 80, render: (item) => (
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <TouchableOpacity style={styles.actionBtn} onPress={() => handleOpenEdit(item)}>
-            <Feather name="edit-2" size={14} color="#9CA3AF" />
+            <Feather name="edit-2" size={14} color={colors.textSecondary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionBtn} onPress={() => {
             Alert.alert('Delete Expense', 'Are you sure you want to delete this expense?', [
@@ -196,12 +214,12 @@ export default function ExpensesScreen() {
               }},
             ]);
           }}>
-            <Feather name="trash-2" size={14} color="#EF4444" />
+            <Feather name="trash-2" size={14} color={colors.danger} />
           </TouchableOpacity>
         </View>
       )
     },
-    { key: 'date', title: 'Date', width: 120, render: (item) => <Text style={styles.cellText}>{new Date(item.date).toLocaleDateString()}</Text> },
+    { key: 'date', title: 'Date', width: 120, render: (item) => <Text style={styles.cellText}>{formatDate(item.date)}</Text> },
     { key: 'category', title: 'Category', width: 140, render: (item) => (
         <View style={styles.categoryRow}>
           <View style={[styles.iconWrapper, { backgroundColor: (item.category?.color || '#3B82F6') + '20' }]}>
@@ -233,7 +251,7 @@ export default function ExpensesScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color="#9CA3AF" />
+            <Ionicons name="arrow-back" size={24} color={colors.textSecondary} />
           </TouchableOpacity>
           <View>
             <Text style={styles.pageTitle}>Expenses</Text>
@@ -247,17 +265,40 @@ export default function ExpensesScreen() {
 
       <View style={styles.actionBar}>
         <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#94A3B8" />
+          <Ionicons name="search" size={20} color={colors.textSecondary} />
           <TextInput 
             style={styles.searchInput} 
             placeholder="Search expenses..." 
-            placeholderTextColor="#64748B"
+            placeholderTextColor={colors.textSecondary}
+            value={search}
+            onChangeText={setSearch}
+            onSubmitEditing={fetchData}
           />
         </View>
-        <TouchableOpacity style={styles.actionIconBtn}>
-          <Feather name="filter" size={20} color="#9CA3AF" />
+        <TouchableOpacity style={styles.actionIconBtn} onPress={() => setIsFilterVisible(true)}>
+          <Feather name="filter" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
+
+      <ActiveFilters 
+        module="expenses"
+        config={[
+          { key: 'status', label: 'Status', type: 'select', options: EXPENSE_STATUSES.map(s => ({ label: s, value: s })) },
+          { key: 'dateRange', label: 'Date', type: 'date-range' }
+        ]}
+        onFiltersChanged={fetchData}
+      />
+
+      <FilterPanel
+        module="expenses"
+        visible={isFilterVisible}
+        onClose={() => setIsFilterVisible(false)}
+        onApply={fetchData}
+        config={[
+          { key: 'status', label: 'Status', type: 'select', options: EXPENSE_STATUSES.map(s => ({ label: s, value: s })) },
+          { key: 'dateRange', label: 'Date Range', type: 'date-range' }
+        ]}
+      />
 
       <View style={styles.tableWrapper}>
         {isInteracting || (loading && !refreshing && expenses.length === 0) ? (
@@ -272,7 +313,7 @@ export default function ExpensesScreen() {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{isEdit ? 'Edit Expense' : 'Record New Expense'}</Text>
             <TouchableOpacity onPress={() => setIsModalVisible(false)}>
-              <Ionicons name="close" size={24} color="#9CA3AF" />
+              <Ionicons name="close" size={24} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
           
@@ -291,11 +332,15 @@ export default function ExpensesScreen() {
             <View style={styles.formRow}>
               <View style={[styles.formGroup, { flex: 1 }]}>
                 <Text style={styles.label}>Amount (₹) *</Text>
-                <TextInput style={styles.input} value={formData.amount} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, amount: t})} placeholder="1000" placeholderTextColor="#64748B" />
+                <TextInput style={styles.input} value={formData.amount} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, amount: t})} placeholder="1000" placeholderTextColor={colors.textSecondary} />
               </View>
               <View style={[styles.formGroup, { flex: 1 }]}>
-                <Text style={styles.label}>Date *</Text>
-                <TextInput style={styles.input} value={formData.date} onChangeText={(t) => setFormData({...formData, date: t})} placeholder="YYYY-MM-DD" placeholderTextColor="#64748B" />
+                <DatePickerField
+                  label="Date *"
+                  value={formData.date}
+                  onChange={(d) => setFormData({...formData, date: d})}
+                  placeholder="Select date"
+                />
               </View>
             </View>
 
@@ -335,7 +380,7 @@ export default function ExpensesScreen() {
 
             <View style={styles.formGroup}>
               <Text style={styles.label}>Notes / Description</Text>
-              <TextInput style={[styles.input, styles.textArea]} value={formData.description} onChangeText={(t) => setFormData({...formData, description: t})} multiline numberOfLines={3} placeholder="e.g. FUEL, supplier name etc." placeholderTextColor="#64748B" />
+              <TextInput style={[styles.input, styles.textArea]} value={formData.description} onChangeText={(t) => setFormData({...formData, description: t})} multiline numberOfLines={3} placeholder="e.g. FUEL, supplier name etc." placeholderTextColor={colors.textSecondary} />
             </View>
 
             <View style={{ height: 40 }} />
@@ -355,22 +400,22 @@ export default function ExpensesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
+const getStyles = (colors: any) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   backBtn: { padding: 4, marginLeft: -4 },
-  pageTitle: { fontSize: 20, fontWeight: 'bold', color: '#F8FAFC' },
-  pageSubtitle: { fontSize: 12, color: '#94A3B8', marginTop: 2 },
+  pageTitle: { fontSize: 20, fontWeight: 'bold', color: colors.text },
+  pageSubtitle: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
   newButton: { backgroundColor: '#2996A8', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
-  newButtonText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
+  newButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
   actionBar: { flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 12, gap: 12 },
-  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#1E1E1E', borderRadius: 8, paddingHorizontal: 12, height: 36, gap: 8 },
-  searchInput: { flex: 1, color: '#F8FAFC', fontSize: 14, height: '100%' },
-  actionIconBtn: { width: 36, height: 36, backgroundColor: '#1E1E1E', borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 8, paddingHorizontal: 12, height: 36, gap: 8 },
+  searchInput: { flex: 1, color: colors.text, fontSize: 14, height: '100%' },
+  actionIconBtn: { width: 36, height: 36, backgroundColor: colors.surface, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   tableWrapper: { flex: 1, paddingHorizontal: 16, paddingBottom: 80 },
-  cellText: { color: '#F8FAFC', fontSize: 14 },
+  cellText: { color: colors.text, fontSize: 14 },
   categoryRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
   iconWrapper: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, alignSelf: 'flex-start' },
@@ -378,24 +423,24 @@ const styles = StyleSheet.create({
   actionBtn: { padding: 8 },
   
   // Modal Styles
-  modalContainer: { flex: 1, backgroundColor: '#121212' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#1E1E1E', backgroundColor: '#121212' },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#F8FAFC' },
+  modalContainer: { flex: 1, backgroundColor: colors.background },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: colors.surface, backgroundColor: colors.background },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', color: colors.text },
   modalScroll: { flex: 1 },
   modalContent: { padding: 20 },
   formGroup: { marginBottom: 20 },
   formRow: { flexDirection: 'row', gap: 16, marginBottom: 0 },
-  label: { fontSize: 12, fontWeight: 'bold', color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
-  input: { backgroundColor: '#1E1E1E', borderRadius: 12, padding: 16, color: '#F8FAFC', fontSize: 16, borderWidth: 1, borderColor: '#27272A' },
+  label: { fontSize: 12, fontWeight: 'bold', color: colors.textSecondary, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
+  input: { backgroundColor: colors.surface, borderRadius: 12, padding: 16, color: colors.text, fontSize: 16, borderWidth: 1, borderColor: colors.border },
   textArea: { height: 100, textAlignVertical: 'top' },
   pillContainer: { flexDirection: 'row' },
-  pill: { backgroundColor: '#1E1E1E', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, marginRight: 8, borderWidth: 1, borderColor: '#27272A' },
+  pill: { backgroundColor: colors.surface, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, marginRight: 8, borderWidth: 1, borderColor: colors.border },
   pillActive: { backgroundColor: '#2996A8', borderColor: '#2996A8' },
-  pillText: { color: '#94A3B8', fontSize: 14, fontWeight: 'bold' },
-  pillTextActive: { color: '#FFFFFF' },
-  modalFooter: { flexDirection: 'row', padding: 20, borderTopWidth: 1, borderTopColor: '#1E1E1E', backgroundColor: '#121212', gap: 12 },
-  cancelBtn: { flex: 1, padding: 16, borderRadius: 12, backgroundColor: '#1E1E1E', alignItems: 'center' },
-  cancelBtnText: { color: '#F8FAFC', fontSize: 16, fontWeight: 'bold' },
+  pillText: { color: colors.textSecondary, fontSize: 14, fontWeight: 'bold' },
+  pillTextActive: { color: '#fff' },
+  modalFooter: { flexDirection: 'row', padding: 20, borderTopWidth: 1, borderTopColor: colors.surface, backgroundColor: colors.background, gap: 12 },
+  cancelBtn: { flex: 1, padding: 16, borderRadius: 12, backgroundColor: colors.surface, alignItems: 'center' },
+  cancelBtnText: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
   saveBtn: { flex: 2, padding: 16, borderRadius: 12, backgroundColor: '#2996A8', alignItems: 'center' },
-  saveBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
+  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });

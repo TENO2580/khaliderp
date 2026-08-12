@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useThemeStore } from '../../../store/themeStore';
 import { StyleSheet, View, FlatList, ActivityIndicator, TouchableOpacity, InteractionManager, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/Themed';
@@ -6,6 +7,7 @@ import api from '../../../lib/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { getCachedData, setCachedData } from '../../../lib/cache';
+import { formatDate } from '../../../lib/utils';
 
 interface Notification {
   id: string;
@@ -19,6 +21,8 @@ interface Notification {
 }
 
 export default function NotificationsScreen() {
+  const colors = useThemeStore((state) => state.getColors());
+  const styles = getStyles(colors);
   const [notifications, setNotifications] = useState<Notification[]>(getCachedData('notifications') || []);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(!getCachedData('notifications'));
@@ -69,8 +73,8 @@ export default function NotificationsScreen() {
       case 'URGENT': return '#EF4444';
       case 'HIGH': return '#F59E0B';
       case 'NORMAL': return '#2996A8';
-      case 'LOW': return '#64748B';
-      default: return '#94A3B8';
+      case 'LOW': return colors.textSecondary;
+      default: return colors.textSecondary;
     }
   };
 
@@ -98,7 +102,7 @@ export default function NotificationsScreen() {
     if (diffHrs < 24) return `${diffHrs}h ago`;
     const diffDays = Math.floor(diffHrs / 24);
     if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
+    return formatDate(date);
   };
 
   const renderItem = ({ item }: { item: Notification }) => (
@@ -108,7 +112,7 @@ export default function NotificationsScreen() {
       </View>
       <View style={styles.notifContent}>
         <View style={styles.notifHeader}>
-          <Text style={[styles.notifTitle, !item.isRead && { color: '#F8FAFC' }]} numberOfLines={1}>{item.title}</Text>
+          <Text style={[styles.notifTitle, !item.isRead && { color: colors.text }]} numberOfLines={1}>{item.title}</Text>
           <Text style={styles.notifTime}>{formatTime(item.createdAt)}</Text>
         </View>
         <Text style={styles.notifMessage} numberOfLines={2}>{item.message}</Text>
@@ -127,7 +131,7 @@ export default function NotificationsScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color="#9CA3AF" />
+            <Ionicons name="arrow-back" size={24} color={colors.textSecondary} />
           </TouchableOpacity>
           <View>
             <Text style={styles.pageTitle}>Notifications</Text>
@@ -145,8 +149,8 @@ export default function NotificationsScreen() {
         <View style={styles.center}><ActivityIndicator size="large" color="#2996A8" /></View>
       ) : notifications.length === 0 ? (
         <View style={styles.center}>
-          <Ionicons name="notifications-off-outline" size={48} color="#27272A" />
-          <Text style={{ color: '#94A3B8', marginTop: 12 }}>No notifications yet</Text>
+          <Ionicons name="notifications-off-outline" size={48} color={colors.border} />
+          <Text style={{ color: colors.textSecondary, marginTop: 12 }}>No notifications yet</Text>
         </View>
       ) : (
         <FlatList
@@ -161,32 +165,32 @@ export default function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
+const getStyles = (colors: any) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8,
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   backBtn: { padding: 4, marginLeft: -4 },
-  pageTitle: { fontSize: 20, fontWeight: 'bold', color: '#F8FAFC' },
-  pageSubtitle: { fontSize: 12, color: '#94A3B8', marginTop: 2 },
+  pageTitle: { fontSize: 20, fontWeight: 'bold', color: colors.text },
+  pageSubtitle: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
   markReadBtn: { backgroundColor: '#2996A8', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
-  markReadText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 12 },
+  markReadText: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
   notifCard: {
-    flexDirection: 'row', backgroundColor: '#1E1E1E', borderRadius: 12, padding: 14,
-    marginBottom: 8, borderWidth: 1, borderColor: '#27272A', gap: 12,
+    flexDirection: 'row', backgroundColor: colors.surface, borderRadius: 12, padding: 14,
+    marginBottom: 8, borderWidth: 1, borderColor: colors.border, gap: 12,
   },
-  unreadCard: { borderColor: '#2996A830', backgroundColor: '#1E1E1E' },
+  unreadCard: { borderColor: '#2996A830', backgroundColor: colors.surface },
   iconCircle: {
     width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center',
   },
   notifContent: { flex: 1 },
   notifHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  notifTitle: { fontSize: 14, fontWeight: 'bold', color: '#94A3B8', flex: 1, marginRight: 8 },
-  notifTime: { fontSize: 11, color: '#64748B' },
-  notifMessage: { fontSize: 13, color: '#94A3B8', lineHeight: 18, marginBottom: 6 },
+  notifTitle: { fontSize: 14, fontWeight: 'bold', color: colors.textSecondary, flex: 1, marginRight: 8 },
+  notifTime: { fontSize: 11, color: colors.textSecondary },
+  notifMessage: { fontSize: 13, color: colors.textSecondary, lineHeight: 18, marginBottom: 6 },
   notifMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   moduleBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
   moduleBadgeText: { fontSize: 10, fontWeight: 'bold' },

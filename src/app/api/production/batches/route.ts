@@ -3,6 +3,9 @@ import prisma from '@/lib/db';
 import { authenticateRequest, jsonResponse, errorResponse } from '@/lib/middleware-server';
 import { NotificationService } from '@/lib/services/NotificationService';
 
+export const dynamic = 'force-dynamic';
+
+
 export async function GET(req: NextRequest) {
   const { user, error } = await authenticateRequest(req);
   if (error) return error;

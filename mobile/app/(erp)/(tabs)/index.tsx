@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useThemeStore } from '../../../store/themeStore';
 import { StyleSheet, View, ScrollView, TouchableOpacity, Image, Animated, RefreshControl } from 'react-native';
 import { Text } from '@/components/Themed';
 import { useAuthStore } from '../../../store/authStore';
@@ -12,6 +13,8 @@ import { StatusBar } from 'expo-status-bar';
 import api from '../../../lib/api';
 
 export default function PremiumDashboard() {
+  const colors = useThemeStore((state) => state.getColors());
+  const styles = getStyles(colors);
   const { user } = useAuthStore();
   const router = useRouter();
   const [stats, setStats] = useState<any>(null);
@@ -73,11 +76,11 @@ export default function PremiumDashboard() {
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity style={styles.iconButton}>
-            <Search color="#94A3B8" size={20} />
+            <Search color={colors.textSecondary} size={20} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconButton}>
             <View style={styles.notificationBadge} />
-            <Bell color="#94A3B8" size={20} />
+            <Bell color={colors.textSecondary} size={20} />
           </TouchableOpacity>
         </View>
       </View>
@@ -123,7 +126,7 @@ export default function PremiumDashboard() {
         <Text style={styles.kpiLabel}>Outst. Credit</Text>
         <Text style={styles.kpiValue}>₹{(stats?.outstandingCredit || 0).toLocaleString()}</Text>
         <View style={styles.kpiTrendRow}>
-          <AlertCircle size={12} color="#EF4444" />
+          <AlertCircle size={12} color={colors.danger} />
           <Text style={styles.kpiTrendDanger}>Requires Follow-up</Text>
         </View>
       </View>
@@ -181,12 +184,12 @@ export default function PremiumDashboard() {
       case 'archive-outline': return <Archive size={28} color="#F59E0B" />;
       case 'bus-outline': return <Bus size={28} color="#7C5CFF" />;
       case 'construct-outline': return <Settings size={28} color="#EC4899" />;
-      case 'receipt-outline': return <Search size={28} color="#EF4444" />;
+      case 'receipt-outline': return <Search size={28} color={colors.danger} />;
       case 'bar-chart-outline': return <TrendingUp size={28} color="#14B8A6" />;
       case 'person-outline': return <Users size={28} color="#8B5CF6" />;
-      case 'stats-chart-outline': return <TrendingUp size={28} color="#9CA3AF" />;
+      case 'stats-chart-outline': return <TrendingUp size={28} color={colors.textSecondary} />;
       case 'bulb-outline': return <Sparkles size={28} color="#D946EF" />;
-      case 'settings-outline': return <Settings size={28} color="#64748B" />;
+      case 'settings-outline': return <Settings size={28} color={colors.textSecondary} />;
       default: return <Package size={28} color="#4F8CFF" />;
     }
   };
@@ -267,10 +270,10 @@ export default function PremiumDashboard() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: colors.background,
   },
   scrollContent: {
     paddingTop: 60,
@@ -301,7 +304,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#1E1E1E',
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: '#4F8CFF',
     alignItems: 'center',
@@ -317,13 +320,13 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: 14,
-    color: '#94A3B8',
+    color: colors.textSecondary,
     marginBottom: 2,
   },
   userName: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#F8FAFC',
+    color: colors.text,
   },
   headerActions: {
     flexDirection: 'row',
@@ -333,11 +336,11 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#1E1E1E',
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#1E1E1E',
+    borderColor: colors.surface,
   },
   notificationBadge: {
     position: 'absolute',
@@ -346,7 +349,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#EF4444',
+    backgroundColor: colors.danger,
     zIndex: 10,
   },
   statusRow: {
@@ -356,7 +359,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 12,
-    color: '#64748B',
+    color: colors.textSecondary,
     fontWeight: '600',
   },
   onlineStatus: {
@@ -388,12 +391,12 @@ const styles = StyleSheet.create({
   },
   kpiCard: {
     width: '48%',
-    backgroundColor: '#1E1E1E',
+    backgroundColor: colors.surface,
     borderRadius: 22,
     padding: 20,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#1E1E1E',
+    borderColor: colors.surface,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.2,
@@ -402,14 +405,14 @@ const styles = StyleSheet.create({
   },
   kpiLabel: {
     fontSize: 12,
-    color: '#94A3B8',
+    color: colors.textSecondary,
     marginBottom: 8,
     fontWeight: '500',
   },
   kpiValue: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#F8FAFC',
+    color: colors.text,
     marginBottom: 8,
   },
   kpiTrendRow: {
@@ -430,7 +433,7 @@ const styles = StyleSheet.create({
   },
   kpiTrendDanger: {
     fontSize: 12,
-    color: '#EF4444',
+    color: colors.danger,
     marginLeft: 4,
     fontWeight: '600',
   },
@@ -446,7 +449,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#F8FAFC',
+    color: colors.text,
     marginBottom: 16,
     paddingHorizontal: 24,
   },
@@ -469,7 +472,7 @@ const styles = StyleSheet.create({
   },
   aiCard: {
     marginHorizontal: 24,
-    backgroundColor: '#1E1E1E',
+    backgroundColor: colors.surface,
     borderRadius: 22,
     padding: 24,
     borderWidth: 1,
@@ -488,7 +491,7 @@ const styles = StyleSheet.create({
   aiTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#F8FAFC',
+    color: colors.text,
     marginLeft: 12,
   },
   aiContent: {
@@ -496,7 +499,7 @@ const styles = StyleSheet.create({
   },
   aiText: {
     fontSize: 14,
-    color: '#CBD5E1',
+    color: colors.textSecondary,
     marginBottom: 8,
     lineHeight: 20,
   },
@@ -516,7 +519,7 @@ const styles = StyleSheet.create({
   },
   aiActionText: {
     fontSize: 14,
-    color: '#F8FAFC',
+    color: colors.text,
     fontWeight: '500',
   },
   modulesGrid: {
@@ -527,12 +530,12 @@ const styles = StyleSheet.create({
   },
   moduleCard: {
     width: '48%',
-    backgroundColor: '#1E1E1E',
+    backgroundColor: colors.surface,
     borderRadius: 22,
     padding: 20,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#1E1E1E',
+    borderColor: colors.surface,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.2,
@@ -543,30 +546,30 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 16,
-    backgroundColor: '#121212',
+    backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#1E1E1E',
+    borderColor: colors.surface,
   },
   moduleTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#F8FAFC',
+    color: colors.text,
     marginBottom: 4,
   },
   moduleDesc: {
     fontSize: 12,
-    color: '#64748B',
+    color: colors.textSecondary,
   },
   timelineCard: {
     marginHorizontal: 24,
-    backgroundColor: '#1E1E1E',
+    backgroundColor: colors.surface,
     borderRadius: 22,
     padding: 24,
     borderWidth: 1,
-    borderColor: '#1E1E1E',
+    borderColor: colors.surface,
   },
   timelineItem: {
     flexDirection: 'row',
@@ -578,17 +581,17 @@ const styles = StyleSheet.create({
   timelineTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#F8FAFC',
+    color: colors.text,
     marginBottom: 4,
   },
   timelineTime: {
     fontSize: 12,
-    color: '#64748B',
+    color: colors.textSecondary,
   },
   timelineLine: {
     width: 2,
     height: 24,
-    backgroundColor: '#1E1E1E',
+    backgroundColor: colors.surface,
     marginLeft: 7,
     marginVertical: 4,
   }

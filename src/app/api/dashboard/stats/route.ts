@@ -2,6 +2,9 @@ import { NextRequest } from 'next/server';
 import prisma from '@/lib/db';
 import { authenticateRequest, jsonResponse, errorResponse } from '@/lib/middleware-server';
 
+export const dynamic = 'force-dynamic';
+
+
 export const revalidate = 300; // Cache this route for 5 minutes
 
 

@@ -1,35 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, ScrollView, TouchableOpacity, Modal, FlatList, Alert, Switch, SafeAreaView, Platform } from 'react-native';
+import { StyleSheet, View, ScrollView, TouchableOpacity, Modal, FlatList, Alert, Switch, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/Themed';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, Stack } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../../store/authStore';
+import { useThemeStore } from '../../store/themeStore';
 import api from '../../lib/api';
 
 // Custom Select Component for Dropdowns
-const CustomSelect = ({ label, description, options, value, onValueChange }: any) => {
+const CustomSelect = ({ label, description, options, value, onValueChange, colors }: any) => {
   const [modalVisible, setModalVisible] = useState(false);
+  const styles = getStyles(colors);
   const selectedOption = options.find((o: any) => o.value === value) || options[0];
 
   return (
     <View style={styles.controlContainer}>
       <View style={styles.controlInfo}>
-        <Text style={styles.controlLabel}>{label}</Text>
-        {description && <Text style={styles.controlDesc}>{description}</Text>}
+        <Text style={[styles.controlLabel, { color: colors.text }]}>{label}</Text>
+        {description && <Text style={[styles.controlDesc, { color: colors.textSecondary }]}>{description}</Text>}
       </View>
-      <TouchableOpacity style={styles.selectButton} onPress={() => setModalVisible(true)}>
-        <Text style={styles.selectButtonText}>{selectedOption?.label}</Text>
-        <Ionicons name="chevron-down" size={20} color="#94A3B8" />
+      <TouchableOpacity style={[styles.selectButton, { backgroundColor: colors.background, borderColor: colors.border }]} onPress={() => setModalVisible(true)}>
+        <Text style={[styles.selectButtonText, { color: colors.text }]}>{selectedOption?.label}</Text>
+        <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
       </TouchableOpacity>
 
       <Modal visible={modalVisible} transparent animationType="slide">
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setModalVisible(false)}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{label}</Text>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>{label}</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Ionicons name="close" size={24} color="#94A3B8" />
+                <Ionicons name="close" size={24} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
             <FlatList
@@ -37,16 +40,16 @@ const CustomSelect = ({ label, description, options, value, onValueChange }: any
               keyExtractor={(item) => item.value}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[styles.modalOption, value === item.value && styles.modalOptionSelected]}
+                  style={[styles.modalOption, { borderBottomColor: colors.border }, value === item.value && { backgroundColor: colors.background }]}
                   onPress={() => {
                     onValueChange(item.value);
                     setModalVisible(false);
                   }}
                 >
-                  <Text style={[styles.modalOptionText, value === item.value && styles.modalOptionTextSelected]}>
+                  <Text style={[styles.modalOptionText, { color: colors.textSecondary }, value === item.value && { color: colors.tint, fontWeight: 'bold' }]}>
                     {item.label}
                   </Text>
-                  {value === item.value && <Ionicons name="checkmark" size={20} color="#3B82F6" />}
+                  {value === item.value && <Ionicons name="checkmark" size={20} color={colors.tint} />}
                 </TouchableOpacity>
               )}
             />
@@ -58,18 +61,19 @@ const CustomSelect = ({ label, description, options, value, onValueChange }: any
 };
 
 // Custom Switch Component
-const CustomSwitch = ({ label, description, value, onValueChange }: any) => {
+const CustomSwitch = ({ label, description, value, onValueChange, colors }: any) => {
+  const styles = getStyles(colors);
   return (
     <View style={[styles.controlContainer, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
       <View style={[styles.controlInfo, { flex: 1, paddingRight: 16 }]}>
-        <Text style={styles.controlLabel}>{label}</Text>
-        {description && <Text style={styles.controlDesc}>{description}</Text>}
+        <Text style={[styles.controlLabel, { color: colors.text }]}>{label}</Text>
+        {description && <Text style={[styles.controlDesc, { color: colors.textSecondary }]}>{description}</Text>}
       </View>
       <Switch 
         value={value} 
         onValueChange={onValueChange} 
-        trackColor={{ false: '#334155', true: '#3B82F6' }}
-        thumbColor="#FFFFFF"
+        trackColor={{ false: colors.border, true: colors.tint }}
+        thumbColor={colors.text}
       />
     </View>
   );
@@ -79,13 +83,17 @@ export default function CustomizationScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
   
+  const colors = useThemeStore((state) => state.getColors());
+  const styles = getStyles(colors);
+  const setThemeMode = useThemeStore((state) => state.setThemeMode);
+
   const [initialPrefs, setInitialPrefs] = useState<any>({});
   const [prefs, setPrefs] = useState({
     fontFamily: 'inter',
     fontSize: 'medium',
     tableDensity: 'comfortable',
     tableWidth: 'fit',
-    theme: 'dark',
+    theme: 'system',
     accentColor: 'blue',
     roundedCorners: 'medium',
     animations: true,
@@ -120,6 +128,7 @@ export default function CustomizationScreen() {
       const size = await AsyncStorage.getItem('app-font-size');
       const density = await AsyncStorage.getItem('app-table-density');
       const width = await AsyncStorage.getItem('app-table-layout');
+      const theme = await AsyncStorage.getItem('app-theme');
       
       const localPrefs = {
         ...prefs,
@@ -127,6 +136,7 @@ export default function CustomizationScreen() {
         fontSize: size || 'medium',
         tableDensity: density || 'comfortable',
         tableWidth: width || 'fit',
+        theme: theme || 'system'
       };
       setPrefs(localPrefs);
       setInitialPrefs(localPrefs);
@@ -144,6 +154,7 @@ export default function CustomizationScreen() {
       await AsyncStorage.setItem('app-font-size', prefs.fontSize);
       await AsyncStorage.setItem('app-table-density', prefs.tableDensity);
       await AsyncStorage.setItem('app-table-layout', prefs.tableWidth);
+      await setThemeMode(prefs.theme as any);
       
       setInitialPrefs(prefs);
       Alert.alert("Success", "Preferences saved globally to your profile!");
@@ -163,15 +174,15 @@ export default function CustomizationScreen() {
   const previewPadding = prefs.tableDensity === 'compact' ? 8 : prefs.tableDensity === 'comfortable' ? 12 : 16;
   
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.surface }]}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#F8FAFC" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>Customization</Text>
-          <Text style={styles.headerSubtitle}>Personalize your ERP experience</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Customization</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Personalize your ERP experience</Text>
         </View>
         <View style={{ width: 40 }} />
       </View>
@@ -179,13 +190,13 @@ export default function CustomizationScreen() {
       <ScrollView style={styles.scrollContent} contentContainerStyle={{ paddingBottom: 100 }}>
         
         {/* PREVIEW */}
-        <View style={styles.groupCard}>
+        <View style={[styles.groupCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.groupHeader}>
-            <Ionicons name="eye-outline" size={20} color="#3B82F6" />
-            <Text style={styles.groupTitle}>Live Preview</Text>
+            <Ionicons name="eye-outline" size={20} color={colors.tint} />
+            <Text style={[styles.groupTitle, { color: colors.text }]}>Live Preview</Text>
           </View>
-          <View style={[styles.previewBox, prefs.highContrast && { borderColor: '#fff', borderWidth: 2 }]}>
-            <Text style={{ fontSize: previewFontSize, color: '#F8FAFC', marginBottom: 8, fontWeight: 'bold' }}>
+          <View style={[styles.previewBox, { backgroundColor: colors.background, borderColor: colors.border }, prefs.highContrast && { borderColor: colors.text, borderWidth: 2 }]}>
+            <Text style={{ fontSize: previewFontSize, color: colors.text, marginBottom: 8, fontWeight: 'bold' }}>
               Sample Dashboard
             </Text>
             <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
@@ -193,24 +204,24 @@ export default function CustomizationScreen() {
                 <Text style={{ color: '#fff', fontSize: previewFontSize * 0.8, fontWeight: '600' }}>Primary Action</Text>
               </View>
             </View>
-            <View style={{ backgroundColor: '#1E293B', borderRadius: 8, overflow: 'hidden' }}>
-              <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#334155', padding: previewPadding }}>
-                <Text style={{ color: '#94A3B8', fontSize: previewFontSize * 0.85, flex: 1, fontWeight: '600' }}>ID</Text>
-                <Text style={{ color: '#94A3B8', fontSize: previewFontSize * 0.85, flex: 2, fontWeight: '600' }}>Customer</Text>
+            <View style={{ backgroundColor: colors.surface, borderRadius: 8, overflow: 'hidden' }}>
+              <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.border, padding: previewPadding }}>
+                <Text style={{ color: colors.textSecondary, fontSize: previewFontSize * 0.85, flex: 1, fontWeight: '600' }}>ID</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: previewFontSize * 0.85, flex: 2, fontWeight: '600' }}>Customer</Text>
               </View>
               <View style={{ flexDirection: 'row', padding: previewPadding }}>
-                <Text style={{ color: '#F8FAFC', fontSize: previewFontSize * 0.9, flex: 1 }}>#1042</Text>
-                <Text style={{ color: '#F8FAFC', fontSize: previewFontSize * 0.9, flex: 2 }}>Acme Corp</Text>
+                <Text style={{ color: colors.text, fontSize: previewFontSize * 0.9, flex: 1 }}>#1042</Text>
+                <Text style={{ color: colors.text, fontSize: previewFontSize * 0.9, flex: 2 }}>Acme Corp</Text>
               </View>
             </View>
           </View>
         </View>
 
         {/* DISPLAY */}
-        <View style={styles.groupCard}>
+        <View style={[styles.groupCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.groupHeader}>
-            <Ionicons name="desktop-outline" size={20} color="#3B82F6" />
-            <Text style={styles.groupTitle}>Display</Text>
+            <Ionicons name="desktop-outline" size={20} color={colors.tint} />
+            <Text style={[styles.groupTitle, { color: colors.text }]}>Display</Text>
           </View>
           <CustomSelect
             label="Font Family"
@@ -223,8 +234,9 @@ export default function CustomizationScreen() {
               { label: 'SF Pro', value: 'sfpro' },
               { label: 'Poppins', value: 'poppins' }
             ]}
+            colors={colors}
           />
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <CustomSelect
             label="Font Size"
             value={prefs.fontSize}
@@ -235,14 +247,15 @@ export default function CustomizationScreen() {
               { label: 'Large', value: 'large' },
               { label: 'Extra Large', value: 'xl' }
             ]}
+            colors={colors}
           />
         </View>
 
         {/* TABLE PREFERENCES */}
-        <View style={styles.groupCard}>
+        <View style={[styles.groupCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.groupHeader}>
-            <Ionicons name="grid-outline" size={20} color="#3B82F6" />
-            <Text style={styles.groupTitle}>Table Preferences</Text>
+            <Ionicons name="grid-outline" size={20} color={colors.tint} />
+            <Text style={[styles.groupTitle, { color: colors.text }]}>Table Preferences</Text>
           </View>
           <CustomSelect
             label="Table Density"
@@ -254,8 +267,9 @@ export default function CustomizationScreen() {
               { label: 'Comfortable (Balanced)', value: 'comfortable' },
               { label: 'Spacious (Easier to read)', value: 'spacious' }
             ]}
+            colors={colors}
           />
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <CustomSelect
             label="Table Width"
             description="Controls how table columns are displayed."
@@ -266,24 +280,25 @@ export default function CustomizationScreen() {
               { label: 'Fill Screen', value: 'fill' },
               { label: 'Auto', value: 'auto' }
             ]}
+            colors={colors}
           />
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <View style={[styles.controlContainer, { marginBottom: 0 }]}>
             <View style={styles.controlInfo}>
-              <Text style={styles.controlLabel}>Column Visibility</Text>
-              <Text style={styles.controlDesc}>Open the enterprise column manager. Users can hide, show, pin, and reorder columns per module.</Text>
+              <Text style={[styles.controlLabel, { color: colors.text }]}>Column Visibility</Text>
+              <Text style={[styles.controlDesc, { color: colors.textSecondary }]}>Open the enterprise column manager. Users can hide, show, pin, and reorder columns per module.</Text>
             </View>
-            <TouchableOpacity style={styles.actionButton} onPress={() => Alert.alert('Column Manager', 'Enterprise column manager will open here in a future update.')}>
-              <Text style={styles.actionButtonText}>Customize Columns</Text>
+            <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.background }]} onPress={() => Alert.alert('Column Manager', 'Enterprise column manager will open here in a future update.')}>
+              <Text style={[styles.actionButtonText, { color: colors.text }]}>Customize Columns</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* APPEARANCE */}
-        <View style={styles.groupCard}>
+        <View style={[styles.groupCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.groupHeader}>
-            <Ionicons name="color-palette-outline" size={20} color="#3B82F6" />
-            <Text style={styles.groupTitle}>Appearance</Text>
+            <Ionicons name="color-palette-outline" size={20} color={colors.tint} />
+            <Text style={[styles.groupTitle, { color: colors.text }]}>Appearance</Text>
           </View>
           <CustomSelect
             label="Theme"
@@ -294,8 +309,9 @@ export default function CustomizationScreen() {
               { label: 'Light', value: 'light' },
               { label: 'System Default', value: 'system' }
             ]}
+            colors={colors}
           />
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <CustomSelect
             label="Accent Color"
             value={prefs.accentColor}
@@ -306,8 +322,9 @@ export default function CustomizationScreen() {
               { label: 'Green', value: 'green' },
               { label: 'Orange', value: 'orange' }
             ]}
+            colors={colors}
           />
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <CustomSelect
             label="Rounded Corners"
             value={prefs.roundedCorners}
@@ -317,31 +334,35 @@ export default function CustomizationScreen() {
               { label: 'Medium', value: 'medium' },
               { label: 'Large', value: 'large' }
             ]}
+            colors={colors}
           />
         </View>
 
         {/* ACCESSIBILITY */}
-        <View style={styles.groupCard}>
+        <View style={[styles.groupCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.groupHeader}>
-            <Ionicons name="accessibility-outline" size={20} color="#3B82F6" />
-            <Text style={styles.groupTitle}>Accessibility</Text>
+            <Ionicons name="accessibility-outline" size={20} color={colors.tint} />
+            <Text style={[styles.groupTitle, { color: colors.text }]}>Accessibility</Text>
           </View>
           <CustomSwitch
             label="Animations"
             value={prefs.animations}
             onValueChange={(val: boolean) => setPrefs(p => ({ ...p, animations: val }))}
+            colors={colors}
           />
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <CustomSwitch
             label="Reduce Motion"
             value={prefs.reduceMotion}
             onValueChange={(val: boolean) => setPrefs(p => ({ ...p, reduceMotion: val }))}
+            colors={colors}
           />
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <CustomSwitch
             label="High Contrast"
             value={prefs.highContrast}
             onValueChange={(val: boolean) => setPrefs(p => ({ ...p, highContrast: val }))}
+            colors={colors}
           />
         </View>
         
@@ -349,11 +370,11 @@ export default function CustomizationScreen() {
 
       {/* STICKY SAVE BAR */}
       {hasChanges && (
-        <View style={styles.stickyFooter}>
-          <TouchableOpacity style={styles.resetBtn} onPress={handleReset}>
-            <Text style={styles.resetBtnText}>Cancel</Text>
+        <View style={[styles.stickyFooter, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+          <TouchableOpacity style={[styles.resetBtn, { borderColor: colors.border }]} onPress={handleReset}>
+            <Text style={[styles.resetBtnText, { color: colors.text }]}>Cancel</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={isSaving}>
+          <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.tint }]} onPress={handleSave} disabled={isSaving}>
             <Text style={styles.saveBtnText}>{isSaving ? 'Saving...' : 'Save Preferences'}</Text>
           </TouchableOpacity>
         </View>
@@ -362,10 +383,9 @@ export default function CustomizationScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0F172A',
     paddingTop: Platform.OS === 'android' ? 32 : 0,
   },
   header: {
@@ -374,9 +394,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     height: 60,
-    backgroundColor: '#0F172A',
     borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
   },
   backButton: {
     padding: 8,
@@ -388,11 +406,9 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
     fontWeight: 'bold',
-    color: '#F8FAFC',
   },
   headerSubtitle: {
     fontSize: 12,
-    color: '#94A3B8',
     marginTop: 2,
   },
   scrollContent: {
@@ -401,12 +417,10 @@ const styles = StyleSheet.create({
   
   // Group Cards
   groupCard: {
-    backgroundColor: '#1E293B',
     borderRadius: 16,
     padding: 16,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#334155',
   },
   groupHeader: {
     flexDirection: 'row',
@@ -417,7 +431,6 @@ const styles = StyleSheet.create({
   groupTitle: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: '#F8FAFC',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -432,52 +445,42 @@ const styles = StyleSheet.create({
   controlLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#F8FAFC',
   },
   controlDesc: {
     fontSize: 13,
-    color: '#94A3B8',
     marginTop: 4,
   },
   selectButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#020617',
     borderWidth: 1,
-    borderColor: '#334155',
     borderRadius: 8,
     padding: 12,
   },
   selectButtonText: {
-    color: '#F8FAFC',
     fontSize: 15,
   },
   divider: {
     height: 1,
-    backgroundColor: '#334155',
     marginVertical: 16,
   },
   actionButton: {
-    backgroundColor: '#334155',
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 8,
   },
   actionButtonText: {
-    color: '#F8FAFC',
     fontWeight: '600',
     fontSize: 14,
   },
   
   // Preview
   previewBox: {
-    backgroundColor: '#020617',
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#334155',
   },
   previewButton: {
     paddingHorizontal: 12,
@@ -491,7 +494,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#1E293B',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '70%',
@@ -502,12 +504,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#334155',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#F8FAFC',
   },
   modalOption: {
     flexDirection: 'row',
@@ -515,18 +515,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#334155',
   },
   modalOptionSelected: {
-    backgroundColor: '#0F172A',
   },
   modalOptionText: {
     fontSize: 16,
-    color: '#CBD5E1',
-  },
-  modalOptionTextSelected: {
-    color: '#3B82F6',
-    fontWeight: 'bold',
   },
   
   // Sticky Footer
@@ -535,12 +528,10 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#1E293B',
     flexDirection: 'row',
     padding: 16,
     paddingBottom: Platform.OS === 'ios' ? 32 : 16,
     borderTopWidth: 1,
-    borderTopColor: '#334155',
     gap: 12,
   },
   resetBtn: {
@@ -548,11 +539,9 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#334155',
     alignItems: 'center',
   },
   resetBtnText: {
-    color: '#F8FAFC',
     fontWeight: '600',
     fontSize: 15,
   },
@@ -560,11 +549,10 @@ const styles = StyleSheet.create({
     flex: 2,
     padding: 14,
     borderRadius: 8,
-    backgroundColor: '#3B82F6',
     alignItems: 'center',
   },
   saveBtnText: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontWeight: 'bold',
     fontSize: 15,
   }

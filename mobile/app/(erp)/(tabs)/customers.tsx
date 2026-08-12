@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useThemeStore } from '../../../store/themeStore';
 import { StyleSheet, View, ActivityIndicator, TouchableOpacity, TextInput, Modal, ScrollView, Alert, KeyboardAvoidingView, Platform, InteractionManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/Themed';
@@ -7,7 +8,10 @@ import { Ionicons, Feather } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { DataTable, Column } from '../../../components/DataTable';
 import { getCachedData, setCachedData } from '../../../lib/cache';
-import SkeletonList from '../../../components/SkeletonList';
+import FilterPanel from '../../../components/FilterPanel';
+import ActiveFilters, { FilterConfig } from '../../../components/ActiveFilters';
+import { useFilterStore } from '../../../store/filterStore';
+import DatePickerField from '../../../components/DatePicker';
 
 interface Customer {
   id: string;
@@ -36,10 +40,18 @@ const CUSTOMER_TYPES = ['RETAILER', 'DISTRIBUTOR', 'WHOLESALER', 'DEALER'];
 const CUSTOMER_STATUSES = ['ACTIVE', 'INACTIVE', 'LEAD', 'LOST'];
 
 export default function CustomersScreen() {
+  const colors = useThemeStore((state) => state.getColors());
+  const styles = getStyles(colors);
   const [customers, setCustomers] = useState<Customer[]>(getCachedData('customers') || []);
   const [loading, setLoading] = useState(!getCachedData('customers'));
   const [isInteracting, setIsInteracting] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState('');
+  
+  // Filter State
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
+  const filterState = useFilterStore(state => state.filters['customers']);
+  const filters = filterState || {};
   
   // Modal State
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -72,7 +84,14 @@ export default function CustomersScreen() {
 
   const fetchCustomers = async () => {
     try {
-      const response = await api.get('/customers?limit=500');
+      const queryParams = new URLSearchParams({ limit: '500' });
+      if (search) queryParams.append('search', search);
+      if (filters.status) queryParams.append('status', filters.status);
+      if (filters.route) queryParams.append('route', filters.route);
+      if (filters.startDate) queryParams.append('startDate', filters.startDate);
+      if (filters.endDate) queryParams.append('endDate', filters.endDate);
+
+      const response = await api.get(`/customers?${queryParams.toString()}`);
       const customersList = response.data.data.data;
       setCustomers(customersList);
       setCachedData('customers', customersList);
@@ -101,8 +120,8 @@ export default function CustomersScreen() {
       case 'ACTIVE': return '#10B981';
       case 'INACTIVE': return '#EF4444';
       case 'LEAD': return '#3B82F6';
-      case 'LOST': return '#94A3B8';
-      default: return '#94A3B8';
+      case 'LOST': return colors.textSecondary;
+      default: return colors.textSecondary;
     }
   };
 
@@ -176,7 +195,7 @@ export default function CustomersScreen() {
     { key: 'actions', title: 'Actions', width: 80, render: (item) => (
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <TouchableOpacity style={styles.actionBtn} onPress={() => handleOpenEdit(item)}>
-            <Feather name="edit-2" size={14} color="#9CA3AF" />
+            <Feather name="edit-2" size={14} color={colors.textSecondary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionBtn} onPress={() => {
             Alert.alert('Delete Customer', `Are you sure you want to delete ${item.name}?`, [
@@ -191,7 +210,7 @@ export default function CustomersScreen() {
               }},
             ]);
           }}>
-            <Feather name="trash-2" size={14} color="#EF4444" />
+            <Feather name="trash-2" size={14} color={colors.danger} />
           </TouchableOpacity>
         </View>
       )
@@ -216,7 +235,7 @@ export default function CustomersScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color="#9CA3AF" />
+            <Ionicons name="arrow-back" size={24} color={colors.textSecondary} />
           </TouchableOpacity>
           <View>
             <Text style={styles.pageTitle}>Customers</Text>
@@ -230,24 +249,50 @@ export default function CustomersScreen() {
 
       <View style={styles.actionBar}>
         <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#94A3B8" />
+          <Ionicons name="search" size={20} color={colors.textSecondary} />
           <TextInput 
             style={styles.searchInput} 
             placeholder="Search customers..." 
-            placeholderTextColor="#64748B"
+            placeholderTextColor={colors.textSecondary}
+            value={search}
+            onChangeText={setSearch}
+            onSubmitEditing={fetchCustomers}
           />
         </View>
-        <TouchableOpacity style={styles.actionIconBtn}>
-          <Feather name="filter" size={20} color="#9CA3AF" />
+        <TouchableOpacity style={styles.actionIconBtn} onPress={() => setIsFilterVisible(true)}>
+          <Feather name="filter" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
 
+      <ActiveFilters 
+        module="customers"
+        config={[
+          { key: 'status', label: 'Status', type: 'select', options: CUSTOMER_STATUSES.map(s => ({ label: s, value: s })) },
+          { key: 'route', label: 'Route', type: 'text' },
+          { key: 'dateRange', label: 'Date', type: 'date-range' }
+        ]}
+        onFiltersChanged={fetchCustomers}
+      />
+
+      <FilterPanel
+        module="customers"
+        visible={isFilterVisible}
+        onClose={() => setIsFilterVisible(false)}
+        onApply={fetchCustomers}
+        config={[
+          { key: 'status', label: 'Status', type: 'select', options: CUSTOMER_STATUSES.map(s => ({ label: s, value: s })) },
+          { key: 'route', label: 'Route', type: 'text' },
+          { key: 'dateRange', label: 'Date Range', type: 'date-range' }
+        ]}
+      />
+
       <View style={styles.tableWrapper}>
-        {isInteracting || (loading && !refreshing && customers.length === 0) ? (
-          <SkeletonList />
-        ) : (
-          <DataTable columns={columns} data={customers} showActions={false} />
-        )}
+        <DataTable 
+          columns={columns} 
+          data={customers} 
+          onEdit={handleOpenEdit} 
+          isLoading={isInteracting || (loading && !refreshing && customers.length === 0)}
+        />
       </View>
 
       <Modal visible={isModalVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setIsModalVisible(false)}>
@@ -255,7 +300,7 @@ export default function CustomersScreen() {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{isEdit ? 'Edit Customer' : 'Add New Customer'}</Text>
             <TouchableOpacity onPress={() => setIsModalVisible(false)}>
-              <Ionicons name="close" size={24} color="#9CA3AF" />
+              <Ionicons name="close" size={24} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
           
@@ -263,28 +308,28 @@ export default function CustomersScreen() {
             
             <View style={styles.formGroup}>
               <Text style={styles.label}>Customer Name *</Text>
-              <TextInput style={styles.input} value={formData.name} onChangeText={(t) => setFormData({...formData, name: t})} placeholder="Company or Individual name" placeholderTextColor="#64748B" />
+              <TextInput style={styles.input} value={formData.name} onChangeText={(t) => setFormData({...formData, name: t})} placeholder="Company or Individual name" placeholderTextColor={colors.textSecondary} />
             </View>
 
             <View style={styles.formRow}>
               <View style={[styles.formGroup, { flex: 1 }]}>
                 <Text style={styles.label}>Owner Name</Text>
-                <TextInput style={styles.input} value={formData.ownerName} onChangeText={(t) => setFormData({...formData, ownerName: t})} placeholder="John Doe" placeholderTextColor="#64748B" />
+                <TextInput style={styles.input} value={formData.ownerName} onChangeText={(t) => setFormData({...formData, ownerName: t})} placeholder="John Doe" placeholderTextColor={colors.textSecondary} />
               </View>
               <View style={[styles.formGroup, { flex: 1 }]}>
                 <Text style={styles.label}>Phone</Text>
-                <TextInput style={styles.input} value={formData.phone} keyboardType="phone-pad" onChangeText={(t) => setFormData({...formData, phone: t})} placeholder="9876543210" placeholderTextColor="#64748B" />
+                <TextInput style={styles.input} value={formData.phone} keyboardType="phone-pad" onChangeText={(t) => setFormData({...formData, phone: t})} placeholder="9876543210" placeholderTextColor={colors.textSecondary} />
               </View>
             </View>
 
             <View style={styles.formRow}>
               <View style={[styles.formGroup, { flex: 1 }]}>
                 <Text style={styles.label}>Credit Limit (₹)</Text>
-                <TextInput style={styles.input} value={formData.creditLimit} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, creditLimit: t})} placeholder="50000" placeholderTextColor="#64748B" />
+                <TextInput style={styles.input} value={formData.creditLimit} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, creditLimit: t})} placeholder="50000" placeholderTextColor={colors.textSecondary} />
               </View>
               <View style={[styles.formGroup, { flex: 1 }]}>
                 <Text style={styles.label}>GST Number</Text>
-                <TextInput style={styles.input} value={formData.gstNumber} onChangeText={(t) => setFormData({...formData, gstNumber: t})} placeholder="33AAAAA0000A1Z5" placeholderTextColor="#64748B" />
+                <TextInput style={styles.input} value={formData.gstNumber} onChangeText={(t) => setFormData({...formData, gstNumber: t})} placeholder="33AAAAA0000A1Z5" placeholderTextColor={colors.textSecondary} />
               </View>
             </View>
 
@@ -321,33 +366,37 @@ export default function CustomersScreen() {
             <View style={styles.formRow}>
               <View style={[styles.formGroup, { flex: 1 }]}>
                 <Text style={styles.label}>District / Location</Text>
-                <TextInput style={styles.input} value={formData.district} onChangeText={(t) => setFormData({...formData, district: t})} placeholder="City" placeholderTextColor="#64748B" />
+                <TextInput style={styles.input} value={formData.district} onChangeText={(t) => setFormData({...formData, district: t})} placeholder="City" placeholderTextColor={colors.textSecondary} />
               </View>
               <View style={[styles.formGroup, { flex: 1 }]}>
                 <Text style={styles.label}>Route / Area</Text>
-                <TextInput style={styles.input} value={formData.route} onChangeText={(t) => setFormData({...formData, route: t})} placeholder="Areekode" placeholderTextColor="#64748B" />
+                <TextInput style={styles.input} value={formData.route} onChangeText={(t) => setFormData({...formData, route: t})} placeholder="Areekode" placeholderTextColor={colors.textSecondary} />
               </View>
             </View>
 
             <View style={styles.formGroup}>
               <Text style={styles.label}>Address</Text>
-              <TextInput style={[styles.input, styles.textArea]} value={formData.address} onChangeText={(t) => setFormData({...formData, address: t})} multiline numberOfLines={3} placeholder="Full address" placeholderTextColor="#64748B" />
+              <TextInput style={[styles.input, styles.textArea]} value={formData.address} onChangeText={(t) => setFormData({...formData, address: t})} multiline numberOfLines={3} placeholder="Full address" placeholderTextColor={colors.textSecondary} />
             </View>
 
             <View style={styles.formRow}>
               <View style={[styles.formGroup, { flex: 1 }]}>
                 <Text style={styles.label}>Last Selling Cost (₹)</Text>
-                <TextInput style={styles.input} value={formData.sellingPrice} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, sellingPrice: t})} placeholder="0" placeholderTextColor="#64748B" />
+                <TextInput style={styles.input} value={formData.sellingPrice} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, sellingPrice: t})} placeholder="0" placeholderTextColor={colors.textSecondary} />
               </View>
               <View style={[styles.formGroup, { flex: 1 }]}>
-                <Text style={styles.label}>Next Follow-Up</Text>
-                <TextInput style={styles.input} value={formData.nextFollowupDate} onChangeText={(t) => setFormData({...formData, nextFollowupDate: t})} placeholder="YYYY-MM-DD" placeholderTextColor="#64748B" />
+                <DatePickerField
+                  label="Next Follow-Up"
+                  value={formData.nextFollowupDate}
+                  onChange={(d) => setFormData({...formData, nextFollowupDate: d})}
+                  placeholder="Select date"
+                />
               </View>
             </View>
 
             <View style={styles.formGroup}>
               <Text style={styles.label}>Notes</Text>
-              <TextInput style={[styles.input, styles.textArea]} value={formData.notes} onChangeText={(t) => setFormData({...formData, notes: t})} multiline numberOfLines={3} placeholder="Internal notes" placeholderTextColor="#64748B" />
+              <TextInput style={[styles.input, styles.textArea]} value={formData.notes} onChangeText={(t) => setFormData({...formData, notes: t})} multiline numberOfLines={3} placeholder="Internal notes" placeholderTextColor={colors.textSecondary} />
             </View>
 
             <View style={{ height: 40 }} />
@@ -367,45 +416,45 @@ export default function CustomersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
+const getStyles = (colors: any) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   backBtn: { padding: 4, marginLeft: -4 },
-  pageTitle: { fontSize: 20, fontWeight: 'bold', color: '#F8FAFC' },
-  pageSubtitle: { fontSize: 12, color: '#94A3B8', marginTop: 2 },
+  pageTitle: { fontSize: 20, fontWeight: 'bold', color: colors.text },
+  pageSubtitle: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
   newButton: { backgroundColor: '#2996A8', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
-  newButtonText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
+  newButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
   actionBar: { flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 12, gap: 12 },
-  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#1E1E1E', borderRadius: 8, paddingHorizontal: 12, height: 36, gap: 8 },
-  searchInput: { flex: 1, color: '#F8FAFC', fontSize: 14, height: '100%' },
-  actionIconBtn: { width: 36, height: 36, backgroundColor: '#1E1E1E', borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 8, paddingHorizontal: 12, height: 36, gap: 8 },
+  searchInput: { flex: 1, color: colors.text, fontSize: 14, height: '100%' },
+  actionIconBtn: { width: 36, height: 36, backgroundColor: colors.surface, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   tableWrapper: { flex: 1, paddingHorizontal: 16, paddingBottom: 80 },
-  cellText: { color: '#F8FAFC', fontSize: 14 },
+  cellText: { color: colors.text, fontSize: 14 },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, alignSelf: 'flex-start' },
   statusText: { fontSize: 10, fontWeight: 'bold' },
   actionBtn: { padding: 8 },
   
   // Modal Styles
-  modalContainer: { flex: 1, backgroundColor: '#121212' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#1E1E1E', backgroundColor: '#121212' },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#F8FAFC' },
+  modalContainer: { flex: 1, backgroundColor: colors.background },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: colors.surface, backgroundColor: colors.background },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', color: colors.text },
   modalScroll: { flex: 1 },
   modalContent: { padding: 20 },
   formGroup: { marginBottom: 20 },
   formRow: { flexDirection: 'row', gap: 16, marginBottom: 0 },
-  label: { fontSize: 12, fontWeight: 'bold', color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
-  input: { backgroundColor: '#1E1E1E', borderRadius: 12, padding: 16, color: '#F8FAFC', fontSize: 16, borderWidth: 1, borderColor: '#27272A' },
+  label: { fontSize: 12, fontWeight: 'bold', color: colors.textSecondary, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
+  input: { backgroundColor: colors.surface, borderRadius: 12, padding: 16, color: colors.text, fontSize: 16, borderWidth: 1, borderColor: colors.border },
   textArea: { height: 100, textAlignVertical: 'top' },
   pillContainer: { flexDirection: 'row' },
-  pill: { backgroundColor: '#1E1E1E', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, marginRight: 8, borderWidth: 1, borderColor: '#27272A' },
+  pill: { backgroundColor: colors.surface, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, marginRight: 8, borderWidth: 1, borderColor: colors.border },
   pillActive: { backgroundColor: '#2996A8', borderColor: '#2996A8' },
-  pillText: { color: '#94A3B8', fontSize: 14, fontWeight: 'bold' },
-  pillTextActive: { color: '#FFFFFF' },
-  modalFooter: { flexDirection: 'row', padding: 20, borderTopWidth: 1, borderTopColor: '#1E1E1E', backgroundColor: '#121212', gap: 12 },
-  cancelBtn: { flex: 1, padding: 16, borderRadius: 12, backgroundColor: '#1E1E1E', alignItems: 'center' },
-  cancelBtnText: { color: '#F8FAFC', fontSize: 16, fontWeight: 'bold' },
+  pillText: { color: colors.textSecondary, fontSize: 14, fontWeight: 'bold' },
+  pillTextActive: { color: '#fff' },
+  modalFooter: { flexDirection: 'row', padding: 20, borderTopWidth: 1, borderTopColor: colors.surface, backgroundColor: colors.background, gap: 12 },
+  cancelBtn: { flex: 1, padding: 16, borderRadius: 12, backgroundColor: colors.surface, alignItems: 'center' },
+  cancelBtnText: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
   saveBtn: { flex: 2, padding: 16, borderRadius: 12, backgroundColor: '#2996A8', alignItems: 'center' },
-  saveBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
+  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useThemeStore } from '../../../store/themeStore';
 import { StyleSheet, View, ActivityIndicator, TouchableOpacity, TextInput, ScrollView, Alert, KeyboardAvoidingView, Platform, InteractionManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/Themed';
@@ -8,6 +9,8 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { getCachedData, setCachedData } from '../../../lib/cache';
 
 export default function PricingScreen() {
+  const colors = useThemeStore((state) => state.getColors());
+  const styles = getStyles(colors);
   const [profile, setProfile] = useState<any>(getCachedData('pricing') || null);
   const [loading, setLoading] = useState(!getCachedData('pricing'));
   const [isInteracting, setIsInteracting] = useState(true);
@@ -36,6 +39,15 @@ export default function PricingScreen() {
 
   const handleBaseCostChange = (field: string, value: string) => {
     setProfile({ ...profile, [field]: value === '' ? '' : Number(value) });
+  };
+
+  const handleVariantChange = (index: number, field: string, value: string) => {
+    const updatedVariants = [...profile.caseVariants];
+    updatedVariants[index] = { 
+      ...updatedVariants[index], 
+      [field]: value === '' ? null : Number(value) 
+    };
+    setProfile({ ...profile, caseVariants: updatedVariants });
   };
 
   const handleSave = async () => {
@@ -68,7 +80,7 @@ export default function PricingScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color="#9CA3AF" />
+            <Ionicons name="arrow-back" size={24} color={colors.textSecondary} />
           </TouchableOpacity>
           <View>
             <Text style={styles.pageTitle}>Pricing Engine</Text>
@@ -82,9 +94,9 @@ export default function PricingScreen() {
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         {isInteracting || loading ? (
-          <View style={styles.center}><ActivityIndicator size="large" color="#9CA3AF" /></View>
+          <View style={styles.center}><ActivityIndicator size="large" color={colors.textSecondary} /></View>
         ) : !profile ? (
-          <View style={styles.center}><Text style={{ color: '#94A3B8' }}>Failed to load pricing.</Text></View>
+          <View style={styles.center}><Text style={{ color: colors.textSecondary }}>Failed to load pricing.</Text></View>
         ) : (
           <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
           
@@ -149,9 +161,9 @@ export default function PricingScreen() {
               />
             </View>
             
-            <View style={[styles.summaryRow, { borderTopWidth: 1, borderTopColor: '#27272A', paddingTop: 12, marginTop: 12 }]}>
-              <Text style={[styles.summaryLabel, { color: '#F8FAFC', fontWeight: 'bold' }]}>Profit Margin/KG</Text>
-              <Text style={[styles.summaryValue, { color: profitMarginPerKg >= 0 ? '#10B981' : '#EF4444' }]}>
+            <View style={[styles.summaryRow, { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 12, marginTop: 12 }]}>
+              <Text style={[styles.summaryLabel, { color: colors.text, fontWeight: 'bold' }]}>Profit Margin/KG</Text>
+              <Text style={[styles.summaryValue, { color: profitMarginPerKg >= 0 ? '#10B981' : colors.danger }]}>
                 ₹{profitMarginPerKg.toFixed(2)} ({profitMarginPercent.toFixed(2)}%)
               </Text>
             </View>
@@ -168,13 +180,44 @@ export default function PricingScreen() {
                   <View key={idx} style={styles.variantItem}>
                     <View style={styles.variantHeader}>
                       <Text style={styles.variantName}>{v.name}</Text>
-                      <Text style={styles.variantWeight}>{v.weightKg} KG</Text>
                     </View>
-                    <View style={styles.variantDetails}>
+                    
+                    <View style={styles.variantFormRow}>
+                      <View style={[styles.variantFormGroup, { flex: 1 }]}>
+                        <Text style={styles.variantLabel}>Weight (KG)</Text>
+                        <TextInput 
+                          style={styles.variantInput} 
+                          value={v.weightKg?.toString()} 
+                          keyboardType="numeric" 
+                          onChangeText={(t) => handleVariantChange(idx, 'weightKg', t)} 
+                        />
+                      </View>
+                      <View style={[styles.variantFormGroup, { flex: 1.2 }]}>
+                        <Text style={styles.variantLabel}>Prod Cost/KG</Text>
+                        <TextInput 
+                          style={styles.variantInput} 
+                          value={v.prodCostPerKg ? v.prodCostPerKg.toString() : ''} 
+                          placeholder={effectiveProdCostPerKg.toFixed(2)} 
+                          placeholderTextColor={colors.textSecondary} 
+                          keyboardType="numeric" 
+                          onChangeText={(t) => handleVariantChange(idx, 'prodCostPerKg', t)} 
+                        />
+                      </View>
+                      <View style={[styles.variantFormGroup, { flex: 1 }]}>
+                        <Text style={styles.variantLabel}>Sell Price</Text>
+                        <TextInput 
+                          style={styles.variantInput} 
+                          value={v.sellingPrice?.toString()} 
+                          keyboardType="numeric" 
+                          onChangeText={(t) => handleVariantChange(idx, 'sellingPrice', t)} 
+                        />
+                      </View>
+                    </View>
+
+                    <View style={[styles.variantDetails, { marginTop: 8, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 8 }]}>
                       <Text style={styles.variantDetailText}>Cost: ₹{totalCaseCost.toFixed(2)}</Text>
-                      <Text style={styles.variantDetailText}>Sell: ₹{v.sellingPrice}</Text>
-                      <Text style={[styles.variantDetailText, { color: margin >= 0 ? '#10B981' : '#EF4444', fontWeight: 'bold' }]}>
-                        Margin: ₹{margin.toFixed(2)}
+                      <Text style={[styles.variantDetailText, { color: margin >= 0 ? '#10B981' : colors.danger, fontWeight: 'bold' }]}>
+                        Margin: ₹{margin.toFixed(2)} {v.sellingPrice > 0 ? `(${(margin / v.sellingPrice * 100).toFixed(2)}%)` : ''}
                       </Text>
                     </View>
                   </View>
@@ -191,39 +234,43 @@ export default function PricingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
+const getStyles = (colors: any) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   backBtn: { padding: 4, marginLeft: -4 },
-  pageTitle: { fontSize: 20, fontWeight: 'bold', color: '#F8FAFC' },
-  pageSubtitle: { fontSize: 12, color: '#94A3B8', marginTop: 2 },
+  pageTitle: { fontSize: 20, fontWeight: 'bold', color: colors.text },
+  pageSubtitle: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
   saveBtn: { backgroundColor: '#2996A8', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
-  saveBtnText: { color: '#F8FAFC', fontWeight: 'bold', fontSize: 14 },
+  saveBtnText: { color: colors.text, fontWeight: 'bold', fontSize: 14 },
   
   scroll: { flex: 1 },
   scrollContent: { padding: 16 },
   
-  card: { backgroundColor: '#1E1E1E', borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#27272A' },
-  cardTitle: { fontSize: 16, fontWeight: 'bold', color: '#F8FAFC', marginBottom: 16 },
+  card: { backgroundColor: colors.surface, borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: colors.border },
+  cardTitle: { fontSize: 16, fontWeight: 'bold', color: colors.text, marginBottom: 16 },
   
   formGroup: { marginBottom: 16 },
   formRow: { flexDirection: 'row', gap: 12, marginBottom: 0 },
-  label: { fontSize: 12, fontWeight: 'bold', color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
-  input: { backgroundColor: '#121212', borderRadius: 12, padding: 12, color: '#F8FAFC', fontSize: 16, borderWidth: 1, borderColor: '#27272A' },
+  label: { fontSize: 12, fontWeight: 'bold', color: colors.textSecondary, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
+  input: { backgroundColor: colors.background, borderRadius: 12, padding: 12, color: colors.text, fontSize: 16, borderWidth: 1, borderColor: colors.border },
   
-  summaryCard: { backgroundColor: '#1E1E1E', borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#0EA5E9' },
+  summaryCard: { backgroundColor: colors.surface, borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#0EA5E9' },
   summaryTitle: { fontSize: 16, fontWeight: 'bold', color: '#0EA5E9', marginBottom: 16 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  summaryLabel: { fontSize: 14, color: '#94A3B8' },
-  summaryValue: { fontSize: 16, fontWeight: 'bold', color: '#F8FAFC' },
-  summaryInput: { backgroundColor: '#121212', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, color: '#10B981', fontSize: 16, fontWeight: 'bold', borderWidth: 1, borderColor: '#27272A', minWidth: 100, textAlign: 'right' },
+  summaryLabel: { fontSize: 14, color: colors.textSecondary },
+  summaryValue: { fontSize: 16, fontWeight: 'bold', color: colors.text },
+  summaryInput: { backgroundColor: colors.background, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, color: '#10B981', fontSize: 16, fontWeight: 'bold', borderWidth: 1, borderColor: colors.border, minWidth: 100, textAlign: 'right' },
   
-  variantItem: { backgroundColor: '#121212', borderRadius: 8, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: '#27272A' },
-  variantHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  variantName: { fontSize: 14, fontWeight: 'bold', color: '#F8FAFC' },
-  variantWeight: { fontSize: 12, color: '#94A3B8' },
+  variantItem: { backgroundColor: colors.background, borderRadius: 8, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: colors.border },
+  variantHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  variantName: { fontSize: 16, fontWeight: 'bold', color: colors.text },
+  variantWeight: { fontSize: 12, color: colors.textSecondary },
+  variantFormRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
+  variantFormGroup: { gap: 4 },
+  variantLabel: { fontSize: 10, fontWeight: 'bold', color: colors.textSecondary, textTransform: 'uppercase' },
+  variantInput: { backgroundColor: colors.surface, borderRadius: 8, padding: 8, color: colors.text, fontSize: 14, borderWidth: 1, borderColor: colors.border },
   variantDetails: { flexDirection: 'row', justifyContent: 'space-between' },
-  variantDetailText: { fontSize: 12, color: '#94A3B8' }
+  variantDetailText: { fontSize: 13, color: colors.textSecondary }
 });

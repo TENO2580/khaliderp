@@ -1,4 +1,5 @@
 import React from 'react';
+import { useThemeStore } from '../../../store/themeStore';
 import { StyleSheet, View, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Text } from '@/components/Themed';
 import { useAuthStore } from '../../../store/authStore';
@@ -7,6 +8,8 @@ import { ROLE_LABELS } from '../../../lib/constants';
 import { useRouter } from 'expo-router';
 
 export default function ProfileScreen() {
+  const colors = useThemeStore((state) => state.getColors());
+  const styles = getStyles(colors);
   const { user, logout } = useAuthStore();
   const router = useRouter();
 
@@ -23,12 +26,32 @@ export default function ProfileScreen() {
 
   if (!user) return null;
 
+  const InfoRow = ({ icon, label, value }: any) => (
+    <View style={styles.infoRow}>
+      <View style={styles.infoLeft}>
+        <Ionicons name={icon} size={18} color={colors.textSecondary} />
+        <Text style={styles.infoLabel}>{label}</Text>
+      </View>
+      <Text style={styles.infoValue} numberOfLines={1}>{value}</Text>
+    </View>
+  );
+
+  const MenuButton = ({ icon, title, onPress }: any) => (
+    <TouchableOpacity style={styles.menuButton} onPress={onPress}>
+      <View style={styles.menuLeft}>
+        <Ionicons name={icon} size={20} color={colors.textSecondary} />
+        <Text style={styles.menuTitle}>{title}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+    </TouchableOpacity>
+  );
+
   return (
     <ScrollView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#9CA3AF" />
+          <Ionicons name="arrow-back" size={24} color={colors.textSecondary} />
         </TouchableOpacity>
         <Text style={styles.pageTitle}>Profile</Text>
         <View style={{ width: 32 }} />
@@ -64,7 +87,7 @@ export default function ProfileScreen() {
       </View>
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Ionicons name="log-out-outline" size={20} color="#EF4444" />
+        <Ionicons name="log-out-outline" size={20} color={colors.danger} />
         <Text style={styles.logoutText}>Sign Out</Text>
       </TouchableOpacity>
 
@@ -73,76 +96,57 @@ export default function ProfileScreen() {
   );
 }
 
-const InfoRow = ({ icon, label, value }: any) => (
-  <View style={styles.infoRow}>
-    <View style={styles.infoLeft}>
-      <Ionicons name={icon} size={18} color="#94A3B8" />
-      <Text style={styles.infoLabel}>{label}</Text>
-    </View>
-    <Text style={styles.infoValue} numberOfLines={1}>{value}</Text>
-  </View>
-);
-
-const MenuButton = ({ icon, title, onPress }: any) => (
-  <TouchableOpacity style={styles.menuButton} onPress={onPress}>
-    <View style={styles.menuLeft}>
-      <Ionicons name={icon} size={20} color="#94A3B8" />
-      <Text style={styles.menuTitle}>{title}</Text>
-    </View>
-    <Ionicons name="chevron-forward" size={20} color="#475569" />
-  </TouchableOpacity>
-);
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212', padding: 16 },
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingBottom: 16,
-  },
-  backBtn: { padding: 4 },
-  pageTitle: { fontSize: 20, fontWeight: 'bold', color: '#F8FAFC' },
+const getStyles = (colors: any) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background, padding: 16 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, marginTop: 8 },
+  backBtn: { padding: 4, marginLeft: -4 },
+  pageTitle: { fontSize: 20, fontWeight: 'bold', color: colors.text },
+  
   profileSection: {
-    alignItems: 'center', paddingVertical: 24, backgroundColor: '#1E1E1E',
-    borderRadius: 16, marginBottom: 24, borderWidth: 1, borderColor: '#27272A',
+    alignItems: 'center',
+    paddingVertical: 32,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   avatar: {
-    width: 72, height: 72, borderRadius: 36, backgroundColor: '#2996A8',
-    justifyContent: 'center', alignItems: 'center', marginBottom: 12,
+    width: 80, height: 80, borderRadius: 40, backgroundColor: colors.tint,
+    justifyContent: 'center', alignItems: 'center', marginBottom: 16,
   },
-  avatarText: { fontSize: 28, fontWeight: 'bold', color: '#fff' },
-  userName: { fontSize: 20, fontWeight: 'bold', color: '#F8FAFC', marginBottom: 4 },
-  userEmail: { fontSize: 14, color: '#94A3B8', marginBottom: 12 },
-  roleBadge: { backgroundColor: '#2996A820', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
-  roleText: { color: '#2996A8', fontWeight: 'bold', fontSize: 12 },
-  sectionTitle: {
-    fontSize: 12, fontWeight: 'bold', color: '#64748B', textTransform: 'uppercase',
-    marginBottom: 12, marginLeft: 4, letterSpacing: 0.5,
-  },
+  avatarText: { fontSize: 32, fontWeight: 'bold', color: '#fff' },
+  userName: { fontSize: 20, fontWeight: 'bold', color: colors.text, marginBottom: 4 },
+  userEmail: { fontSize: 14, color: colors.textSecondary, marginBottom: 12 },
+  roleBadge: { backgroundColor: colors.tint + '20', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+  roleText: { color: colors.tint, fontWeight: 'bold', fontSize: 12 },
+  
+  sectionTitle: { fontSize: 14, fontWeight: 'bold', color: colors.textSecondary, textTransform: 'uppercase', marginBottom: 12, marginLeft: 8 },
+  
   infoGroup: {
-    backgroundColor: '#1E1E1E', borderRadius: 16, marginBottom: 24,
-    borderWidth: 1, borderColor: '#27272A', overflow: 'hidden',
+    backgroundColor: colors.surface, borderRadius: 16, marginBottom: 24, borderWidth: 1, borderColor: colors.border, overflow: 'hidden',
   },
   infoRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    padding: 14, borderBottomWidth: 1, borderBottomColor: '#27272A',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16,
+    borderBottomWidth: 1, borderBottomColor: colors.background,
   },
-  infoLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  infoLabel: { fontSize: 13, color: '#94A3B8' },
-  infoValue: { fontSize: 13, color: '#F8FAFC', fontWeight: 'bold', maxWidth: '50%' },
+  infoLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+  infoLabel: { fontSize: 14, color: colors.textSecondary, width: 80 },
+  infoValue: { fontSize: 14, color: colors.text, fontWeight: '500', flex: 1, textAlign: 'right' },
+  
   menuGroup: {
-    backgroundColor: '#1E1E1E', borderRadius: 16, marginBottom: 24,
-    borderWidth: 1, borderColor: '#27272A', overflow: 'hidden',
+    backgroundColor: colors.surface, borderRadius: 16, marginBottom: 24, borderWidth: 1, borderColor: colors.border, overflow: 'hidden',
   },
   menuButton: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16,
-    borderBottomWidth: 1, borderBottomColor: '#27272A',
+    borderBottomWidth: 1, borderBottomColor: colors.background,
   },
   menuLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  menuTitle: { fontSize: 15, color: '#F8FAFC' },
+  menuTitle: { fontSize: 16, color: colors.text },
+  
   logoutButton: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: '#EF444420', padding: 16, borderRadius: 16,
-    borderWidth: 1, borderColor: '#EF444450',
+    backgroundColor: colors.danger + '20', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: colors.danger + '50', marginBottom: 24,
   },
-  logoutText: { fontSize: 16, fontWeight: 'bold', color: '#EF4444' },
+  logoutText: { fontSize: 16, fontWeight: 'bold', color: colors.danger },
 });

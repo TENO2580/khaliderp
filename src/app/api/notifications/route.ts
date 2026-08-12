@@ -4,6 +4,9 @@ import { authenticateRequest, jsonResponse, errorResponse } from '@/lib/middlewa
 import { NotificationModule, NotificationPriority } from '@prisma/client';
 import { NotificationService } from '@/lib/services/NotificationService';
 
+export const dynamic = 'force-dynamic';
+
+
 export async function GET(req: NextRequest) {
   try {
     const { user, error } = await authenticateRequest(req);

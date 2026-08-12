@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { authenticateRequest, jsonResponse, errorResponse } from '@/lib/middleware-server';
 
+export const dynamic = 'force-dynamic';
+
+
 // Default seed data based on requirements
 const DEFAULT_PRICING = {
   name: "Default Pricing",

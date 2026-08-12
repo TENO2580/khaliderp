@@ -137,6 +137,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!prev) return prev;
       const updatedUser = { ...prev, ...updates };
       localStorage.setItem('user', JSON.stringify(updatedUser));
+      
+      // Instantly apply display preferences to the DOM when updated in settings
+      if (updates.preferences) {
+        applyGlobalPreferences(updatedUser.preferences);
+      }
+      
       return updatedUser;
     });
   }, []);

@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useThemeStore } from '../../../store/themeStore';
 import { StyleSheet, View, ScrollView, ActivityIndicator, TouchableOpacity, InteractionManager, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/Themed';
@@ -7,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { DataTable, Column } from '../../../components/DataTable';
 import { getCachedData, setCachedData } from '../../../lib/cache';
+import { formatDate } from '../../../lib/utils';
 
 const REPORT_TYPES = [
   { id: 'sales', label: 'Sales Report' },
@@ -20,6 +22,8 @@ const REPORT_TYPES = [
 ];
 
 export default function ReportsScreen() {
+  const colors = useThemeStore((state) => state.getColors());
+  const styles = getStyles(colors);
   const [activeReport, setActiveReport] = useState(REPORT_TYPES[0].id);
   const [reportData, setReportData] = useState<any>(getCachedData(`report_${activeReport}`) || null);
   const [loading, setLoading] = useState(!getCachedData(`report_${activeReport}`));
@@ -65,10 +69,10 @@ export default function ReportsScreen() {
       case 'sales': return [
         { key: 'orderNumber', title: 'Order #', width: 120, render: (item) => <Text style={[styles.cellText, {color: '#2996A8', fontWeight: 'bold'}]}>{item.orderNumber}</Text> },
         { key: 'customer', title: 'Customer', width: 150, render: (item) => <Text style={[styles.cellText, {fontWeight: 'bold'}]} numberOfLines={1}>{item.customer}</Text> },
-        { key: 'date', title: 'Date', width: 100, render: (item) => <Text style={styles.cellText}>{new Date(item.date).toLocaleDateString()}</Text> },
+        { key: 'date', title: 'Date', width: 100, render: (item) => <Text style={styles.cellText}>{formatDate(item.date)}</Text> },
         { key: 'amount', title: 'Amount', width: 100, render: (item) => <Text style={styles.cellText}>₹{item.amount?.toLocaleString()}</Text> },
         { key: 'paid', title: 'Paid', width: 100, render: (item) => <Text style={[styles.cellText, {color: '#10B981'}]}>₹{item.paid?.toLocaleString()}</Text> },
-        { key: 'outstanding', title: 'Outstanding', width: 100, render: (item) => <Text style={[styles.cellText, {color: item.outstanding > 0 ? '#EF4444' : '#64748B'}]}>₹{item.outstanding?.toLocaleString()}</Text> },
+        { key: 'outstanding', title: 'Outstanding', width: 100, render: (item) => <Text style={[styles.cellText, {color: item.outstanding > 0 ? '#EF4444' : colors.textSecondary}]}>₹{item.outstanding?.toLocaleString()}</Text> },
         { key: 'status', title: 'Status', width: 100, render: (item) => <Text style={[styles.cellText, {fontSize: 12, fontWeight: 'bold'}]}>{item.status}</Text> },
       ];
       case 'customer': return [
@@ -91,13 +95,13 @@ export default function ReportsScreen() {
       case 'inventory': return [
         { key: 'type', title: 'Type', width: 120 },
         { key: 'name', title: 'Item Name', width: 150, render: (item) => <Text style={[styles.cellText, {fontWeight: 'bold'}]} numberOfLines={1}>{item.name}</Text> },
-        { key: 'stock', title: 'Stock', width: 80, render: (item) => <Text style={[styles.cellText, {fontWeight: 'bold', color: item.lowStock ? '#EF4444' : '#F8FAFC'}]}>{item.stock}</Text> },
+        { key: 'stock', title: 'Stock', width: 80, render: (item) => <Text style={[styles.cellText, {fontWeight: 'bold', color: item.lowStock ? '#EF4444' : colors.text}]}>{item.stock}</Text> },
         { key: 'unitCost', title: 'Unit Cost', width: 100, render: (item) => <Text style={styles.cellText}>₹{item.unitCost?.toLocaleString()}</Text> },
         { key: 'totalValue', title: 'Total Value', width: 100, render: (item) => <Text style={styles.cellText}>₹{item.totalValue?.toLocaleString()}</Text> },
       ];
       case 'production': return [
         { key: 'productionNumber', title: 'Prod #', width: 120, render: (item) => <Text style={[styles.cellText, {color: '#2996A8', fontWeight: 'bold'}]}>{item.productionNumber}</Text> },
-        { key: 'date', title: 'Date', width: 100, render: (item) => <Text style={styles.cellText}>{new Date(item.date).toLocaleDateString()}</Text> },
+        { key: 'date', title: 'Date', width: 100, render: (item) => <Text style={styles.cellText}>{formatDate(item.date)}</Text> },
         { key: 'waxUsed', title: 'Wax Used', width: 100 },
         { key: 'quantityProduced', title: 'Produced', width: 100 },
         { key: 'totalCost', title: 'Total Cost', width: 100, render: (item) => <Text style={styles.cellText}>₹{item.totalCost?.toLocaleString()}</Text> },
@@ -105,7 +109,7 @@ export default function ReportsScreen() {
       case 'gst': return [
         { key: 'invoiceNumber', title: 'Invoice #', width: 120, render: (item) => <Text style={[styles.cellText, {color: '#2996A8', fontWeight: 'bold'}]}>{item.invoiceNumber}</Text> },
         { key: 'customer', title: 'Customer', width: 150, render: (item) => <Text style={[styles.cellText, {fontWeight: 'bold'}]} numberOfLines={1}>{item.customer}</Text> },
-        { key: 'date', title: 'Date', width: 100, render: (item) => <Text style={styles.cellText}>{new Date(item.date).toLocaleDateString()}</Text> },
+        { key: 'date', title: 'Date', width: 100, render: (item) => <Text style={styles.cellText}>{formatDate(item.date)}</Text> },
         { key: 'taxableAmount', title: 'Taxable Amt', width: 100, render: (item) => <Text style={styles.cellText}>₹{item.taxableAmount?.toLocaleString()}</Text> },
         { key: 'totalGst', title: 'Total GST', width: 100, render: (item) => <Text style={styles.cellText}>₹{item.totalGst?.toLocaleString()}</Text> },
         { key: 'totalAmount', title: 'Total', width: 100, render: (item) => <Text style={[styles.cellText, {fontWeight: 'bold'}]}>₹{item.totalAmount?.toLocaleString()}</Text> },
@@ -114,7 +118,7 @@ export default function ReportsScreen() {
         { key: 'name', title: 'Name', width: 150, render: (item) => <Text style={[styles.cellText, {fontWeight: 'bold'}]} numberOfLines={1}>{item.name}</Text> },
         { key: 'phone', title: 'Phone', width: 120 },
         { key: 'invoiceCount', title: 'Pending Inv', width: 100 },
-        { key: 'outstanding', title: 'Outstanding', width: 120, render: (item) => <Text style={[styles.cellText, {color: '#EF4444', fontWeight: 'bold'}]}>₹{item.outstanding?.toLocaleString()}</Text> },
+        { key: 'outstanding', title: 'Outstanding', width: 120, render: (item) => <Text style={[styles.cellText, {color: colors.danger, fontWeight: 'bold'}]}>₹{item.outstanding?.toLocaleString()}</Text> },
       ];
       default: return [];
     }
@@ -159,7 +163,7 @@ export default function ReportsScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color="#9CA3AF" />
+            <Ionicons name="arrow-back" size={24} color={colors.textSecondary} />
           </TouchableOpacity>
           <View>
             <Text style={styles.pageTitle}>Reports & Advanced Analytics</Text>
@@ -185,17 +189,15 @@ export default function ReportsScreen() {
         </ScrollView>
       </View>
 
-      {isInteracting || loading ? (
-        <View style={styles.center}><ActivityIndicator size="large" color="#2996A8" /></View>
-      ) : !reportData ? (
-        <View style={styles.center}><Text style={{ color: '#94A3B8' }}>No data available for this report.</Text></View>
+      {!reportData && !loading && !isInteracting ? (
+        <View style={styles.center}><Text style={{ color: colors.textSecondary }}>No data available for this report.</Text></View>
       ) : (
         <View style={styles.contentWrapper}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, paddingBottom: 16 }}>
             {renderSummaryCards()}
           </ScrollView>
           <View style={styles.tableWrapper}>
-            <DataTable columns={getColumns()} data={reportData.rows || []} showActions={false} />
+            <DataTable columns={getColumns()} data={reportData?.rows || []} showActions={false} isLoading={isInteracting || loading} />
           </View>
         </View>
       )}
@@ -203,9 +205,9 @@ export default function ReportsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
+const getStyles = (colors: any) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -216,33 +218,33 @@ const styles = StyleSheet.create({
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   backBtn: { padding: 4, marginLeft: -4 },
-  pageTitle: { fontSize: 20, fontWeight: 'bold', color: '#F8FAFC' },
-  pageSubtitle: { fontSize: 12, color: '#94A3B8', marginTop: 2 },
+  pageTitle: { fontSize: 20, fontWeight: 'bold', color: colors.text },
+  pageSubtitle: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
   newButton: { backgroundColor: '#2996A8', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
-  newButtonText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
+  newButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
   
   tabsContainer: {
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E1E1E',
+    borderBottomColor: colors.surface,
   },
   pill: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
     marginRight: 8,
-    backgroundColor: '#1E1E1E',
+    backgroundColor: colors.surface,
   },
   pillActive: {
     backgroundColor: '#2996A8',
   },
   pillText: {
-    color: '#94A3B8',
+    color: colors.textSecondary,
     fontSize: 14,
     fontWeight: 'bold',
   },
   pillTextActive: {
-    color: '#FFFFFF',
+    color: '#fff',
   },
   
   contentWrapper: {
@@ -255,16 +257,16 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   summaryCard: {
-    backgroundColor: '#1E1E1E',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 16,
     minWidth: 140,
     borderWidth: 1,
-    borderColor: '#27272A',
+    borderColor: colors.border,
   },
   summaryTitle: {
     fontSize: 12,
-    color: '#94A3B8',
+    color: colors.textSecondary,
     fontWeight: 'bold',
     textTransform: 'uppercase',
     marginBottom: 8,
@@ -272,7 +274,7 @@ const styles = StyleSheet.create({
   summaryValue: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#F8FAFC',
+    color: colors.text,
   },
   
   tableWrapper: {
@@ -281,7 +283,7 @@ const styles = StyleSheet.create({
     paddingBottom: 80,
   },
   cellText: {
-    color: '#F8FAFC',
+    color: colors.text,
     fontSize: 13,
   },
 });

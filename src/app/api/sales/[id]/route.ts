@@ -193,7 +193,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         });
       }
       return order;
-    });
+    }, { maxWait: 5000, timeout: 20000 });
 
     return jsonResponse(result, 200, 'Sales order updated successfully');
   } catch (err: any) {
@@ -233,7 +233,13 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
         }
       }
 
-      // Invoice and Payment relations should have onDelete: Cascade in schema, or we manually delete them if not
+      // Manually delete related Invoice and its Payments to prevent foreign key constraint violations
+      const invoice = await tx.invoice.findUnique({ where: { orderId: id } });
+      if (invoice) {
+        await tx.payment.deleteMany({ where: { invoiceId: invoice.id } });
+        await tx.invoice.delete({ where: { id: invoice.id } });
+      }
+
       await tx.salesOrder.delete({
         where: { id }
       });
