@@ -34,7 +34,6 @@ export const NAV_ITEMS: NavItem[] = [
       { title: 'Orders', href: '/(erp)/sales' },
       { title: 'Batches', href: '/(erp)/batches' },
       { title: 'Invoices', href: '/(erp)/sales/invoices' },
-      { title: 'Payments', href: '/(erp)/sales/payments' },
     ],
   },
   {
