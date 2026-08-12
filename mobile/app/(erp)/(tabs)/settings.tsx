@@ -4,9 +4,11 @@ import { Text } from '@/components/Themed';
 import { useAuthStore } from '../../../store/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import { ROLE_LABELS } from '../../../lib/constants';
+import { useRouter } from 'expo-router';
 
 export default function SettingsScreen() {
   const { user, logout } = useAuthStore();
+  const router = useRouter();
 
   const handleLogout = () => {
     Alert.alert(
@@ -43,6 +45,7 @@ export default function SettingsScreen() {
 
       <Text style={styles.sectionTitle}>App Settings</Text>
       <View style={styles.menuGroup}>
+        <MenuButton icon="options-outline" title="Customization" onPress={() => router.push('/customization')} />
         <MenuButton icon="color-palette-outline" title="Theme (Dark)" />
         <MenuButton icon="language-outline" title="Language" />
         <MenuButton icon="information-circle-outline" title="About Tripidio" />
@@ -59,8 +62,8 @@ export default function SettingsScreen() {
   );
 }
 
-const MenuButton = ({ icon, title }: any) => (
-  <TouchableOpacity style={styles.menuButton}>
+const MenuButton = ({ icon, title, onPress }: any) => (
+  <TouchableOpacity style={styles.menuButton} onPress={onPress}>
     <View style={styles.menuLeft}>
       <Ionicons name={icon} size={20} color="#94A3B8" />
       <Text style={styles.menuTitle}>{title}</Text>
