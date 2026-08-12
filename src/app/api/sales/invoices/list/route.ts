@@ -2,6 +2,9 @@ import { NextRequest } from 'next/server';
 import prisma from '@/lib/db';
 import { authenticateRequest, jsonResponse } from '@/lib/middleware-server';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(req: NextRequest) {
   const { user, error } = await authenticateRequest(req);
   if (error) return error;
@@ -43,12 +46,31 @@ export async function GET(req: NextRequest) {
     invoiceNumber: inv.invoiceNumber,
     orderNumber: inv.order?.orderNumber,
     customerName: inv.customer?.name,
+    customerAddress: inv.customer?.address,
+    customerPhone: inv.customer?.phone,
+    customerGst: inv.customer?.gstin,
+    ownerName: inv.customer?.ownerName,
     invoiceDate: inv.invoiceDate,
+    dueDate: inv.dueDate,
     gstAmount: inv.totalGst,
     totalAmount: inv.totalAmount,
+    taxableAmount: inv.subtotal,
+    cgstTotal: inv.cgst,
+    sgstTotal: inv.sgst,
+    transportCharge: inv.transportCharge,
     status: inv.status,
     customer: inv.customer,
     order: inv.order,
+    items: inv.order?.items?.map((item: any) => ({
+      name: item.product?.name,
+      hsn: item.product?.hsnCode || '34060010',
+      qty: item.quantity,
+      price: item.unitPrice,
+      taxable: item.taxableAmount || (item.quantity * item.unitPrice),
+      cgst: item.cgst,
+      sgst: item.sgst,
+      total: item.total || (item.taxableAmount || (item.quantity * item.unitPrice)) + (item.cgst || 0) + (item.sgst || 0)
+    })) || []
   }));
 
   return jsonResponse({

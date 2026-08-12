@@ -58,8 +58,8 @@ export default function DataTable<T extends { id?: string }>({
   onAddClick,
   addButtonLabel = 'Add New',
   totalItems,
-  page = 1,
-  totalPages = 1,
+  page,
+  totalPages,
   onPageChange,
   onExportClick,
   isLoading = false,
@@ -79,6 +79,43 @@ export default function DataTable<T extends { id?: string }>({
   const [isUnlocked, setIsUnlocked] = useState(false);
   const pendingEditsRef = useRef<Record<string, Record<string, string>>>({});
   const [pendingCount, setPendingCount] = useState(0);
+
+  // Reorder columns so ACTIONS is always first
+  const reorderedColumns = React.useMemo(() => {
+    const actionsColIndex = columns.findIndex(col => col.header?.toUpperCase() === 'ACTIONS');
+    if (actionsColIndex > -1) {
+      const newCols = [...columns];
+      const [actionsCol] = newCols.splice(actionsColIndex, 1);
+      newCols.unshift(actionsCol);
+      return newCols;
+    }
+    return columns;
+  }, [columns]);
+
+  // Client-side pagination state fallback
+  const [internalPage, setInternalPage] = useState(1);
+  const [internalLimit, setInternalLimit] = useState(10);
+
+  const isServerPaginated = !!onPageChange;
+  const actualLimit = limit ?? internalLimit;
+  const actualPage = page ?? internalPage;
+
+  const displayData = isServerPaginated ? data : data.slice((actualPage - 1) * actualLimit, actualPage * actualLimit);
+  const displayTotal = isServerPaginated ? (totalItems ?? data.length) : data.length;
+  const displayTotalPages = isServerPaginated ? (totalPages ?? 1) : Math.ceil(displayTotal / actualLimit) || 1;
+
+  const handlePageChange = (p: number) => {
+    if (onPageChange) onPageChange(p);
+    else setInternalPage(p);
+  };
+
+  const handleLimitChange = (l: number) => {
+    if (onLimitChange) onLimitChange(l);
+    else {
+      setInternalLimit(l);
+      setInternalPage(1);
+    }
+  };
 
   // Drag to scroll refs
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -121,7 +158,7 @@ export default function DataTable<T extends { id?: string }>({
       startX.current = e.pageX - scrollRef.current.offsetLeft;
       startY.current = e.pageY - scrollRef.current.offsetTop;
       scrollLeft.current = scrollRef.current.scrollLeft;
-      scrollTop.current = scrollRef.current.scrollTop;
+      scrollRef.current.scrollTop = scrollRef.current.scrollTop;
       scrollRef.current.style.cursor = 'grabbing';
       scrollRef.current.style.userSelect = 'none';
       scrollRef.current.style.pointerEvents = 'none'; // Prevents hover state lags while dragging
@@ -277,7 +314,7 @@ export default function DataTable<T extends { id?: string }>({
         <table className="w-full min-w-max text-left text-sm text-gray-600 dark:text-gray-400">
           <thead className="sticky top-0 z-30 bg-gray-50 text-xs uppercase font-semibold tracking-wider text-gray-500 dark:bg-gray-950 dark:text-gray-400 outline outline-1 outline-gray-200 dark:outline-gray-800 shadow-sm">
             <tr>
-              {columns.map((col, idx) => (
+              {reorderedColumns.map((col, idx) => (
                 <th
                   key={idx}
                   className={cn(
@@ -292,28 +329,28 @@ export default function DataTable<T extends { id?: string }>({
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
             {isLoading ? (
-              Array.from({ length: 5 }).map((_, rIdx) => (
+              Array.from({ length: Math.min(5, actualLimit) }).map((_, rIdx) => (
                 <tr key={rIdx} className="animate-pulse">
-                  {columns.map((_, cIdx) => (
+                  {reorderedColumns.map((_, cIdx) => (
                     <td key={cIdx} className="px-6 py-4">
                       <div className="h-4 rounded bg-gray-200 dark:bg-gray-800 w-3/4" />
                     </td>
                   ))}
                 </tr>
               ))
-            ) : data.length === 0 ? (
+            ) : displayData.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                <td colSpan={reorderedColumns.length} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                   No records found.
                 </td>
               </tr>
             ) : (
-              data.map((row, rIdx) => (
+              displayData.map((row, rIdx) => (
                 <tr
                   key={row.id || rIdx}
                   className="group transition-colors hover:bg-gray-50/80 dark:hover:bg-gray-800/50"
                 >
-                  {columns.map((col, cIdx) => (
+                  {reorderedColumns.map((col, cIdx) => (
                     <td
                       key={cIdx}
                       className={cn(
@@ -378,52 +415,48 @@ export default function DataTable<T extends { id?: string }>({
       </div>
 
       {/* Pagination Footer */}
-      {((onPageChange && totalPages > 1) || (limit && onLimitChange)) && (
-        <div className="flex items-center justify-between border-t border-gray-200/80 px-6 py-4 dark:border-gray-800">
-          <div className="flex items-center gap-4">
-            {limit && onLimitChange && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500 dark:text-gray-400">Rows per page:</span>
-                <select
-                  value={limit}
-                  onChange={(e) => onLimitChange(Number(e.target.value))}
-                  className="rounded border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
-                >
-                  <option value={10}>10</option>
-                  <option value={30}>30</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                  <option value={200}>200</option>
-                </select>
-              </div>
-            )}
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Page <span className="font-semibold text-gray-900 dark:text-white">{page}</span> of{' '}
-              <span className="font-semibold text-gray-900 dark:text-white">{totalPages}</span>
-            </p>
-            <div className="rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-              Total: {totalItems ?? data.length}
-            </div>
-          </div>
-
+      <div className="flex items-center justify-between border-t border-gray-200/80 px-6 py-4 dark:border-gray-800">
+        <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <button
-              disabled={!onPageChange || page <= 1}
-              onClick={() => onPageChange?.(page - 1)}
-              className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-800 dark:hover:bg-gray-800"
+            <span className="text-xs text-gray-500 dark:text-gray-400">Rows per page:</span>
+            <select
+              value={actualLimit}
+              onChange={(e) => handleLimitChange(Number(e.target.value))}
+              className="rounded border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
             >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button
-              disabled={!onPageChange || page >= totalPages}
-              onClick={() => onPageChange?.(page + 1)}
-              className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-800 dark:hover:bg-gray-800"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
+              <option value={10}>10</option>
+              <option value={30}>30</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+              <option value={200}>200</option>
+            </select>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Page <span className="font-semibold text-gray-900 dark:text-white">{actualPage}</span> of{' '}
+            <span className="font-semibold text-gray-900 dark:text-white">{displayTotalPages}</span>
+          </p>
+          <div className="rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+            Total: {displayTotal}
           </div>
         </div>
-      )}
+
+        <div className="flex items-center gap-2">
+          <button
+            disabled={actualPage <= 1}
+            onClick={() => handlePageChange(actualPage - 1)}
+            className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-800 dark:hover:bg-gray-800"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            disabled={actualPage >= displayTotalPages}
+            onClick={() => handlePageChange(actualPage + 1)}
+            className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-800 dark:hover:bg-gray-800"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
