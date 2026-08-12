@@ -125,7 +125,7 @@ export default function DataTable<T extends { id?: string }>({
         const mergedColumns = columns.map((c, i) => {
           const savedCol = parsed.columns.find(sc => sc.header === c.header);
           if (savedCol) return savedCol;
-          return { header: c.header, visible: true, order: 999 + i, pinned: c.header.toUpperCase() === 'ACTIONS' ? 'left' : null };
+          return { header: c.header, visible: true, order: 999 + i, pinned: (c.header.toUpperCase() === 'ACTIONS' ? 'left' : null) as 'left' | null };
         });
         setPrefs({ density: parsed.density || 'comfortable', columns: mergedColumns });
       } else {
