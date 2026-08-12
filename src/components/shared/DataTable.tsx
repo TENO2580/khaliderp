@@ -28,8 +28,6 @@ export interface ColumnPreference {
 }
 
 export interface TablePreferences {
-  density: 'compact' | 'comfortable' | 'spacious';
-  layout?: 'auto' | 'full';
   columns: ColumnPreference[];
 }
 
@@ -104,8 +102,6 @@ export default function DataTable<T extends { id?: string }>({
   const tablePrefKey = `tripidio_table_prefs_${pathname.replace(/\//g, '_')}`;
 
   const defaultPrefs: TablePreferences = useMemo(() => ({
-    density: 'comfortable',
-    layout: 'full',
     columns: columns.map((c, i) => ({
       header: c.header,
       visible: true,
@@ -115,9 +111,30 @@ export default function DataTable<T extends { id?: string }>({
   }), [columns]);
 
   const [prefs, setPrefs] = useState<TablePreferences>(defaultPrefs);
+  const [globalDensity, setGlobalDensity] = useState<'compact' | 'comfortable' | 'spacious'>('comfortable');
+  const [globalLayout, setGlobalLayout] = useState<'auto' | 'full'>('full');
+  
   const [isColumnManagerOpen, setIsColumnManagerOpen] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
+
+  const loadGlobalPrefs = () => {
+    try {
+      if (typeof window !== 'undefined') {
+        const density = localStorage.getItem('app-table-density');
+        if (density) setGlobalDensity(density as any);
+        const layout = localStorage.getItem('app-table-layout');
+        if (layout) setGlobalLayout(layout as any);
+      }
+    } catch(e) {}
+  };
+
+  useEffect(() => {
+    loadGlobalPrefs();
+    const handleGlobalPrefChange = () => loadGlobalPrefs();
+    window.addEventListener('app-table-prefs-changed', handleGlobalPrefChange);
+    return () => window.removeEventListener('app-table-prefs-changed', handleGlobalPrefChange);
+  }, []);
 
   useEffect(() => {
     try {
@@ -129,7 +146,7 @@ export default function DataTable<T extends { id?: string }>({
           if (savedCol) return savedCol;
           return { header: c.header, visible: true, order: 999 + i, pinned: (c.header.toUpperCase() === 'ACTIONS' ? 'left' : null) as 'left' | null };
         });
-        setPrefs({ density: parsed.density || 'comfortable', layout: parsed.layout || 'full', columns: mergedColumns });
+        setPrefs({ columns: mergedColumns });
       } else {
         setPrefs(defaultPrefs);
       }
@@ -312,13 +329,20 @@ export default function DataTable<T extends { id?: string }>({
     });
   };
 
-  // Density mapping
-  const densityClass = {
-    compact: 'px-2 py-1.5 text-xs',
-    comfortable: 'px-4 py-3 text-sm',
-    spacious: 'px-6 py-5 text-base'
+  const saveGlobalPrefs = (key: string, value: string) => {
+    localStorage.setItem(key, value);
+    window.dispatchEvent(new Event('app-table-prefs-changed'));
   };
-  const padClass = densityClass[prefs.density] || densityClass.comfortable;
+
+  const getDensityPadding = () => {
+    switch (globalDensity) {
+      case 'compact': return 'px-2 py-2 text-xs';
+      case 'spacious': return 'px-6 py-4 text-sm';
+      default: return 'px-4 py-3 text-sm';
+    }
+  };
+
+  const padClass = getDensityPadding();
 
   return (
     <div className="flex flex-col max-h-[calc(100vh-8rem)] rounded-2xl border border-gray-200/80 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 overflow-hidden relative">
@@ -446,7 +470,7 @@ export default function DataTable<T extends { id?: string }>({
       </div>
 
       <div className="flex-1 overflow-x-auto w-full relative">
-        <table className={cn("min-w-max text-left text-sm text-gray-600 dark:text-gray-400", prefs.layout === 'auto' ? 'w-auto' : 'w-full')}>
+        <table className={cn("min-w-max text-left text-sm text-gray-600 dark:text-gray-400", globalLayout === 'auto' ? 'w-auto' : 'w-full')}>
           <thead className="sticky top-0 z-30 bg-gray-50 text-xs uppercase font-semibold tracking-wider text-gray-500 dark:bg-gray-950 dark:text-gray-400 shadow-sm border-b border-gray-200 dark:border-gray-800">
             <tr>
               {reorderedColumns.map((col, idx) => (
@@ -620,10 +644,10 @@ export default function DataTable<T extends { id?: string }>({
                 {(['compact', 'comfortable', 'spacious'] as const).map(d => (
                   <button
                     key={d}
-                    onClick={() => savePrefs({...prefs, density: d})}
+                    onClick={() => saveGlobalPrefs('app-table-density', d)}
                     className={cn(
                       "flex-1 py-1.5 px-2 rounded-lg text-xs font-medium border capitalize transition-colors",
-                      prefs.density === d 
+                      globalDensity === d 
                         ? "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300" 
                         : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-800"
                     )}
@@ -638,10 +662,10 @@ export default function DataTable<T extends { id?: string }>({
               <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">Table Width</label>
               <div className="flex gap-2">
                 <button
-                  onClick={() => savePrefs({...prefs, layout: 'full'})}
+                  onClick={() => saveGlobalPrefs('app-table-layout', 'full')}
                   className={cn(
                     "flex-1 py-1.5 px-2 rounded-lg text-xs font-medium border transition-colors",
-                    prefs.layout !== 'auto'
+                    globalLayout !== 'auto'
                       ? "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300" 
                       : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-800"
                   )}
@@ -649,10 +673,10 @@ export default function DataTable<T extends { id?: string }>({
                   Fill Screen
                 </button>
                 <button
-                  onClick={() => savePrefs({...prefs, layout: 'auto'})}
+                  onClick={() => saveGlobalPrefs('app-table-layout', 'auto')}
                   className={cn(
                     "flex-1 py-1.5 px-2 rounded-lg text-xs font-medium border transition-colors",
-                    prefs.layout === 'auto'
+                    globalLayout === 'auto'
                       ? "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300" 
                       : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-800"
                   )}

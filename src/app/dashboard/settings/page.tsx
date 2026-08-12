@@ -33,12 +33,19 @@ export default function SettingsPage() {
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
 
   // Customization state
-  const [customization, setCustomization] = useState({ font: 'roboto', size: 'medium' });
+  const [customization, setCustomization] = useState({ 
+    font: 'roboto', 
+    size: 'medium',
+    tableDensity: 'comfortable',
+    tableLayout: 'full'
+  });
 
   useEffect(() => {
     setCustomization({
       font: localStorage.getItem('app-font') || 'roboto',
-      size: localStorage.getItem('app-font-size') || 'medium'
+      size: localStorage.getItem('app-font-size') || 'medium',
+      tableDensity: localStorage.getItem('app-table-density') || 'comfortable',
+      tableLayout: localStorage.getItem('app-table-layout') || 'full'
     });
 
     if (activeTab === 'permissions') {
@@ -62,6 +69,12 @@ export default function SettingsPage() {
     document.documentElement.style.setProperty('--app-font-family', `var(--font-${customization.font})`);
     const sizeMap: Record<string, string> = { xs: '12px', small: '14px', medium: '16px', large: '18px', xl: '20px' };
     document.documentElement.style.setProperty('--app-base-font-size', sizeMap[customization.size] || '16px');
+    
+    // Save table preferences globally
+    localStorage.setItem('app-table-density', customization.tableDensity);
+    localStorage.setItem('app-table-layout', customization.tableLayout);
+    window.dispatchEvent(new Event('app-table-prefs-changed'));
+
     toast.success('Display customization updated!');
   };
 
@@ -351,6 +364,40 @@ export default function SettingsPage() {
                 <option value="medium">Medium (16px)</option>
                 <option value="large">Large (18px)</option>
                 <option value="xl">Extra Large (20px)</option>
+              </select>
+            </div>
+          </div>
+          
+          <hr className="border-gray-200 dark:border-gray-800" />
+          
+          <div>
+            <h3 className="text-base font-bold text-gray-900 dark:text-white">Table Display Preferences</h3>
+            <p className="text-xs text-gray-500">Configure global layout and padding for all data grids.</p>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Default Table Density</label>
+              <select
+                value={customization.tableDensity}
+                onChange={(e) => setCustomization({ ...customization, tableDensity: e.target.value })}
+                className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white font-semibold"
+              >
+                <option value="compact">Compact (High Density)</option>
+                <option value="comfortable">Comfortable (Standard)</option>
+                <option value="spacious">Spacious (Low Density)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Default Table Width</label>
+              <select
+                value={customization.tableLayout}
+                onChange={(e) => setCustomization({ ...customization, tableLayout: e.target.value })}
+                className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white font-semibold"
+              >
+                <option value="full">Fill Screen (100% Width)</option>
+                <option value="auto">Fit Content (Tight Columns)</option>
               </select>
             </div>
           </div>
