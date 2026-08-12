@@ -58,25 +58,24 @@ export default function ProductionScreen() {
 
   const fetchData = async () => {
     try {
-      const queryParams = new URLSearchParams({ limit: '500' });
+      const currentFilters = useFilterStore.getState().filters['production'] || {};
+      const queryParams = new URLSearchParams({ limit: '50' });
       if (search) queryParams.append('search', search);
 
-      const [prodRes, batchRes] = await Promise.all([
-        api.get(`/production?${queryParams.toString()}`),
-        api.get('/production/batches/list?limit=500')
-      ]);
+      const prodRes = await api.get(`/production?${queryParams.toString()}`);
+      const batchRes = await api.get('/production/batches/list?limit=50');
       let prodList = prodRes.data.data.data || prodRes.data.data || [];
       
       // Local filtering for shift if present
-      if (filters.shift) {
-        prodList = prodList.filter((p: any) => p.shift === filters.shift);
+      if (currentFilters.shift) {
+        prodList = prodList.filter((p: any) => p.shift === currentFilters.shift);
       }
       // Local filtering for date range if backend doesn't support it but user requested it
-      if (filters.startDate) {
-        prodList = prodList.filter((p: any) => new Date(p.date) >= new Date(filters.startDate));
+      if (currentFilters.startDate) {
+        prodList = prodList.filter((p: any) => new Date(p.date) >= new Date(currentFilters.startDate));
       }
-      if (filters.endDate) {
-        prodList = prodList.filter((p: any) => new Date(p.date) <= new Date(filters.endDate));
+      if (currentFilters.endDate) {
+        prodList = prodList.filter((p: any) => new Date(p.date) <= new Date(currentFilters.endDate));
       }
       const batchList = batchRes.data.data.data || batchRes.data.data || [];
       setProductions(Array.isArray(prodList) ? prodList : []);

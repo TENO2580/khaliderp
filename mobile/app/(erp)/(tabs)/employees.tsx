@@ -61,6 +61,8 @@ export default function EmployeesScreen() {
 
   const fetchEmployees = async () => {
     try {
+      const currentFilters = useFilterStore.getState().filters['employees'] || {};
+
       const response = await api.get('/employees');
       let employeesList = response.data.data.data || response.data.data;
       

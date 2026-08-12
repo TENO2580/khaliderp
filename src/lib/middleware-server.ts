@@ -33,6 +33,9 @@ export function errorResponse(message: string, status = 400, errors?: any) {
   );
 }
 
+const AUTH_CACHE = new Map<string, { user: any; expiresAt: number }>();
+const CACHE_TTL_MS = 60000; // 60 seconds
+
 /**
  * Authenticate incoming NextRequest on Vercel Serverless
  */
@@ -46,6 +49,12 @@ export async function authenticateRequest(req: Request) {
   try {
     const payload = jwt.verify(token, JWT_SECRET) as TokenPayload;
     
+    const now = Date.now();
+    const cached = AUTH_CACHE.get(payload.userId);
+    if (cached && cached.expiresAt > now) {
+      return { user: cached.user, error: null };
+    }
+    
     // Check if user exists in database
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
@@ -58,6 +67,9 @@ export async function authenticateRequest(req: Request) {
         error: errorResponse('Your account is not authorized to access Tripidio ERP.', 403),
       };
     }
+
+    // Cache the user for 60 seconds
+    AUTH_CACHE.set(payload.userId, { user, expiresAt: now + CACHE_TTL_MS });
 
     return { user, error: null };
   } catch {

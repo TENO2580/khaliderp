@@ -68,16 +68,15 @@ export default function ExpensesScreen() {
 
   const fetchData = async () => {
     try {
-      const queryParams = new URLSearchParams({ limit: '500' });
+      const currentFilters = useFilterStore.getState().filters['expenses'] || {};
+      const queryParams = new URLSearchParams({ limit: '50' });
       if (search) queryParams.append('search', search);
-      if (filters.status) queryParams.append('status', filters.status);
-      if (filters.startDate) queryParams.append('startDate', filters.startDate);
-      if (filters.endDate) queryParams.append('endDate', filters.endDate);
+      if (currentFilters.status) queryParams.append('status', currentFilters.status);
+      if (currentFilters.startDate) queryParams.append('startDate', currentFilters.startDate);
+      if (currentFilters.endDate) queryParams.append('endDate', currentFilters.endDate);
 
-      const [expRes, catRes] = await Promise.all([
-        api.get(`/expenses?${queryParams.toString()}`),
-        api.get('/expenses/categories')
-      ]);
+      const expRes = await api.get(`/expenses?${queryParams.toString()}`);
+      const catRes = await api.get('/expenses/categories');
       const expensesList = Array.isArray(expRes.data?.data?.data) ? expRes.data.data.data : (Array.isArray(expRes.data?.data) ? expRes.data.data : []);
       setExpenses(expensesList);
       setCachedData('expenses', expensesList);

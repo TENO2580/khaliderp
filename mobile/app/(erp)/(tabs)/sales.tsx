@@ -55,6 +55,8 @@ export default function SalesScreen() {
   const [orders, setOrders] = useState<Order[]>(getCachedData('sales') || []);
   const [invoices, setInvoices] = useState<any[]>(getCachedData('sales_invoices') || []);
   const [activeTab, setActiveTab] = useState<'orders' | 'invoices'>('orders');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   
   const [customers, setCustomers] = useState<any[]>(getCachedData('sales_customers') || []);
   const [products, setProducts] = useState<any[]>(getCachedData('sales_products') || []);
@@ -351,22 +353,23 @@ export default function SalesScreen() {
 
   const fetchData = async (currentPage = 1) => {
     try {
-      const queryParams = new URLSearchParams({ limit: '10', page: currentPage.toString() });
+      const currentFilters = useFilterStore.getState().filters['sales'] || {};
+      const queryParams = new URLSearchParams({ limit: '50', page: currentPage.toString() });
       if (search) queryParams.append('search', search);
-      if (filters.status) queryParams.append('status', filters.status);
-      if (filters.startDate) queryParams.append('startDate', filters.startDate);
-      if (filters.endDate) queryParams.append('endDate', filters.endDate);
+      if (currentFilters.status) queryParams.append('status', currentFilters.status);
+      if (currentFilters.startDate) queryParams.append('startDate', currentFilters.startDate);
+      if (currentFilters.endDate) queryParams.append('endDate', currentFilters.endDate);
 
-      const [salesRes, custRes, prodRes, batchRes, invRes] = await Promise.all([
-        api.get(`/sales?${queryParams.toString()}`),
-        api.get('/customers?limit=100'),
-        api.get('/inventory?limit=100'),
-        api.get('/production/batches?limit=100'),
-        api.get(`/sales/invoices/list?${queryParams.toString()}`)
-      ]);
+      const salesRes = await api.get(`/sales?${queryParams.toString()}`);
+      const custRes = await api.get('/customers?limit=100');
+      const prodRes = await api.get('/inventory?limit=100');
+      const batchRes = await api.get('/production/batches?limit=100');
+      const invRes = await api.get(`/sales/invoices/list?${queryParams.toString()}`);
+
       const ordersList = salesRes.data.data?.data || salesRes.data.data || [];
       setOrders(ordersList);
       setCachedData('sales', ordersList);
+      setTotalPages(salesRes.data.data?.pagination?.totalPages || 1);
       
       const invData = invRes.data.data || invRes.data;
       const invoicesList = invData?.data || invData || [];

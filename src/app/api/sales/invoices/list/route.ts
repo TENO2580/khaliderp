@@ -13,7 +13,9 @@ export async function GET(req: NextRequest) {
   const page = parseInt(url.searchParams.get('page') || '1');
   const limit = parseInt(url.searchParams.get('limit') || '10');
   const search = url.searchParams.get('search') || '';
-
+  const status = url.searchParams.get('status');
+  const startDate = url.searchParams.get('startDate');
+  const endDate = url.searchParams.get('endDate');
   const skip = (page - 1) * limit;
   const where: any = {};
 
@@ -22,6 +24,24 @@ export async function GET(req: NextRequest) {
       { invoiceNumber: { contains: search, mode: 'insensitive' } },
       { customer: { name: { contains: search, mode: 'insensitive' } } },
     ];
+  }
+
+  if (status) {
+    where.status = status;
+  }
+  
+  if (startDate) {
+    const d = new Date(startDate);
+    if (!isNaN(d.getTime())) {
+      where.invoiceDate = { ...where.invoiceDate, gte: new Date(d.setHours(0, 0, 0, 0)) };
+    }
+  }
+
+  if (endDate) {
+    const d = new Date(endDate);
+    if (!isNaN(d.getTime())) {
+      where.invoiceDate = { ...where.invoiceDate, lte: new Date(d.setHours(23, 59, 59, 999)) };
+    }
   }
 
   const [data, total] = await Promise.all([

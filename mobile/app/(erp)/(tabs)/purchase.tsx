@@ -53,11 +53,13 @@ export default function PurchaseScreen() {
 
   const fetchData = async () => {
     try {
-      const queryParams = new URLSearchParams({ limit: '500' });
+      const currentFilters = useFilterStore.getState().filters['purchase'] || {};
+
+      const queryParams = new URLSearchParams({ limit: '50' });
       if (search) queryParams.append('search', search);
-      if (filters.status) queryParams.append('status', filters.status);
-      if (filters.startDate) queryParams.append('startDate', filters.startDate);
-      if (filters.endDate) queryParams.append('endDate', filters.endDate);
+      if (currentFilters.status) queryParams.append('status', currentFilters.status);
+      if (currentFilters.startDate) queryParams.append('startDate', currentFilters.startDate);
+      if (currentFilters.endDate) queryParams.append('endDate', currentFilters.endDate);
 
       const res = await api.get(`/purchase?${queryParams.toString()}`);
       const data = res.data.data.data || res.data.data;
