@@ -9,7 +9,40 @@ interface User {
   email: string;
   role: string;
   avatar?: string;
+  preferences?: any;
 }
+
+const applyGlobalPreferences = (prefs: any) => {
+  if (typeof window === 'undefined' || !prefs) return;
+  
+  if (prefs.fontFamily) {
+    localStorage.setItem('app-font', prefs.fontFamily);
+    document.documentElement.setAttribute('data-font', prefs.fontFamily);
+  }
+  if (prefs.fontSize) {
+    localStorage.setItem('app-font-size', prefs.fontSize);
+    document.documentElement.setAttribute('data-font-size', prefs.fontSize);
+  }
+  if (prefs.tableDensity) {
+    localStorage.setItem('app-table-density', prefs.tableDensity);
+  }
+  if (prefs.tableWidth) {
+    localStorage.setItem('app-table-layout', prefs.tableWidth);
+  }
+  if (prefs.theme) {
+    if (prefs.theme === 'dark') document.documentElement.classList.add('dark');
+    else if (prefs.theme === 'light') document.documentElement.classList.remove('dark');
+  }
+
+  // Handle column visibility if present
+  if (prefs.columnVisibility) {
+    for (const [moduleName, config] of Object.entries(prefs.columnVisibility)) {
+      localStorage.setItem(`table-cols-${moduleName}`, JSON.stringify(config));
+    }
+  }
+
+  window.dispatchEvent(new Event('app-table-prefs-changed'));
+};
 
 interface AuthContextType {
   user: User | null;
@@ -58,6 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const freshUser = response.data.data;
       setUser(freshUser);
       localStorage.setItem('user', JSON.stringify(freshUser));
+      applyGlobalPreferences(freshUser.preferences);
     } catch {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
@@ -80,6 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('refreshToken', refreshToken);
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
+    applyGlobalPreferences(userData.preferences);
     setIsLoading(false);
   };
 

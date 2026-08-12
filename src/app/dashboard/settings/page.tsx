@@ -5,8 +5,10 @@ import { Settings, Shield, Building, Database, Save, RotateCcw, UserCircle, Moni
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import { formatDate } from '@/lib/utils';
+import { useAuth } from '@/lib/auth';
 
 export default function SettingsPage() {
+  const { user, updateUser } = useAuth();
   const [activeTab, setActiveTab] = useState('company');
 
   const [companyForm, setCompanyForm] = useState({
@@ -41,11 +43,13 @@ export default function SettingsPage() {
   });
 
   useEffect(() => {
+    // If we have database preferences from user context, use those, else local
+    const p = user?.preferences || {};
     setCustomization({
-      font: localStorage.getItem('app-font') || 'roboto',
-      size: localStorage.getItem('app-font-size') || 'medium',
-      tableDensity: localStorage.getItem('app-table-density') || 'comfortable',
-      tableLayout: localStorage.getItem('app-table-layout') || 'full'
+      font: p.fontFamily || localStorage.getItem('app-font') || 'roboto',
+      size: p.fontSize || localStorage.getItem('app-font-size') || 'medium',
+      tableDensity: p.tableDensity || localStorage.getItem('app-table-density') || 'comfortable',
+      tableLayout: p.tableWidth || localStorage.getItem('app-table-layout') || 'full'
     });
 
     if (activeTab === 'permissions') {
@@ -63,19 +67,25 @@ export default function SettingsPage() {
     }
   }, [activeTab]);
 
-  const handleCustomizationSave = () => {
-    localStorage.setItem('app-font', customization.font);
-    localStorage.setItem('app-font-size', customization.size);
-    document.documentElement.style.setProperty('--app-font-family', `var(--font-${customization.font})`);
-    const sizeMap: Record<string, string> = { xs: '12px', small: '14px', medium: '16px', large: '18px', xl: '20px' };
-    document.documentElement.style.setProperty('--app-base-font-size', sizeMap[customization.size] || '16px');
-    
-    // Save table preferences globally
-    localStorage.setItem('app-table-density', customization.tableDensity);
-    localStorage.setItem('app-table-layout', customization.tableLayout);
-    window.dispatchEvent(new Event('app-table-prefs-changed'));
+  const handleCustomizationSave = async () => {
+    const preferencesPayload = {
+      fontFamily: customization.font,
+      fontSize: customization.size,
+      tableDensity: customization.tableDensity,
+      tableWidth: customization.tableLayout
+    };
 
-    toast.success('Display customization updated!');
+    try {
+      // Save globally via API
+      await api.put('/users/preferences', preferencesPayload);
+      
+      // Update local auth context (which applies them to DOM/localStorage)
+      updateUser({ preferences: { ...user?.preferences, ...preferencesPayload } });
+      
+      toast.success('Display customization updated and saved globally!');
+    } catch (err) {
+      toast.error('Failed to save display preferences globally');
+    }
   };
 
   return (

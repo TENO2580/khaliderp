@@ -25,6 +25,7 @@ model User {
   name          String
   phone         String?
   avatar        String?
+  preferences   Json?
   role          UserRole  @default(EMPLOYEE)
   isActive      Boolean   @default(true)
   refreshToken  String?

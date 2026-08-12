@@ -49,7 +49,7 @@ export async function authenticateRequest(req: Request) {
     // Check if user exists in database
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
-      select: { id: true, email: true, name: true, role: true, avatar: true, isActive: true },
+      select: { id: true, email: true, name: true, role: true, avatar: true, isActive: true, preferences: true },
     });
 
     if (!user || !user.isActive) {
