@@ -3,10 +3,7 @@ import prisma from '@/lib/db';
 import { authenticateRequest, jsonResponse, errorResponse } from '@/lib/middleware-server';
 
 export const dynamic = 'force-dynamic';
-
-
-export const revalidate = 300; // Cache this route for 5 minutes
-
+export const revalidate = 300;
 
 export async function GET(req: NextRequest) {
   const { user, error } = await authenticateRequest(req);
@@ -22,150 +19,112 @@ export async function GET(req: NextRequest) {
 
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const firstDayOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    
+    const firstDayPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const sevenDaysAgo = new Date(todayStart);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
-    // ── KPIs: parallel queries ──
-    const [
-      todaySalesAgg,
-      monthlySalesAgg,
-      monthlyExpensesAgg,
-      monthlyProductionCostAgg,
-      ordersPending,
-      ordersDelivered,
-      totalCustomers,
-      activeCustomers,
-      outstandingCreditAgg,
-      waxStockAgg,
-      finishedGoodsAgg,
-      inventoryValueAgg,
-      productionTodayAgg,
-      productionMonthAgg,
-      employeeAttendanceToday,
-    ] = await Promise.all([
-      // Today's sales
-      prisma.salesOrder.aggregate({
-        where: { orderDate: { gte: todayStart, lt: todayEnd } },
-        _sum: { totalAmount: true },
-      }),
-      // Monthly sales
-      prisma.salesOrder.aggregate({
-        where: { orderDate: { gte: firstDayOfMonth, lt: firstDayOfNextMonth } },
-        _sum: { totalAmount: true },
-      }),
-      // Monthly expenses
-      prisma.expense.aggregate({
-        where: { date: { gte: firstDayOfMonth, lt: firstDayOfNextMonth } },
-        _sum: { amount: true },
-      }),
-      // Monthly production cost
-      prisma.production.aggregate({
-        where: { date: { gte: firstDayOfMonth, lt: firstDayOfNextMonth } },
-        _sum: { totalCost: true },
-      }),
-      // Orders pending
-      prisma.salesOrder.count({
-        where: { status: { in: ['PENDING', 'CONFIRMED', 'IN_PRODUCTION', 'READY'] } },
-      }),
-      // Orders delivered
-      prisma.salesOrder.count({
-        where: {
-          status: 'DELIVERED',
-          orderDate: { gte: firstDayOfMonth, lt: firstDayOfNextMonth },
-        },
-      }),
-      // Total customers
-      prisma.customer.count(),
-      // Active customers
-      prisma.customer.count({ where: { status: 'ACTIVE' } }),
-      // Outstanding credit (sum of outstanding across all sales orders)
-      prisma.salesOrder.aggregate({
-        where: { outstanding: { gt: 0 } },
-        _sum: { outstanding: true },
-      }),
-      // Current wax stock
-      prisma.rawMaterial.aggregate({
-        where: { category: 'WAX' },
-        _sum: { currentStock: true },
-      }),
-      // Finished goods stock
-      prisma.inventory.aggregate({ _sum: { currentStock: true } }),
-      // Inventory value
-      prisma.inventory.aggregate({ _sum: { value: true } }),
-      // Production today (quantity)
-      prisma.production.aggregate({
-        where: { date: { gte: todayStart, lt: todayEnd } },
-        _sum: { quantityProduced: true },
-      }),
-      // Production this month (quantity)
-      prisma.production.aggregate({
-        where: { date: { gte: firstDayOfMonth, lt: firstDayOfNextMonth } },
-        _sum: { quantityProduced: true },
-      }),
-      // Employee attendance today
-      prisma.attendance.count({
-        where: {
-          date: { gte: todayStart, lt: todayEnd },
-          status: { in: ['PRESENT', 'LATE'] },
-        },
-      }),
-    ]);
+    // Using Raw SQL to execute all 15 KPI queries in a single database roundtrip
+    // This resolves the massive Supabase connection pool latency (from 48s to 1s)
+    const rawData: any = await prisma.$queryRaw`
+      SELECT 
+        (SELECT COALESCE(SUM("totalAmount"), 0) FROM "sales_orders" WHERE "orderDate" >= ${todayStart} AND "orderDate" < ${todayEnd}) as "todaysSales",
+        (SELECT COALESCE(SUM("totalAmount"), 0) FROM "sales_orders" WHERE "orderDate" >= ${firstDayOfMonth} AND "orderDate" < ${firstDayOfNextMonth}) as "monthlySales",
+        (SELECT COALESCE(SUM("amount"), 0) FROM "expenses" WHERE "date" >= ${firstDayOfMonth} AND "date" < ${firstDayOfNextMonth}) as "monthlyExpenses",
+        (SELECT COALESCE(SUM("totalCost"), 0) FROM "productions" WHERE "date" >= ${firstDayOfMonth} AND "date" < ${firstDayOfNextMonth}) as "monthlyProductionCost",
+        (SELECT COUNT(*) FROM "sales_orders" WHERE "status" IN ('PENDING', 'CONFIRMED', 'IN_PRODUCTION', 'READY')) as "ordersPending",
+        (SELECT COUNT(*) FROM "sales_orders" WHERE "status" = 'DELIVERED' AND "orderDate" >= ${firstDayOfMonth} AND "orderDate" < ${firstDayOfNextMonth}) as "ordersDelivered",
+        (SELECT COUNT(*) FROM "customers") as "totalCustomers",
+        (SELECT COUNT(*) FROM "customers" WHERE "status" = 'ACTIVE') as "activeCustomers",
+        (SELECT COALESCE(SUM("outstanding"), 0) FROM "sales_orders" WHERE "outstanding" > 0) as "outstandingCredit",
+        (SELECT COALESCE(SUM("currentStock"), 0) FROM "raw_materials" WHERE "category" = 'WAX') as "waxStock",
+        (SELECT COALESCE(SUM("currentStock"), 0) FROM "inventory") as "finishedGoodsStock",
+        (SELECT COALESCE(SUM("value"), 0) FROM "inventory") as "inventoryValue",
+        (SELECT COALESCE(SUM("quantityProduced"), 0) FROM "productions" WHERE "date" >= ${todayStart} AND "date" < ${todayEnd}) as "productionToday",
+        (SELECT COALESCE(SUM("quantityProduced"), 0) FROM "productions" WHERE "date" >= ${firstDayOfMonth} AND "date" < ${firstDayOfNextMonth}) as "productionThisMonth",
+        (SELECT COUNT(*) FROM "attendance" WHERE "date" >= ${todayStart} AND "date" < ${todayEnd} AND "status" IN ('PRESENT', 'LATE')) as "employeeAttendanceToday",
+        (SELECT COALESCE(SUM("totalAmount"), 0) FROM "sales_orders" WHERE "orderDate" >= ${firstDayPrevMonth} AND "orderDate" < ${firstDayOfMonth}) as "prevMonthlySales",
+        (SELECT COALESCE(SUM("amount"), 0) FROM "expenses" WHERE "date" >= ${firstDayPrevMonth} AND "date" < ${firstDayOfMonth}) as "prevMonthlyExpenses"
+    `;
 
-    const todaysSales = todaySalesAgg._sum.totalAmount || 0;
-    const monthlySales = monthlySalesAgg._sum.totalAmount || 0;
-    const monthlyExpenses = monthlyExpensesAgg._sum.amount || 0;
-    const monthlyProductionCost = monthlyProductionCostAgg._sum.totalCost || 0;
+    const row = rawData[0];
+    const todaysSales = Number(row.todaysSales || 0);
+    const monthlySales = Number(row.monthlySales || 0);
+    const monthlyExpenses = Number(row.monthlyExpenses || 0);
+    const monthlyProductionCost = Number(row.monthlyProductionCost || 0);
+    const waxStock = Number(row.waxStock || 0);
+    const finishedGoodsStock = Number(row.finishedGoodsStock || 0);
+    const inventoryValue = Number(row.inventoryValue || 0);
+    const outstandingCredit = Number(row.outstandingCredit || 0);
+    const productionToday = Number(row.productionToday || 0);
+    const productionThisMonth = Number(row.productionThisMonth || 0);
+    const prevMonthlySales = Number(row.prevMonthlySales || 0);
+    const prevMonthlyExpenses = Number(row.prevMonthlyExpenses || 0);
+    const ordersPending = Number(row.ordersPending || 0);
+    const ordersDelivered = Number(row.ordersDelivered || 0);
+    const totalCustomers = Number(row.totalCustomers || 0);
+    const activeCustomers = Number(row.activeCustomers || 0);
+    const employeeAttendanceToday = Number(row.employeeAttendanceToday || 0);
+
     const monthlyProfit = monthlySales - (monthlyProductionCost + monthlyExpenses);
     const grossMargin = monthlySales > 0 ? Math.round((monthlyProfit / monthlySales) * 100 * 10) / 10 : 0;
-    const waxStock = waxStockAgg._sum.currentStock || 0;
-    const finishedGoodsStock = finishedGoodsAgg._sum.currentStock || 0;
-    const inventoryValue = inventoryValueAgg._sum.value || 0;
-    const outstandingCredit = outstandingCreditAgg._sum.outstanding || 0;
-    const productionToday = productionTodayAgg._sum.quantityProduced || 0;
-    const productionThisMonth = productionMonthAgg._sum.quantityProduced || 0;
-
-    // Today's profit (proportional estimate from monthly margin)
     const todaysProfit = monthlySales > 0 ? Math.round(todaysSales * (monthlyProfit / monthlySales)) : 0;
-
-    // ── Previous month for % change calculations ──
-    const firstDayPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const [prevMonthlySalesAgg, prevMonthlyExpensesAgg] = await Promise.all([
-      prisma.salesOrder.aggregate({
-        where: { orderDate: { gte: firstDayPrevMonth, lt: firstDayOfMonth } },
-        _sum: { totalAmount: true },
-      }),
-      prisma.expense.aggregate({
-        where: { date: { gte: firstDayPrevMonth, lt: firstDayOfMonth } },
-        _sum: { amount: true },
-      }),
-    ]);
-    const prevMonthlySales = prevMonthlySalesAgg._sum.totalAmount || 0;
-    const prevMonthlyExpenses = prevMonthlyExpensesAgg._sum.amount || 0;
 
     const salesChange = prevMonthlySales > 0 ? Math.round(((monthlySales - prevMonthlySales) / prevMonthlySales) * 100 * 10) / 10 : 0;
     const expenseChange = prevMonthlyExpenses > 0 ? Math.round(((monthlyExpenses - prevMonthlyExpenses) / prevMonthlyExpenses) * 100 * 10) / 10 : 0;
 
-    // ── Charts ──
+    // Charts queries in parallel (only 4 queries total)
+    const [salesTrendRows, topSales, expenseByCat, recentBatches, recentSales] = await Promise.all([
+      prisma.$queryRaw`
+        SELECT date_trunc('month', "orderDate") as "monthDate", SUM("totalAmount") as "totalAmount"
+        FROM "sales_orders"
+        WHERE "orderDate" >= ${sixMonthsAgo}
+        GROUP BY date_trunc('month', "orderDate")
+        ORDER BY "monthDate" ASC
+      `,
+      prisma.salesOrder.groupBy({
+        by: ['customerId'],
+        _sum: { totalAmount: true },
+        orderBy: { _sum: { totalAmount: 'desc' } },
+        take: 10,
+      }),
+      prisma.expense.groupBy({
+        by: ['categoryId'],
+        _sum: { amount: true },
+        where: { date: { gte: firstDayOfMonth, lt: firstDayOfNextMonth } },
+        orderBy: { _sum: { amount: 'desc' } },
+      }),
+      prisma.batch.findMany({
+        take: 5,
+        orderBy: { purchaseDate: 'desc' },
+        select: { batchNumber: true, producedQty: true, soldQty: true },
+      }),
+      prisma.salesOrder.groupBy({
+        by: ['orderDate'],
+        _sum: { totalAmount: true },
+        where: { orderDate: { gte: sevenDaysAgo } },
+        orderBy: { orderDate: 'asc' },
+      })
+    ]);
 
-    // 1) 6-month sales trend
+    // 1) 6-month sales trend formatting
+    const salesTrendMap = new Map((salesTrendRows as any[]).map(row => [
+      new Date(row.monthDate).toLocaleString('en-IN', { month: 'short' }),
+      Number(row.totalAmount || 0)
+    ]));
+    
     const salesTrend = [];
     for (let i = 5; i >= 0; i--) {
       const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
-      const agg = await prisma.salesOrder.aggregate({
-        where: { orderDate: { gte: monthStart, lt: monthEnd } },
-        _sum: { totalAmount: true },
-      });
+      const mLabel = monthStart.toLocaleString('en-IN', { month: 'short' });
       salesTrend.push({
-        month: monthStart.toLocaleString('en-IN', { month: 'short' }),
-        sales: agg._sum.totalAmount || 0,
+        month: mLabel,
+        sales: salesTrendMap.get(mLabel) || 0,
       });
     }
 
-    const topSales = await prisma.salesOrder.groupBy({
-      by: ['customerId'],
-      _sum: { totalAmount: true },
-      orderBy: { _sum: { totalAmount: 'desc' } },
-      take: 10,
-    });
+    // 2) Top Customers mapping
     const topCustomerIds = topSales.map(s => s.customerId);
     const topCustomersData = await prisma.customer.findMany({
       where: { id: { in: topCustomerIds } },
@@ -180,12 +139,6 @@ export async function GET(req: NextRequest) {
       .filter(c => c.TotalSales > 0);
 
     // 3) Expense breakdown by category
-    const expenseByCat = await prisma.expense.groupBy({
-      by: ['categoryId'],
-      _sum: { amount: true },
-      where: { date: { gte: firstDayOfMonth, lt: firstDayOfNextMonth } },
-      orderBy: { _sum: { amount: 'desc' } },
-    });
     const catIds = expenseByCat.map(e => e.categoryId);
     const categories = catIds.length > 0
       ? await prisma.expenseCategory.findMany({ where: { id: { in: catIds } } })
@@ -196,15 +149,7 @@ export async function GET(req: NextRequest) {
       amount: e._sum.amount || 0,
     }));
 
-    // 4) 7-day sales trend
-    const sevenDaysAgo = new Date(todayStart);
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
-    const recentSales = await prisma.salesOrder.groupBy({
-      by: ['orderDate'],
-      _sum: { totalAmount: true },
-      where: { orderDate: { gte: sevenDaysAgo } },
-      orderBy: { orderDate: 'asc' },
-    });
+    // 4) 7-day sales trend formatting
     const salesDayMap = new Map<string, number>();
     recentSales.forEach(s => {
       salesDayMap.set(s.orderDate.toISOString().split('T')[0], s._sum.totalAmount || 0);
@@ -218,11 +163,6 @@ export async function GET(req: NextRequest) {
     }
 
     // 5) Production vs Sales by batch
-    const recentBatches = await prisma.batch.findMany({
-      take: 5,
-      orderBy: { purchaseDate: 'desc' },
-      select: { batchNumber: true, producedQty: true, soldQty: true },
-    });
     const productionVsSales = recentBatches
       .map(b => ({
         batchName: b.batchNumber,
@@ -263,7 +203,6 @@ export async function GET(req: NextRequest) {
         productionToday: Math.round(productionToday),
         productionThisMonth: Math.round(productionThisMonth),
         employeeAttendance: employeeAttendanceToday,
-        // % changes
         salesChange,
         expenseChange,
       },

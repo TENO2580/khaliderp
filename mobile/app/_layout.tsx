@@ -74,9 +74,9 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={effectiveTheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="login" options={{ headerShown: false }} />
-        <Stack.Screen name="(erp)" options={{ headerShown: false }} />
+      <Stack screenOptions={{ animationDuration: 350 }}>
+        <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />
+        <Stack.Screen name="(erp)" options={{ headerShown: false, animation: 'fade_from_bottom' }} />
       </Stack>
     </ThemeProvider>
   );

@@ -338,12 +338,11 @@ export default function SalesPage() {
     },
     {
       header: 'Batch Used',
-      editableKey: 'batchUsed',
-      inlineEditable: true,
-      cell: (o) => {
-        const data = parseNotes(o.notes);
-        return <span className="text-sm text-gray-900 dark:text-gray-100">{data.batchUsed || '-'}</span>;
-      },
+      cell: (o) => (
+        <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+          {o.fifoBatches || '-'}
+        </span>
+      ),
     },
     {
       header: 'Order Date',

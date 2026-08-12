@@ -146,6 +146,14 @@ export default function BatchesPage() {
       cell: (b) => <span className="text-xs text-orange-600 font-medium">{Number(b.remainingQty).toFixed(2)} KG</span>,
     },
     {
+      header: 'Orders',
+      cell: (b) => (
+        <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+          {b.fifoOrders || '-'}
+        </span>
+      ),
+    },
+    {
       header: 'Wax Stock',
       cell: (b) => {
         const stock = (Number(b.waxInitialQty) || 0) - (Number(b.producedQty) || 0);

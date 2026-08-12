@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, View, Text, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import api from '../lib/api';
@@ -7,12 +7,25 @@ import { StatusBar } from 'expo-status-bar';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withTiming, 
+  withSequence, 
+  withSpring,
+  interpolateColor,
+  FadeIn
+} from 'react-native-reanimated';
+import * as Network from 'expo-network';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [offline, setOffline] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [userName, setUserName] = useState('');
   
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
@@ -20,27 +33,101 @@ export default function LoginScreen() {
   const login = useAuthStore((state) => state.login);
   const router = useRouter();
 
+  // Animations
+  const passwordShake = useSharedValue(0);
+  const passwordBorder = useSharedValue(0);
+  const buttonScale = useSharedValue(1);
+  const logoScale = useSharedValue(0.95);
+  const logoGlow = useSharedValue(0);
+
+  const passwordAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateX: passwordShake.value }],
+      borderColor: interpolateColor(
+        passwordBorder.value,
+        [0, 1],
+        ['#1E293B', '#EF4444']
+      )
+    };
+  });
+
+  const buttonAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: buttonScale.value }]
+    };
+  });
+
+  const logoAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: logoScale.value }],
+      shadowColor: '#14B8A6',
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: logoGlow.value,
+      shadowRadius: 15,
+      elevation: logoGlow.value > 0 ? 15 : 0,
+    };
+  });
+
+  useEffect(() => {
+    checkNetwork();
+  }, []);
+
+  const checkNetwork = async () => {
+    const networkState = await Network.getNetworkStateAsync();
+    if (!networkState.isConnected) {
+      setOffline(true);
+      return false;
+    }
+    setOffline(false);
+    return true;
+  };
+
+  const triggerShake = () => {
+    passwordBorder.value = withTiming(1, { duration: 200 });
+    passwordShake.value = withSequence(
+      withTiming(10, { duration: 50 }),
+      withTiming(-10, { duration: 50 }),
+      withTiming(10, { duration: 50 }),
+      withTiming(0, { duration: 50 })
+    );
+  };
+
   const handleLogin = async () => {
+    const isOnline = await checkNetwork();
+    if (!isOnline) return;
+
     if (!email || !password) {
       setError('Please enter both email and password');
+      triggerShake();
       return;
     }
 
     setLoading(true);
     setError('');
+    passwordBorder.value = withTiming(0);
+    buttonScale.value = withTiming(0.98, { duration: 100 });
 
     try {
       const response = await api.post('/auth/login', { email, password });
-      
       const { user, accessToken, refreshToken } = response.data.data;
       
-      await login(user, accessToken, refreshToken);
-      // Navigation is handled by the RootLayout auth guard automatically
+      setUserName(user.name || email.split('@')[0]);
+      setSuccess(true);
+      
+      buttonScale.value = withSpring(1);
+      logoScale.value = withSpring(1, { damping: 12, stiffness: 90 });
+      logoGlow.value = withTiming(0.8, { duration: 500 });
+      
+      setTimeout(async () => {
+        await login(user, accessToken, refreshToken);
+      }, 700);
+      
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Invalid credentials or server error');
-    } finally {
       setLoading(false);
-    }
+      buttonScale.value = withSpring(1);
+      setError(err.response?.data?.error || 'Invalid email or password.');
+      triggerShake();
+    } 
   };
 
   return (
@@ -52,21 +139,43 @@ export default function LoginScreen() {
       >
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           
+          {offline && (
+            <View style={styles.offlineBanner}>
+              <Feather name="wifi-off" size={16} color="#fff" />
+              <Text style={styles.offlineText}>No Internet Connection</Text>
+              <TouchableOpacity onPress={checkNetwork} style={styles.retryBtn}>
+                <Text style={styles.retryText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* Logo Area */}
-          <View style={styles.logoContainer}>
+          <Animated.View style={[styles.logoContainer, logoAnimatedStyle]}>
             <MaterialCommunityIcons name="cube-outline" size={48} color="#14B8A6" />
             <Text style={styles.logoTitle}>TRPIDIO</Text>
             <Text style={styles.logoSubtitle}>E R P</Text>
-          </View>
+          </Animated.View>
 
           {/* Welcome Text */}
           <View style={styles.welcomeContainer}>
-            <Text style={styles.welcomeTitle}>Welcome <Text style={styles.tealText}>Back!</Text></Text>
-            <Text style={styles.welcomeSubtitle}>Sign in to continue to your ERP</Text>
+            {success ? (
+              <>
+                <Animated.View entering={FadeIn} style={{flexDirection: 'row', alignItems: 'center', marginBottom: 8}}>
+                   <Feather name="check-circle" size={28} color="#14B8A6" style={{marginRight: 8}} />
+                   <Text style={styles.welcomeTitle}>Welcome back,</Text>
+                </Animated.View>
+                <Text style={styles.tealText}>{userName}</Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.welcomeTitle}>Welcome <Text style={styles.tealText}>Back!</Text></Text>
+                <Text style={styles.welcomeSubtitle}>Sign in to continue to your ERP</Text>
+              </>
+            )}
           </View>
 
           {/* Form Card */}
-          <View style={styles.formCard}>
+          <View style={styles.formCard} pointerEvents={(loading || success) ? 'none' : 'auto'}>
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
             <Text style={styles.label}>Email Address</Text>
@@ -80,11 +189,12 @@ export default function LoginScreen() {
                 autoCapitalize="none"
                 value={email}
                 onChangeText={setEmail}
+                editable={!loading && !success}
               />
             </View>
 
             <Text style={styles.label}>Password</Text>
-            <View style={styles.inputWrapper}>
+            <Animated.View style={[styles.inputWrapper, passwordAnimatedStyle]}>
               <Feather name="lock" size={20} color="#14B8A6" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
@@ -93,50 +203,57 @@ export default function LoginScreen() {
                 secureTextEntry={!showPassword}
                 value={password}
                 onChangeText={setPassword}
+                editable={!loading && !success}
               />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon} disabled={loading || success}>
                 <Feather name={showPassword ? "eye-off" : "eye"} size={20} color="#14B8A6" />
               </TouchableOpacity>
-            </View>
+            </Animated.View>
 
             <View style={styles.optionsRow}>
               <TouchableOpacity 
                 style={styles.checkboxContainer} 
                 onPress={() => setRememberMe(!rememberMe)}
                 activeOpacity={0.7}
+                disabled={loading || success}
               >
                 <View style={[styles.checkbox, rememberMe && styles.checkboxActive]}>
                   {rememberMe && <Feather name="check" size={14} color="#0B1120" />}
                 </View>
                 <Text style={styles.rememberText}>Remember me</Text>
               </TouchableOpacity>
-              {/* Forgot password removed as requested */}
             </View>
 
-            <TouchableOpacity 
-              onPress={handleLogin}
-              disabled={loading}
-              activeOpacity={0.8}
-              style={styles.loginBtnShadow}
-            >
-              <LinearGradient
-                colors={['#14B8A6', '#0F766E']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={[styles.loginBtn, loading && { opacity: 0.7 }]}
+            <Animated.View style={[styles.loginBtnShadow, buttonAnimatedStyle]}>
+              <TouchableOpacity 
+                onPress={handleLogin}
+                disabled={loading || success}
+                activeOpacity={0.8}
               >
-                {loading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <>
-                    <Text style={styles.loginBtnText}>Sign In</Text>
-                    <View style={styles.btnArrow}>
-                      <Feather name="arrow-right" size={18} color="#fff" />
-                    </View>
-                  </>
-                )}
-              </LinearGradient>
-            </TouchableOpacity>
+                <LinearGradient
+                  colors={success ? ['#10B981', '#059669'] : ['#14B8A6', '#0F766E']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.loginBtn}
+                >
+                  {success ? (
+                    <Text style={styles.loginBtnText}>Authenticated</Text>
+                  ) : loading ? (
+                    <>
+                      <ActivityIndicator color="#fff" style={{marginRight: 8}} />
+                      <Text style={styles.loginBtnText}>Signing In...</Text>
+                    </>
+                  ) : (
+                    <>
+                      <Text style={styles.loginBtnText}>Sign In</Text>
+                      <View style={styles.btnArrow}>
+                        <Feather name="arrow-right" size={18} color="#fff" />
+                      </View>
+                    </>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+            </Animated.View>
 
             <View style={styles.dividerContainer}>
               <View style={styles.dividerLine} />
@@ -144,7 +261,7 @@ export default function LoginScreen() {
               <View style={styles.dividerLine} />
             </View>
 
-            <TouchableOpacity style={styles.companyBtn} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.companyBtn} activeOpacity={0.7} disabled={loading || success}>
               <MaterialCommunityIcons name="office-building" size={20} color="#E2E8F0" style={styles.companyIcon} />
               <Text style={styles.companyBtnText}>Sign in with Company</Text>
               <Feather name="chevron-right" size={20} color="#64748B" />
@@ -203,6 +320,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-evenly',
   },
+  offlineBanner: {
+    flexDirection: 'row',
+    backgroundColor: '#EF4444',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 16,
+    justifyContent: 'space-between',
+  },
+  offlineText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    marginLeft: 8,
+    flex: 1,
+  },
+  retryBtn: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  retryText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
   logoContainer: {
     alignItems: 'center',
     marginBottom: 16,
@@ -233,6 +377,8 @@ const styles = StyleSheet.create({
   },
   tealText: {
     color: '#14B8A6',
+    fontSize: 28,
+    fontWeight: 'bold',
   },
   welcomeSubtitle: {
     fontSize: 15,

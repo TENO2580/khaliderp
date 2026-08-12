@@ -183,6 +183,12 @@ export default function BatchesScreen() {
     { key: 'producedQty', title: 'Produced', width: 80, render: (item) => <Text style={styles.cellText}>{Number(item.producedQty).toFixed(2)}</Text> },
     { key: 'soldQty', title: 'Sold', width: 80, render: (item) => <Text style={[styles.cellText, { color: '#10B981' }]}>{Number(item.soldQty).toFixed(2)}</Text> },
     { key: 'remainingQty', title: 'Remaining', width: 90, render: (item) => <Text style={[styles.cellText, { color: '#F59E0B' }]}>{Number(item.remainingQty).toFixed(2)}</Text> },
+    { key: 'orders', title: 'Orders', width: 140, render: (item) => (
+        <Text style={[styles.cellText, { color: '#4F46E5', fontWeight: 'bold' }]} numberOfLines={1}>
+          {item.fifoOrders || '-'}
+        </Text>
+      )
+    },
     { key: 'status', title: 'Status', width: 110, render: (item) => (
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '20' }]}>
           <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>{item.status.replace('_', ' ')}</Text>

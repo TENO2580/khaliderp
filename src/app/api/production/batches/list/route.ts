@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/db';
 import { authenticateRequest, jsonResponse } from '@/lib/middleware-server';
+import { calculateStrictFifoMapping } from '@/lib/fifo-calculator';
 
 export const dynamic = 'force-dynamic';
 
@@ -62,8 +63,15 @@ export async function GET(req: NextRequest) {
     prisma.batch.count({ where }),
   ]);
 
+  const fifoMapping = await calculateStrictFifoMapping();
+  
+  const dataWithFifo = data.map((b: any) => ({
+    ...b,
+    fifoOrders: fifoMapping.batchToOrders[b.id] || '-'
+  }));
+
   return jsonResponse({
-    data: data,
+    data: dataWithFifo,
     pagination: {
       page,
       limit,

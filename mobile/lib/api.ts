@@ -11,6 +11,7 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   withCredentials: true,
+  timeout: 60000, // 60 second timeout due to Supabase DB latency
 });
 
 api.interceptors.request.use(

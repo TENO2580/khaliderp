@@ -6,18 +6,37 @@ import { useAuthStore } from '../../../store/authStore';
 import { ROLE_LABELS, hasPermission, NAV_ITEMS } from '../../../lib/constants';
 import { 
   Bell, Search, TrendingUp, AlertCircle, Clock, Package, 
-  Users, ShoppingCart, Archive, Bus, Settings, Sparkles, CheckCircle2 
+  Users, ShoppingCart, Archive, Bus, Settings, Sparkles, CheckCircle2,
+  FileText, DollarSign, Info, Truck, Layers, TrendingDown, User
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import api from '../../../lib/api';
+import Reanimated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 
+const SkeletonItem = ({ width, height, style, borderRadius = 8 }: any) => {
+  const opacity = useSharedValue(0.3);
+  useEffect(() => {
+    opacity.value = withRepeat(
+      withSequence(
+        withTiming(0.6, { duration: 800 }),
+        withTiming(0.3, { duration: 800 })
+      ),
+      -1,
+      true
+    );
+  }, []);
+  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  return <Reanimated.View style={[{ width, height, backgroundColor: '#1E293B', borderRadius }, style, animStyle]} />;
+};
 export default function PremiumDashboard() {
   const colors = useThemeStore((state) => state.getColors());
   const styles = getStyles(colors);
   const { user } = useAuthStore();
   const router = useRouter();
   const [stats, setStats] = useState<any>(null);
+  const [activities, setActivities] = useState<any[]>([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   
   // Animations
@@ -27,16 +46,29 @@ export default function PremiumDashboard() {
   const fetchStats = async () => {
     try {
       const response = await api.get('/dashboard/stats');
-      setStats(response.data.kpis);
+      setStats(response.data?.data?.kpis || response.data?.kpis || {});
     } catch (e) {
-      console.error(e);
+      console.error('Failed to fetch stats:', e);
+      setStats({}); // Prevent infinite skeleton loading on error
+    }
+  };
+
+  const fetchActivities = async () => {
+    try {
+      setActivitiesLoading(true);
+      const response = await api.get('/activities?limit=10');
+      setActivities(response.data?.data || []);
+    } catch (e) {
+      console.error('Failed to fetch activities:', e);
     } finally {
+      setActivitiesLoading(false);
       setRefreshing(false);
     }
   };
 
   useEffect(() => {
     fetchStats();
+    fetchActivities();
     Animated.parallel([
       Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
       Animated.timing(slideAnim, { toValue: 0, duration: 800, useNativeDriver: true })
@@ -46,6 +78,25 @@ export default function PremiumDashboard() {
   const onRefresh = () => {
     setRefreshing(true);
     fetchStats();
+    fetchActivities();
+  };
+
+  const timeAgo = (date: string) => {
+    const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
+    let interval = seconds / 31536000;
+    if (interval > 1) return Math.floor(interval) + ' years ago';
+    interval = seconds / 2592000;
+    if (interval > 1) return Math.floor(interval) + ' months ago';
+    interval = seconds / 86400;
+    if (interval > 1) {
+      if (Math.floor(interval) === 1) return 'Yesterday';
+      return Math.floor(interval) + ' days ago';
+    }
+    interval = seconds / 3600;
+    if (interval > 1) return Math.floor(interval) + ' hours ago';
+    interval = seconds / 60;
+    if (interval > 1) return Math.floor(interval) + ' mins ago';
+    return 'Just now';
   };
 
   if (!user) return null;
@@ -96,42 +147,57 @@ export default function PremiumDashboard() {
   );
 
   // 2. Business Health KPIs
-  const renderKPIs = () => (
-    <Animated.View style={[styles.kpiGrid, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-      <View style={styles.kpiCard}>
-        <Text style={styles.kpiLabel}>Today's Sales</Text>
-        <Text style={styles.kpiValue}>₹{(stats?.todaysSales || 0).toLocaleString()}</Text>
-        <View style={styles.kpiTrendRow}>
-          <TrendingUp size={12} color="#22C55E" />
-          <Text style={styles.kpiTrendSuccess}>+12.5%</Text>
+  const renderKPIs = () => {
+    if (!stats) {
+      return (
+        <Animated.View style={[styles.kpiGrid, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+          {[1, 2, 3, 4].map(key => (
+            <View key={key} style={styles.kpiCard}>
+              <SkeletonItem width="60%" height={14} style={{ marginBottom: 12 }} />
+              <SkeletonItem width="80%" height={24} style={{ marginBottom: 12 }} />
+              <SkeletonItem width="40%" height={14} />
+            </View>
+          ))}
+        </Animated.View>
+      );
+    }
+    return (
+      <Animated.View style={[styles.kpiGrid, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+        <View style={styles.kpiCard}>
+          <Text style={styles.kpiLabel}>Today's Sales</Text>
+          <Text style={styles.kpiValue}>₹{(stats?.todaysSales || 0).toLocaleString()}</Text>
+          <View style={styles.kpiTrendRow}>
+            <TrendingUp size={12} color="#22C55E" />
+            <Text style={styles.kpiTrendSuccess}>+12.5%</Text>
+          </View>
         </View>
-      </View>
-      <View style={styles.kpiCard}>
-        <Text style={styles.kpiLabel}>Pending Orders</Text>
-        <Text style={styles.kpiValue}>{stats?.ordersPending || 0}</Text>
-        <View style={styles.kpiTrendRow}>
-          <Clock size={12} color="#F59E0B" />
-          <Text style={styles.kpiTrendWarning}>Action Needed</Text>
+        <View style={styles.kpiCard}>
+          <Text style={styles.kpiLabel}>Pending Orders</Text>
+          <Text style={styles.kpiValue}>{stats?.ordersPending || 0}</Text>
+          <View style={styles.kpiTrendRow}>
+            <Clock size={12} color="#F59E0B" />
+            <Text style={styles.kpiTrendWarning}>Action Needed</Text>
+          </View>
         </View>
-      </View>
-      <View style={styles.kpiCard}>
-        <Text style={styles.kpiLabel}>Finished Goods</Text>
-        <Text style={styles.kpiValue}>{stats?.finishedGoodsStock || 0} KG</Text>
-        <View style={styles.kpiTrendRow}>
-          <Package size={12} color="#4F8CFF" />
-          <Text style={styles.kpiTrendNeutral}>In Stock</Text>
+        <View style={styles.kpiCard}>
+          <Text style={styles.kpiLabel}>Finished Goods</Text>
+          <Text style={styles.kpiValue}>{stats?.finishedGoodsStock || 0} KG</Text>
+          <View style={styles.kpiTrendRow}>
+            <Package size={12} color="#4F8CFF" />
+            <Text style={styles.kpiTrendNeutral}>In Stock</Text>
+          </View>
         </View>
-      </View>
-      <View style={styles.kpiCard}>
-        <Text style={styles.kpiLabel}>Outst. Credit</Text>
-        <Text style={styles.kpiValue}>₹{(stats?.outstandingCredit || 0).toLocaleString()}</Text>
-        <View style={styles.kpiTrendRow}>
-          <AlertCircle size={12} color={colors.danger} />
-          <Text style={styles.kpiTrendDanger}>Requires Follow-up</Text>
+        <View style={styles.kpiCard}>
+          <Text style={styles.kpiLabel}>Outst. Credit</Text>
+          <Text style={styles.kpiValue}>₹{(stats?.outstandingCredit || 0).toLocaleString()}</Text>
+          <View style={styles.kpiTrendRow}>
+            <AlertCircle size={12} color={colors.danger} />
+            <Text style={styles.kpiTrendDanger}>Requires Follow-up</Text>
+          </View>
         </View>
-      </View>
-    </Animated.View>
-  );
+      </Animated.View>
+    );
+  };
 
   // 3. Quick Actions
   const renderQuickActions = () => (
@@ -156,25 +222,48 @@ export default function PremiumDashboard() {
   );
 
   // 4. AI Business Insights
-  const renderAIInsights = () => (
-    <View style={styles.section}>
-      <View style={styles.aiCard}>
-        <View style={styles.aiHeader}>
-          <Sparkles color="#7C5CFF" size={24} />
-          <Text style={styles.aiTitle}>AI Business Insights</Text>
+  const renderAIInsights = () => {
+    if (!stats) {
+      return (
+        <View style={styles.section}>
+          <View style={styles.aiCard}>
+            <View style={styles.aiHeader}>
+              <SkeletonItem width={24} height={24} borderRadius={12} />
+              <SkeletonItem width="50%" height={18} style={{ marginLeft: 12 }} />
+            </View>
+            <View style={styles.aiContent}>
+              <SkeletonItem width="90%" height={14} style={{ marginBottom: 12 }} />
+              <SkeletonItem width="95%" height={14} style={{ marginBottom: 12 }} />
+              <SkeletonItem width="80%" height={14} />
+            </View>
+            <View style={styles.aiActionBox}>
+              <SkeletonItem width="30%" height={12} style={{ marginBottom: 8 }} />
+              <SkeletonItem width="70%" height={14} />
+            </View>
+          </View>
         </View>
-        <View style={styles.aiContent}>
-          <Text style={styles.aiText}>• Sales increased 14% this week compared to last week.</Text>
-          <Text style={styles.aiText}>• 5 loyal customers haven't purchased for over 45 days.</Text>
-          <Text style={styles.aiText}>• Profit margin dropped 2% due to rising raw material costs.</Text>
-        </View>
-        <View style={styles.aiActionBox}>
-          <Text style={styles.aiActionLabel}>Suggested Action:</Text>
-          <Text style={styles.aiActionText}>Follow up with inactive customers via SMS promotion.</Text>
+      );
+    }
+    return (
+      <View style={styles.section}>
+        <View style={styles.aiCard}>
+          <View style={styles.aiHeader}>
+            <Sparkles color="#7C5CFF" size={24} />
+            <Text style={styles.aiTitle}>AI Business Insights</Text>
+          </View>
+          <View style={styles.aiContent}>
+            <Text style={styles.aiText}>• Sales increased 14% this week compared to last week.</Text>
+            <Text style={styles.aiText}>• 5 loyal customers haven't purchased for over 45 days.</Text>
+            <Text style={styles.aiText}>• Profit margin dropped 2% due to rising raw material costs.</Text>
+          </View>
+          <View style={styles.aiActionBox}>
+            <Text style={styles.aiActionLabel}>Suggested Action:</Text>
+            <Text style={styles.aiActionText}>Follow up with inactive customers via SMS promotion.</Text>
+          </View>
         </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   // 5. My Modules Grid
   const getLucideIcon = (iconName: string) => {
@@ -220,37 +309,99 @@ export default function PremiumDashboard() {
   };
 
   // 6. Recent Activity
-  const renderActivity = () => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Recent Activity</Text>
-      <View style={styles.timelineCard}>
-        <View style={styles.timelineItem}>
-          <CheckCircle2 size={16} color="#22C55E" />
-          <View style={styles.timelineContent}>
-            <Text style={styles.timelineTitle}>Invoice INV-001 Created</Text>
-            <Text style={styles.timelineTime}>10 mins ago</Text>
+  const renderActivity = () => {
+    if (activitiesLoading && activities.length === 0) {
+      return (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Recent Activity</Text>
+          <View style={styles.timelineCard}>
+            <View style={styles.timelineItem}>
+              <SkeletonItem width={16} height={16} borderRadius={8} />
+              <View style={[styles.timelineContent, { marginLeft: 16 }]}>
+                <SkeletonItem width="60%" height={14} style={{ marginBottom: 6 }} />
+                <SkeletonItem width="30%" height={12} />
+              </View>
+            </View>
+            <View style={styles.timelineLine} />
+            <View style={styles.timelineItem}>
+              <SkeletonItem width={16} height={16} borderRadius={8} />
+              <View style={[styles.timelineContent, { marginLeft: 16 }]}>
+                <SkeletonItem width="55%" height={14} style={{ marginBottom: 6 }} />
+                <SkeletonItem width="40%" height={12} />
+              </View>
+            </View>
+            <View style={styles.timelineLine} />
+            <View style={styles.timelineItem}>
+              <SkeletonItem width={16} height={16} borderRadius={8} />
+              <View style={[styles.timelineContent, { marginLeft: 16 }]}>
+                <SkeletonItem width="65%" height={14} style={{ marginBottom: 6 }} />
+                <SkeletonItem width="25%" height={12} />
+              </View>
+            </View>
           </View>
+          <View style={{ height: 60 }} />
         </View>
-        <View style={styles.timelineLine} />
-        <View style={styles.timelineItem}>
-          <CheckCircle2 size={16} color="#4F8CFF" />
-          <View style={styles.timelineContent}>
-            <Text style={styles.timelineTitle}>Customer Added</Text>
-            <Text style={styles.timelineTime}>1 hour ago</Text>
+      );
+    }
+    
+    if (activities.length === 0) {
+      return (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Recent Activity</Text>
+          <View style={[styles.timelineCard, { alignItems: 'center', padding: 20 }]}>
+            <Archive size={32} color={colors.textSecondary} style={{ marginBottom: 10, opacity: 0.5 }} />
+            <Text style={{ color: colors.textSecondary, fontSize: 14 }}>No recent activities found.</Text>
           </View>
+          <View style={{ height: 60 }} />
         </View>
-        <View style={styles.timelineLine} />
-        <View style={styles.timelineItem}>
-          <CheckCircle2 size={16} color="#F59E0B" />
-          <View style={styles.timelineContent}>
-            <Text style={styles.timelineTitle}>Production Completed</Text>
-            <Text style={styles.timelineTime}>3 hours ago</Text>
-          </View>
+      );
+    }
+
+    const getIcon = (type: string, color: string) => {
+      const props = { size: 16, color: color || '#4F8CFF' };
+      switch (type) {
+        case 'shopping-cart': return <ShoppingCart {...props} />;
+        case 'file-text': return <FileText {...props} />;
+        case 'users': return <Users {...props} />;
+        case 'truck': return <Truck {...props} />;
+        case 'package': return <Package {...props} />;
+        case 'layers': return <Layers {...props} />;
+        case 'dollar-sign': return <DollarSign {...props} />;
+        case 'trending-down': return <TrendingDown {...props} />;
+        case 'user': return <User {...props} />;
+        case 'clock': return <Clock {...props} />;
+        default: return <Info {...props} />;
+      }
+    };
+
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Recent Activity</Text>
+        <View style={styles.timelineCard}>
+          {activities.map((activity, index) => (
+            <React.Fragment key={activity.id}>
+              <TouchableOpacity 
+                style={styles.timelineItem} 
+                onPress={() => {
+                  if (activity.deepLink) {
+                    router.push(activity.deepLink as any);
+                  }
+                }}
+              >
+                {getIcon(activity.iconType, activity.iconColor)}
+                <View style={styles.timelineContent}>
+                  <Text style={styles.timelineTitle}>{activity.title}</Text>
+                  <Text style={styles.timelineTime}>{timeAgo(activity.createdAt)}</Text>
+                </View>
+              </TouchableOpacity>
+              {index < activities.length - 1 && <View style={styles.timelineLine} />}
+            </React.Fragment>
+          ))}
         </View>
+        <View style={{ height: 60 }} />
       </View>
-      <View style={{ height: 60 }} />
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -277,7 +428,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   scrollContent: {
     paddingTop: 60,
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   header: {
     paddingHorizontal: 24,

@@ -349,9 +349,9 @@ export default function SalesScreen() {
     return <Text style={style}>{value}</Text>;
   };
 
-  const fetchData = async () => {
+  const fetchData = async (currentPage = 1) => {
     try {
-      const queryParams = new URLSearchParams({ limit: '500' });
+      const queryParams = new URLSearchParams({ limit: '10', page: currentPage.toString() });
       if (search) queryParams.append('search', search);
       if (filters.status) queryParams.append('status', filters.status);
       if (filters.startDate) queryParams.append('startDate', filters.startDate);
@@ -359,10 +359,10 @@ export default function SalesScreen() {
 
       const [salesRes, custRes, prodRes, batchRes, invRes] = await Promise.all([
         api.get(`/sales?${queryParams.toString()}`),
-        api.get('/customers?limit=500'),
-        api.get('/inventory?limit=500'),
-        api.get('/production/batches'),
-        api.get(`/sales/invoices/list?limit=500${search ? `&search=${search}` : ''}`)
+        api.get('/customers?limit=100'),
+        api.get('/inventory?limit=100'),
+        api.get('/production/batches?limit=100'),
+        api.get(`/sales/invoices/list?${queryParams.toString()}`)
       ]);
       const ordersList = salesRes.data.data?.data || salesRes.data.data || [];
       setOrders(ordersList);
@@ -393,13 +393,12 @@ export default function SalesScreen() {
     }
   };
 
-
   useFocusEffect(useCallback(() => {
     InteractionManager.runAfterInteractions(() => {
       setIsInteracting(false);
-      fetchData();
+      fetchData(1);
     });
-  }, []));
+  }, [search, filters, activeTab]));
 
   const parseNotes = (notes: string) => {
     try {
@@ -727,9 +726,25 @@ export default function SalesScreen() {
         {isInteracting || (loading && !refreshing) ? (
           <SkeletonList />
         ) : activeTab === 'orders' ? (
-          <DataTable columns={columns} data={orders} showActions={false} />
+          <DataTable 
+            columns={columns} 
+            data={orders} 
+            showActions={false} 
+            serverPagination
+            serverPage={page}
+            serverTotalPages={totalPages}
+            onPageChange={(p) => { setPage(p); fetchData(p); }}
+          />
         ) : (
-          <DataTable columns={invoiceColumns} data={invoices} showActions={false} />
+          <DataTable 
+            columns={invoiceColumns} 
+            data={invoices} 
+            showActions={false} 
+            serverPagination
+            serverPage={page}
+            serverTotalPages={totalPages}
+            onPageChange={(p) => { setPage(p); fetchData(p); }}
+          />
         )}
       </View>
 

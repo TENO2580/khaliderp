@@ -21,6 +21,10 @@ interface DataTableProps {
   onEdit?: (item: any) => void;
   onDelete?: (item: any) => void;
   isLoading?: boolean;
+  serverPagination?: boolean;
+  serverPage?: number;
+  serverTotalPages?: number;
+  onPageChange?: (page: number) => void;
 }
 
 const DataTableRow = memo(({ item, index, columns, showActions, defaultWidth, onRowPress, onEdit, onDelete, styles, colors }: any) => {
@@ -60,11 +64,11 @@ const DataTableRow = memo(({ item, index, columns, showActions, defaultWidth, on
   );
 });
 
-export function DataTable({ columns, data, onRowPress, keyExtractor, showActions, onEdit, onDelete, isLoading }: DataTableProps) {
+export function DataTable({ columns, data, onRowPress, keyExtractor, showActions, onEdit, onDelete, isLoading, serverPagination, serverPage, serverTotalPages, onPageChange }: DataTableProps) {
   const colors = useThemeStore((state) => state.getColors());
   const styles = getStyles(colors);
   
-  const [page, setPage] = useState(1);
+  const [localPage, setLocalPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [showPicker, setShowPicker] = useState(false);
 
@@ -72,8 +76,17 @@ export function DataTable({ columns, data, onRowPress, keyExtractor, showActions
   
   const totalWidth = columns.reduce((sum, col) => sum + (col.width || defaultWidth), showActions ? 50 : 0);
 
-  const totalPages = Math.ceil(data.length / limit) || 1;
-  const paginatedData = data.slice((page - 1) * limit, page * limit);
+  const page = serverPagination ? (serverPage || 1) : localPage;
+  const totalPages = serverPagination ? (serverTotalPages || 1) : (Math.ceil(data.length / limit) || 1);
+  const paginatedData = serverPagination ? data : data.slice((page - 1) * limit, page * limit);
+
+  const handlePageChange = (newPage: number) => {
+    if (serverPagination && onPageChange) {
+      onPageChange(newPage);
+    } else {
+      setLocalPage(newPage);
+    }
+  };
 
   const renderHeader = () => (
     <View style={styles.headerRow}>
@@ -123,14 +136,14 @@ export function DataTable({ columns, data, onRowPress, keyExtractor, showActions
         <TouchableOpacity 
           style={[styles.pageBtn, page <= 1 && styles.pageBtnDisabled]}
           disabled={page <= 1}
-          onPress={() => setPage(p => Math.max(1, p - 1))}
+          onPress={() => handlePageChange(Math.max(1, page - 1))}
         >
           <Feather name="chevron-left" size={18} color={page <= 1 ? colors.border : colors.textSecondary} />
         </TouchableOpacity>
         <TouchableOpacity 
           style={[styles.pageBtn, page >= totalPages && styles.pageBtnDisabled]}
           disabled={page >= totalPages}
-          onPress={() => setPage(p => Math.min(totalPages, p + 1))}
+          onPress={() => handlePageChange(Math.min(totalPages, page + 1))}
         >
           <Feather name="chevron-right" size={18} color={page >= totalPages ? colors.border : colors.textSecondary} />
         </TouchableOpacity>
@@ -145,7 +158,7 @@ export function DataTable({ columns, data, onRowPress, keyExtractor, showActions
                 style={[styles.pickerItem, limit === val && styles.pickerItemActive]}
                 onPress={() => {
                   setLimit(val);
-                  setPage(1);
+                  handlePageChange(1);
                   setShowPicker(false);
                 }}
               >

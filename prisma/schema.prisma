@@ -18,29 +18,30 @@ datasource db {
 // ============================================
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  password      String?
-  googleId      String?
-  name          String
-  phone         String?
-  avatar        String?
-  preferences   Json?
-  role          UserRole  @default(EMPLOYEE)
-  isActive      Boolean   @default(true)
-  refreshToken  String?
-  lastLoginAt   DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           String    @id @default(cuid())
+  email        String    @unique
+  password     String?
+  googleId     String?
+  name         String
+  phone        String?
+  avatar       String?
+  preferences  Json?
+  role         UserRole  @default(EMPLOYEE)
+  isActive     Boolean   @default(true)
+  refreshToken String?
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   // Relations
-  notifications Notification[]
+  notifications        Notification[]
   createdNotifications Notification[] @relation("NotificationCreator")
-  auditLogs     AuditLog[]
-  expenses      Expense[]           @relation("ExpenseCreator")
-  approvedExpenses Expense[]        @relation("ExpenseApprover")
-  productions   Production[]
-  employee      Employee?
+  auditLogs            AuditLog[]
+  expenses             Expense[]      @relation("ExpenseCreator")
+  approvedExpenses     Expense[]      @relation("ExpenseApprover")
+  productions          Production[]
+  employee             Employee?
+  activityLogs         ActivityLog[]
 
   @@index([role])
   @@index([isActive])
@@ -62,39 +63,39 @@ enum UserRole {
 // ============================================
 
 model Customer {
-  id              String         @id @default(cuid())
-  customerId      String         @unique // e.g., CUST-0001
-  name            String
-  ownerName       String?
-  phone           String?
-  whatsapp        String?
-  email           String?
-  gstNumber       String?
-  address         String?
-  district        String?
-  state           String?
-  pincode         String?
-  route           String?        // Field for location-wise classification (e.g., Areekode, Mukkam)
-  latitude        Float?
-  longitude       Float?
-  type            CustomerType   @default(RETAILER)
-  currentBrand    String?
-  sellingPrice    Float?         @default(0)
-  creditLimit     Float          @default(0)
-  outstanding     Float          @default(0)
-  status          CustomerStatus @default(LEAD)
+  id               String         @id @default(cuid())
+  customerId       String         @unique // e.g., CUST-0001
+  name             String
+  ownerName        String?
+  phone            String?
+  whatsapp         String?
+  email            String?
+  gstNumber        String?
+  address          String?
+  district         String?
+  state            String?
+  pincode          String?
+  route            String? // Field for location-wise classification (e.g., Areekode, Mukkam)
+  latitude         Float?
+  longitude        Float?
+  type             CustomerType   @default(RETAILER)
+  currentBrand     String?
+  sellingPrice     Float?         @default(0)
+  creditLimit      Float          @default(0)
+  outstanding      Float          @default(0)
+  status           CustomerStatus @default(LEAD)
   lastPurchaseDate DateTime?
   nextFollowupDate DateTime?
-  notes           String?
-  attachments     String?        // URLs from Supabase Storage
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  notes            String?
+  attachments      String? // URLs from Supabase Storage
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
   // Relations
-  followups       CustomerFollowup[]
-  salesOrders     SalesOrder[]
-  invoices        Invoice[]
-  payments        Payment[]
+  followups   CustomerFollowup[]
+  salesOrders SalesOrder[]
+  invoices    Invoice[]
+  payments    Payment[]
 
   @@index([name])
   @@index([status])
@@ -118,18 +119,18 @@ enum CustomerStatus {
 }
 
 model CustomerFollowup {
-  id          String    @id @default(cuid())
+  id          String       @id @default(cuid())
   customerId  String
   type        FollowupType
   notes       String?
   nextDate    DateTime?
   completedAt DateTime?
   createdBy   String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   // Relations
-  customer    Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@index([customerId])
   @@map("customer_followups")
@@ -149,18 +150,18 @@ enum FollowupType {
 // ============================================
 
 model Product {
-  id          String    @id @default(cuid())
-  name        String
-  sku         String    @unique
-  category    String?
-  unit        String    @default("KG")
-  description String?
-  hsnCode     String?
-  gstRate     Float     @default(18)
+  id           String   @id @default(cuid())
+  name         String
+  sku          String   @unique
+  category     String?
+  unit         String   @default("KG")
+  description  String?
+  hsnCode      String?
+  gstRate      Float    @default(18)
   sellingPrice Float    @default(0)
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relations
   inventory       Inventory?
@@ -173,17 +174,17 @@ model Product {
 }
 
 model RawMaterial {
-  id           String             @id @default(cuid())
+  id           String              @id @default(cuid())
   name         String
   category     RawMaterialCategory
-  unit         String             @default("KG")
-  currentStock Float              @default(0)
-  minimumStock Float              @default(0)
-  reorderLevel Float              @default(0)
-  unitCost     Float              @default(0)
-  isActive     Boolean            @default(true)
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
+  unit         String              @default("KG")
+  currentStock Float               @default(0)
+  minimumStock Float               @default(0)
+  reorderLevel Float               @default(0)
+  unitCost     Float               @default(0)
+  isActive     Boolean             @default(true)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
 
   // Relations
   stockMovements StockMovement[]
@@ -209,16 +210,16 @@ enum RawMaterialCategory {
 // ============================================
 
 model Inventory {
-  id           String    @id @default(cuid())
-  productId    String    @unique
-  currentStock Float     @default(0)
-  minimumStock Float     @default(0)
-  reorderLevel Float     @default(0)
-  unitCost     Float     @default(0)
-  value        Float     @default(0) // currentStock * unitCost
-  lastUpdated  DateTime  @default(now())
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id           String   @id @default(cuid())
+  productId    String   @unique
+  currentStock Float    @default(0)
+  minimumStock Float    @default(0)
+  reorderLevel Float    @default(0)
+  unitCost     Float    @default(0)
+  value        Float    @default(0) // currentStock * unitCost
+  lastUpdated  DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relations
   product        Product         @relation(fields: [productId], references: [id])
@@ -229,20 +230,20 @@ model Inventory {
 }
 
 model StockMovement {
-  id             String        @id @default(cuid())
-  inventoryId    String?
-  rawMaterialId  String?
-  type           MovementType
-  quantity       Float
-  reference      String?       // e.g., "Production #P-0001" or "Sales Order #SO-0001"
-  referenceId    String?
-  notes          String?
-  createdBy      String?
-  createdAt      DateTime      @default(now())
+  id            String       @id @default(cuid())
+  inventoryId   String?
+  rawMaterialId String?
+  type          MovementType
+  quantity      Float
+  reference     String? // e.g., "Production #P-0001" or "Sales Order #SO-0001"
+  referenceId   String?
+  notes         String?
+  createdBy     String?
+  createdAt     DateTime     @default(now())
 
   // Relations
-  inventory      Inventory?    @relation(fields: [inventoryId], references: [id])
-  rawMaterial    RawMaterial?  @relation(fields: [rawMaterialId], references: [id])
+  inventory   Inventory?   @relation(fields: [inventoryId], references: [id])
+  rawMaterial RawMaterial? @relation(fields: [rawMaterialId], references: [id])
 
   @@index([inventoryId])
   @@index([rawMaterialId])
@@ -254,11 +255,11 @@ enum MovementType {
   STOCK_IN
   STOCK_OUT
   ADJUSTMENT
-  PRODUCTION_IN     // Finished goods from production
-  PRODUCTION_OUT    // Raw materials consumed
-  SALES_OUT         // Sold goods
-  PURCHASE_IN       // Purchased materials
-  RETURN_IN         // Customer returns
+  PRODUCTION_IN // Finished goods from production
+  PRODUCTION_OUT // Raw materials consumed
+  SALES_OUT // Sold goods
+  PURCHASE_IN // Purchased materials
+  RETURN_IN // Customer returns
 }
 
 // ============================================
@@ -283,8 +284,8 @@ model Batch {
   updatedAt      DateTime    @updatedAt
 
   // Relations
-  product        Product?         @relation(fields: [productId], references: [id])
-  productions    Production[]
+  product         Product?         @relation(fields: [productId], references: [id])
+  productions     Production[]
   salesOrderItems SalesOrderItem[]
 
   @@index([status])
@@ -301,41 +302,41 @@ enum BatchStatus {
 }
 
 model Production {
-  id              String    @id @default(cuid())
+  id               String   @id @default(cuid())
   productionNumber String   @unique // e.g., PROD-2026-0001
-  date            DateTime
-  batchId         String
-  operatorId      String
-  shift           Shift     @default(DAY)
+  date             DateTime
+  batchId          String
+  operatorId       String
+  shift            Shift    @default(DAY)
 
   // Materials used
-  waxUsed         Float     @default(0)
-  fragranceUsed   Float     @default(0)
-  colorUsed       Float     @default(0)
-  containerUsed   Float     @default(0)
-  wickUsed        Float     @default(0)
+  waxUsed       Float @default(0)
+  fragranceUsed Float @default(0)
+  colorUsed     Float @default(0)
+  containerUsed Float @default(0)
+  wickUsed      Float @default(0)
 
   // Costs
-  labourCost      Float     @default(0)
-  gasCost         Float     @default(0)
-  electricityCost Float     @default(0)
-  otherCosts      Float     @default(0)
-  totalCost       Float     @default(0)
+  labourCost      Float @default(0)
+  gasCost         Float @default(0)
+  electricityCost Float @default(0)
+  otherCosts      Float @default(0)
+  totalCost       Float @default(0)
 
   // Output
-  quantityProduced Float    @default(0)
-  costPerKg        Float    @default(0)
-  sellingPrice     Float    @default(0)
-  profit           Float    @default(0)
-  margin           Float    @default(0) // percentage
+  quantityProduced Float @default(0)
+  costPerKg        Float @default(0)
+  sellingPrice     Float @default(0)
+  profit           Float @default(0)
+  margin           Float @default(0) // percentage
 
-  notes            String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  batch            Batch    @relation(fields: [batchId], references: [id])
-  operator         User     @relation(fields: [operatorId], references: [id])
+  batch    Batch @relation(fields: [batchId], references: [id])
+  operator User  @relation(fields: [operatorId], references: [id])
 
   @@index([date])
   @@index([batchId])
@@ -354,36 +355,36 @@ enum Shift {
 // ============================================
 
 model SalesOrder {
-  id              String         @id @default(cuid())
-  orderNumber     String         @unique // e.g., SO-2026-0001
+  id              String        @id @default(cuid())
+  orderNumber     String        @unique // e.g., SO-2026-0001
   customerId      String
-  orderDate       DateTime       @default(now())
+  orderDate       DateTime      @default(now())
   deliveryDate    DateTime?
-  subtotal        Float          @default(0)
-  discount        Float          @default(0)
-  discountPercent Float          @default(0)
-  taxableAmount   Float          @default(0)
-  cgst            Float          @default(0)
-  sgst            Float          @default(0)
-  igst            Float          @default(0)
-  totalGst        Float          @default(0)
-  transportCharge Float          @default(0)
-  totalAmount     Float          @default(0)
-  paymentMethod   PaymentMethod  @default(CREDIT)
-  paymentStatus   PaymentStatus  @default(UNPAID)
-  creditAmount    Float          @default(0)
-  paidAmount      Float          @default(0)
-  outstanding     Float          @default(0)
-  status          OrderStatus    @default(PENDING)
+  subtotal        Float         @default(0)
+  discount        Float         @default(0)
+  discountPercent Float         @default(0)
+  taxableAmount   Float         @default(0)
+  cgst            Float         @default(0)
+  sgst            Float         @default(0)
+  igst            Float         @default(0)
+  totalGst        Float         @default(0)
+  transportCharge Float         @default(0)
+  totalAmount     Float         @default(0)
+  paymentMethod   PaymentMethod @default(CREDIT)
+  paymentStatus   PaymentStatus @default(UNPAID)
+  creditAmount    Float         @default(0)
+  paidAmount      Float         @default(0)
+  outstanding     Float         @default(0)
+  status          OrderStatus   @default(PENDING)
   notes           String?
   createdBy       String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
   // Relations
-  customer        Customer       @relation(fields: [customerId], references: [id])
-  items           SalesOrderItem[]
-  invoice         Invoice?
+  customer Customer         @relation(fields: [customerId], references: [id])
+  items    SalesOrderItem[]
+  invoice  Invoice?
 
   @@index([customerId])
   @@index([status])
@@ -393,22 +394,22 @@ model SalesOrder {
 }
 
 model SalesOrderItem {
-  id           String     @id @default(cuid())
-  orderId      String
-  productId    String
-  batchId      String?
-  quantity     Float
-  unitPrice    Float
-  discount     Float      @default(0)
-  gstRate      Float      @default(18)
-  gstAmount    Float      @default(0)
-  amount       Float      @default(0)
-  createdAt    DateTime   @default(now())
+  id        String   @id @default(cuid())
+  orderId   String
+  productId String
+  batchId   String?
+  quantity  Float
+  unitPrice Float
+  discount  Float    @default(0)
+  gstRate   Float    @default(18)
+  gstAmount Float    @default(0)
+  amount    Float    @default(0)
+  createdAt DateTime @default(now())
 
   // Relations
-  order        SalesOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product      Product    @relation(fields: [productId], references: [id])
-  batch        Batch?     @relation(fields: [batchId], references: [id])
+  order   SalesOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product    @relation(fields: [productId], references: [id])
+  batch   Batch?     @relation(fields: [batchId], references: [id])
 
   @@map("sales_order_items")
 }
@@ -442,31 +443,31 @@ enum OrderStatus {
 }
 
 model Invoice {
-  id            String        @id @default(cuid())
-  invoiceNumber String        @unique // e.g., INV-2026-0001
-  orderId       String        @unique
-  customerId    String
-  invoiceDate   DateTime      @default(now())
-  dueDate       DateTime?
-  subtotal      Float         @default(0)
-  cgst          Float         @default(0)
-  sgst          Float         @default(0)
-  igst          Float         @default(0)
-  totalGst      Float         @default(0)
-  transportCharge Float       @default(0)
-  totalAmount   Float         @default(0)
-  paidAmount    Float         @default(0)
-  outstanding   Float         @default(0)
-  status        InvoiceStatus @default(DRAFT)
-  notes         String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id              String        @id @default(cuid())
+  invoiceNumber   String        @unique // e.g., INV-2026-0001
+  orderId         String        @unique
+  customerId      String
+  invoiceDate     DateTime      @default(now())
+  dueDate         DateTime?
+  subtotal        Float         @default(0)
+  cgst            Float         @default(0)
+  sgst            Float         @default(0)
+  igst            Float         @default(0)
+  totalGst        Float         @default(0)
+  transportCharge Float         @default(0)
+  totalAmount     Float         @default(0)
+  paidAmount      Float         @default(0)
+  outstanding     Float         @default(0)
+  status          InvoiceStatus @default(DRAFT)
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
   // Relations
-  order         SalesOrder    @relation(fields: [orderId], references: [id])
-  customer      Customer      @relation(fields: [customerId], references: [id])
-  items         InvoiceItem[]
-  payments      Payment[]
+  order    SalesOrder    @relation(fields: [orderId], references: [id])
+  customer Customer      @relation(fields: [customerId], references: [id])
+  items    InvoiceItem[]
+  payments Payment[]
 
   @@index([customerId])
   @@index([status])
@@ -482,43 +483,43 @@ enum InvoiceStatus {
 }
 
 model InvoiceItem {
-  id          String   @id @default(cuid())
-  invoiceId   String
-  productId   String
-  description String?
-  hsnCode     String?
-  quantity    Float
-  unitPrice   Float
-  discount    Float    @default(0)
-  taxableAmount Float  @default(0)
-  gstRate     Float    @default(18)
-  cgst        Float    @default(0)
-  sgst        Float    @default(0)
-  igst        Float    @default(0)
-  amount      Float    @default(0)
+  id            String  @id @default(cuid())
+  invoiceId     String
+  productId     String
+  description   String?
+  hsnCode       String?
+  quantity      Float
+  unitPrice     Float
+  discount      Float   @default(0)
+  taxableAmount Float   @default(0)
+  gstRate       Float   @default(18)
+  cgst          Float   @default(0)
+  sgst          Float   @default(0)
+  igst          Float   @default(0)
+  amount        Float   @default(0)
 
   // Relations
-  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  product     Product  @relation(fields: [productId], references: [id])
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
 
   @@map("invoice_items")
 }
 
 model Payment {
-  id          String        @id @default(cuid())
-  invoiceId   String
-  customerId  String
-  amount      Float
-  method      PaymentMethod
-  reference   String?       // Transaction ID, cheque number, etc.
-  date        DateTime      @default(now())
-  notes       String?
-  createdBy   String?
-  createdAt   DateTime      @default(now())
+  id         String        @id @default(cuid())
+  invoiceId  String
+  customerId String
+  amount     Float
+  method     PaymentMethod
+  reference  String? // Transaction ID, cheque number, etc.
+  date       DateTime      @default(now())
+  notes      String?
+  createdBy  String?
+  createdAt  DateTime      @default(now())
 
   // Relations
-  invoice     Invoice       @relation(fields: [invoiceId], references: [id])
-  customer    Customer      @relation(fields: [customerId], references: [id])
+  invoice  Invoice  @relation(fields: [invoiceId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
 
   @@index([invoiceId])
   @@index([customerId])
@@ -530,36 +531,36 @@ model Payment {
 // ============================================
 
 model ExpenseCategory {
-  id        String    @id @default(cuid())
-  name      String    @unique
+  id        String   @id @default(cuid())
+  name      String   @unique
   icon      String?
   color     String?
-  isActive  Boolean   @default(true)
-  createdAt DateTime  @default(now())
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
 
   // Relations
-  expenses  Expense[]
+  expenses Expense[]
 
   @@map("expense_categories")
 }
 
 model Expense {
-  id          String    @id @default(cuid())
-  categoryId  String
-  amount      Float
-  date        DateTime
-  description String?
-  receiptUrl  String?
-  createdById String
+  id           String        @id @default(cuid())
+  categoryId   String
+  amount       Float
+  date         DateTime
+  description  String?
+  receiptUrl   String?
+  createdById  String
   approvedById String?
-  status      ExpenseStatus @default(PENDING)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  status       ExpenseStatus @default(PENDING)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
   // Relations
-  category    ExpenseCategory @relation(fields: [categoryId], references: [id])
-  createdBy   User            @relation("ExpenseCreator", fields: [createdById], references: [id])
-  approvedBy  User?           @relation("ExpenseApprover", fields: [approvedById], references: [id])
+  category   ExpenseCategory @relation(fields: [categoryId], references: [id])
+  createdBy  User            @relation("ExpenseCreator", fields: [createdById], references: [id])
+  approvedBy User?           @relation("ExpenseApprover", fields: [approvedById], references: [id])
 
   @@index([categoryId])
   @@index([date])
@@ -577,30 +578,30 @@ enum ExpenseStatus {
 // ============================================
 
 model Employee {
-  id          String         @id @default(cuid())
-  employeeId  String         @unique // e.g., EMP-0001
-  userId      String?        @unique
-  name        String
-  phone       String?
-  email       String?
-  address     String?
-  designation String?
-  department  String?
-  salary      Float          @default(0)
-  joinDate    DateTime
-  exitDate    DateTime?
-  status      EmployeeStatus @default(ACTIVE)
-  bankAccount String?
-  ifscCode    String?
-  aadharNumber String?
-  panNumber   String?
+  id               String         @id @default(cuid())
+  employeeId       String         @unique // e.g., EMP-0001
+  userId           String?        @unique
+  name             String
+  phone            String?
+  email            String?
+  address          String?
+  designation      String?
+  department       String?
+  salary           Float          @default(0)
+  joinDate         DateTime
+  exitDate         DateTime?
+  status           EmployeeStatus @default(ACTIVE)
+  bankAccount      String?
+  ifscCode         String?
+  aadharNumber     String?
+  panNumber        String?
   emergencyContact String?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
   // Relations
-  user        User?          @relation(fields: [userId], references: [id])
-  attendance  Attendance[]
+  user       User?        @relation(fields: [userId], references: [id])
+  attendance Attendance[]
 
   @@index([status])
   @@map("employees")
@@ -614,22 +615,22 @@ enum EmployeeStatus {
 }
 
 model Attendance {
-  id         String           @id @default(cuid())
-  employeeId String
-  date       DateTime
-  status     AttendanceStatus @default(PRESENT)
-  checkIn    DateTime?
-  checkOut   DateTime?
+  id          String           @id @default(cuid())
+  employeeId  String
+  date        DateTime
+  status      AttendanceStatus @default(PRESENT)
+  checkIn     DateTime?
+  checkOut    DateTime?
   hoursWorked Float?
   overtime    Float?
-  targetKg    Float     @default(0)
-  actualKg    Float     @default(0)
-  dailySalary Float     @default(0)
+  targetKg    Float            @default(0)
+  actualKg    Float            @default(0)
+  dailySalary Float            @default(0)
   notes       String?
-  createdAt  DateTime         @default(now())
+  createdAt   DateTime         @default(now())
 
   // Relations
-  employee   Employee         @relation(fields: [employeeId], references: [id])
+  employee Employee @relation(fields: [employeeId], references: [id])
 
   @@unique([employeeId, date])
   @@index([date])
@@ -650,7 +651,7 @@ enum AttendanceStatus {
 // ============================================
 
 model Supplier {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   name        String
   contactName String?
   phone       String?
@@ -658,9 +659,9 @@ model Supplier {
   gstNumber   String?
   address     String?
   state       String?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relations
   purchaseOrders PurchaseOrder[]
@@ -687,8 +688,8 @@ model PurchaseOrder {
   updatedAt     DateTime            @updatedAt
 
   // Relations
-  supplier      Supplier            @relation(fields: [supplierId], references: [id])
-  items         PurchaseItem[]
+  supplier Supplier       @relation(fields: [supplierId], references: [id])
+  items    PurchaseItem[]
 
   @@index([supplierId])
   @@index([status])
@@ -696,19 +697,19 @@ model PurchaseOrder {
 }
 
 model PurchaseItem {
-  id              String        @id @default(cuid())
+  id              String @id @default(cuid())
   purchaseOrderId String
   rawMaterialId   String
   quantity        Float
   unitPrice       Float
-  gstRate         Float         @default(18)
-  gstAmount       Float         @default(0)
-  amount          Float         @default(0)
-  receivedQty     Float         @default(0)
+  gstRate         Float  @default(18)
+  gstAmount       Float  @default(0)
+  amount          Float  @default(0)
+  receivedQty     Float  @default(0)
 
   // Relations
-  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
-  rawMaterial     RawMaterial   @relation(fields: [rawMaterialId], references: [id])
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  rawMaterial   RawMaterial   @relation(fields: [rawMaterialId], references: [id])
 
   @@map("purchase_items")
 }
@@ -736,25 +737,25 @@ model Notification {
   priority      NotificationPriority @default(MEDIUM)
   title         String
   message       String
-  referenceType String?              // e.g., "SalesOrder", "Batch", "Inventory"
+  referenceType String? // e.g., "SalesOrder", "Batch", "Inventory"
   referenceId   String?
   link          String?
   icon          String?
-  color         String?              // hex or tailwind class
+  color         String? // hex or tailwind class
   isRead        Boolean              @default(false)
   isArchived    Boolean              @default(false)
   isPinned      Boolean              @default(false)
   readAt        DateTime?
   expiresAt     DateTime?
   metadata      Json?
-  
-  createdById   String?
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
+
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relations
-  user          User?                @relation(fields: [userId], references: [id])
-  createdBy     User?                @relation("NotificationCreator", fields: [createdById], references: [id])
+  user      User? @relation(fields: [userId], references: [id])
+  createdBy User? @relation("NotificationCreator", fields: [createdById], references: [id])
 
   @@index([userId, isRead])
   @@index([role, isRead])
@@ -788,8 +789,8 @@ enum NotificationModule {
 model AuditLog {
   id        String   @id @default(cuid())
   userId    String?
-  action    String   // CREATE, UPDATE, DELETE
-  entity    String   // Table name
+  action    String // CREATE, UPDATE, DELETE
+  entity    String // Table name
   entityId  String
   oldData   Json?
   newData   Json?
@@ -798,7 +799,7 @@ model AuditLog {
   createdAt DateTime @default(now())
 
   // Relations
-  user      User?    @relation(fields: [userId], references: [id])
+  user User? @relation(fields: [userId], references: [id])
 
   @@index([entity, entityId])
   @@index([userId])
@@ -829,32 +830,32 @@ model Setting {
 // ============================================
 
 model CostingProfile {
-  id               String   @id @default(cuid())
-  name             String   @default("Default Pricing")
-  waxCost          Float    @default(154.00)
-  otherMaterials   Float    @default(1.00)
-  labourCost       Float    @default(7.00)
-  electricityCost  Float    @default(2.00)
-  energyCost       Float    @default(1.00) // Gas/Wood
-  transportCost    Float    @default(2.00)
-  packagingOverhead Float   @default(10.00)
-  sellingPrice     Float    @default(195.00)
-  updatedAt        DateTime @updatedAt
-  
-  caseVariants     CaseVariant[]
+  id                String   @id @default(cuid())
+  name              String   @default("Default Pricing")
+  waxCost           Float    @default(154.00)
+  otherMaterials    Float    @default(1.00)
+  labourCost        Float    @default(7.00)
+  electricityCost   Float    @default(2.00)
+  energyCost        Float    @default(1.00) // Gas/Wood
+  transportCost     Float    @default(2.00)
+  packagingOverhead Float    @default(10.00)
+  sellingPrice      Float    @default(195.00)
+  updatedAt         DateTime @updatedAt
+
+  caseVariants CaseVariant[]
 
   @@map("costing_profiles")
 }
 
 model CaseVariant {
-  id               String   @id @default(cuid())
-  profileId        String
-  name             String   // e.g., "2 RS CASE"
-  weightKg         Float    // e.g., 0.72
-  prodCostPerKg    Float?   // Optional override for Prod Cost/KG
-  sellingPrice     Float    // e.g., 228.00
-  
-  profile          CostingProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  id            String @id @default(cuid())
+  profileId     String
+  name          String // e.g., "2 RS CASE"
+  weightKg      Float // e.g., 0.72
+  prodCostPerKg Float? // Optional override for Prod Cost/KG
+  sellingPrice  Float // e.g., 228.00
+
+  profile CostingProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@index([profileId])
   @@map("case_variants")
@@ -865,8 +866,8 @@ model CaseVariant {
 // ============================================
 
 model Company {
-  id              String         @id @default(cuid())
-  name            String         @unique
+  id              String    @id @default(cuid())
+  name            String    @unique
   website         String?
   industry        String?
   country         String?
@@ -875,16 +876,16 @@ model Company {
   targetCustomers String?
   estimatedSize   String?
   marketPosition  String?
-  status          String         @default("PENDING") // PENDING, CRAWLING, COMPLETED, FAILED
-  crawlSchedule   String         @default("NONE") // NONE, DAILY, WEEKLY, MONTHLY
+  status          String    @default("PENDING") // PENDING, CRAWLING, COMPLETED, FAILED
+  crawlSchedule   String    @default("NONE") // NONE, DAILY, WEEKLY, MONTHLY
   revenueRange    String?
   employeesCount  Int?
   fundingNews     String?
   acquisitions    String?
   expansionPlans  String?
   lastCrawledAt   DateTime?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   locations       CompanyLocation[]
   products        CompanyProduct[]
@@ -911,43 +912,43 @@ model Company {
 }
 
 model CompanyLocation {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   companyId String
-  type      String   // HEAD_OFFICE, BRANCH, DEALER, WAREHOUSE, FACTORY
+  type      String // HEAD_OFFICE, BRANCH, DEALER, WAREHOUSE, FACTORY
   address   String?
   city      String?
   state     String?
   country   String?
   latitude  Float?
   longitude Float?
-  
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@map("ci_company_locations")
 }
 
 model ProductCategory {
-  id          String   @id @default(cuid())
-  name        String   @unique
+  id          String  @id @default(cuid())
+  name        String  @unique
   description String?
-  
-  products    CompanyProduct[]
+
+  products     CompanyProduct[]
   compProducts CompetitorProduct[]
 
   @@map("ci_product_categories")
 }
 
 model CompanyProduct {
-  id          String          @id @default(cuid())
+  id          String  @id @default(cuid())
   companyId   String
   categoryId  String?
   name        String
   description String?
   features    String?
-  
-  company     Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  category    ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  company      Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category     ProductCategory?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   priceHistory ProductPriceHistory[]
 
   @@index([companyId])
@@ -955,7 +956,7 @@ model CompanyProduct {
 }
 
 model Competitor {
-  id              String   @id @default(cuid())
+  id              String  @id @default(cuid())
   companyId       String
   name            String
   website         String?
@@ -967,46 +968,46 @@ model Competitor {
   weaknesses      String?
   digitalPresence String?
   overview        String?
-  
-  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  products        CompetitorProduct[]
+
+  company  Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  products CompetitorProduct[]
 
   @@index([companyId])
   @@map("ci_competitors")
 }
 
 model CompetitorProduct {
-  id           String          @id @default(cuid())
+  id           String  @id @default(cuid())
   competitorId String
   categoryId   String?
   name         String
-  
-  competitor   Competitor      @relation(fields: [competitorId], references: [id], onDelete: Cascade)
-  category     ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  competitor Competitor       @relation(fields: [competitorId], references: [id], onDelete: Cascade)
+  category   ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   @@index([competitorId])
   @@map("ci_competitor_products")
 }
 
 model ContactInformation {
-  id        String   @id @default(cuid())
-  companyId String   @unique
+  id        String  @id @default(cuid())
+  companyId String  @unique
   phone     String?
   email     String?
   address   String?
-  
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@map("ci_contact_information")
 }
 
 model SocialLink {
-  id        String   @id @default(cuid())
+  id        String @id @default(cuid())
   companyId String
-  platform  String   // LinkedIn, Facebook, Instagram, YouTube
+  platform  String // LinkedIn, Facebook, Instagram, YouTube
   url       String
-  
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@map("ci_social_links")
@@ -1019,63 +1020,63 @@ model WebsiteAnalysis {
   loadTime       Float?
   mobileFriendly Boolean?
   hasSsl         Boolean?
-  
-  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@map("ci_website_analysis")
 }
 
 model SeoAnalysis {
-  id               String   @id @default(cuid())
-  companyId        String   @unique
-  title            String?
-  metaDescription  String?
-  keywords         String?
-  h1Count          Int?
-  internalLinks    Int?
-  externalLinks    Int?
-  schemaPresent    Boolean?
-  blogCount        Int?
-  score            Float?
-  
-  company          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id              String   @id @default(cuid())
+  companyId       String   @unique
+  title           String?
+  metaDescription String?
+  keywords        String?
+  h1Count         Int?
+  internalLinks   Int?
+  externalLinks   Int?
+  schemaPresent   Boolean?
+  blogCount       Int?
+  score           Float?
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@map("ci_seo_analysis")
 }
 
 model TechnologyStack {
-  id        String   @id @default(cuid())
+  id        String @id @default(cuid())
   companyId String
-  category  String   // CMS, Framework, Hosting, Analytics, Payment, CDN
+  category  String // CMS, Framework, Hosting, Analytics, Payment, CDN
   name      String
-  
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@map("ci_technology_stack")
 }
 
 model SwotAnalysis {
-  id            String   @id @default(cuid())
-  companyId     String   @unique
+  id            String @id @default(cuid())
+  companyId     String @unique
   strengths     String // Stored as JSON string array
   weaknesses    String // Stored as JSON string array
   opportunities String // Stored as JSON string array
   threats       String // Stored as JSON string array
-  
-  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@map("ci_swot_analysis")
 }
 
 model Recommendation {
-  id          String   @id @default(cuid())
+  id          String @id @default(cuid())
   companyId   String
-  type        String   // STRATEGIC, MARKETING, PRODUCT, SEO
+  type        String // STRATEGIC, MARKETING, PRODUCT, SEO
   description String
-  impact      String   // HIGH, MEDIUM, LOW
-  
-  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  impact      String // HIGH, MEDIUM, LOW
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@map("ci_recommendations")
@@ -1085,11 +1086,11 @@ model Report {
   id          String   @id @default(cuid())
   companyId   String
   generatedBy String?
-  format      String   // PDF, EXCEL, PPT, WORD
-  url         String?  // Storage URL
+  format      String // PDF, EXCEL, PPT, WORD
+  url         String? // Storage URL
   createdAt   DateTime @default(now())
-  
-  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@map("ci_reports")
@@ -1099,28 +1100,28 @@ model CrawlHistory {
   id           String   @id @default(cuid())
   companyId    String
   url          String
-  status       String   // SUCCESS, FAILED
+  status       String // SUCCESS, FAILED
   pagesCrawled Int
-  duration     Float    // seconds
+  duration     Float // seconds
   createdAt    DateTime @default(now())
-  
-  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@map("ci_crawl_history")
 }
 
 model ProductPriceHistory {
-  id          String   @id @default(cuid())
-  productId   String
-  companyId   String
-  price       Float
-  currency    String   @default("USD")
-  discount    Float?
-  date        DateTime @default(now())
-  
-  product     CompanyProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
-  company     Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  productId String
+  companyId String
+  price     Float
+  currency  String   @default("USD")
+  discount  Float?
+  date      DateTime @default(now())
+
+  product CompanyProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  company Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([productId])
   @@index([companyId])
@@ -1128,45 +1129,45 @@ model ProductPriceHistory {
 }
 
 model MarketingIntelligence {
-  id              String   @id @default(cuid())
-  companyId       String   @unique
-  campaigns       String   // JSON string array
+  id              String  @id @default(cuid())
+  companyId       String  @unique
+  campaigns       String // JSON string array
   contentFreq     String?
-  leadMagnets     String   // JSON string array
-  referralProgram Boolean  @default(false)
-  loyaltyProgram  Boolean  @default(false)
-  adLandingPages  String   // JSON string array
-  
-  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  leadMagnets     String // JSON string array
+  referralProgram Boolean @default(false)
+  loyaltyProgram  Boolean @default(false)
+  adLandingPages  String // JSON string array
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@map("ci_marketing_intelligence")
 }
 
 model CustomerIntelligence {
-  id              String   @id @default(cuid())
-  companyId       String   @unique
-  sentimentScore  Float?
-  topComplaints   String   // JSON string array
-  topCompliments  String   // JSON string array
-  trendingTopics  String   // JSON string array
-  wordCloud       String   // JSON string
-  
-  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id             String @id @default(cuid())
+  companyId      String @unique
+  sentimentScore Float?
+  topComplaints  String // JSON string array
+  topCompliments String // JSON string array
+  trendingTopics String // JSON string array
+  wordCloud      String // JSON string
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@map("ci_customer_intelligence")
 }
 
 model SocialMediaIntelligence {
-  id              String   @id @default(cuid())
-  companyId       String
-  platform        String   // LinkedIn, Twitter, etc.
-  followers       Int?
-  engagementRate  Float?
-  postFreq        String?
-  growthTrend     String?
-  date            DateTime @default(now())
-  
-  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id             String   @id @default(cuid())
+  companyId      String
+  platform       String // LinkedIn, Twitter, etc.
+  followers      Int?
+  engagementRate Float?
+  postFreq       String?
+  growthTrend    String?
+  date           DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@map("ci_social_media_intelligence")
@@ -1175,38 +1176,38 @@ model SocialMediaIntelligence {
 model ChangeDetectionEvent {
   id          String   @id @default(cuid())
   companyId   String
-  type        String   // PRICE_CHANGE, NEW_PRODUCT, WEBSITE_REDESIGN, etc.
+  type        String // PRICE_CHANGE, NEW_PRODUCT, WEBSITE_REDESIGN, etc.
   description String
   detectedAt  DateTime @default(now())
-  
-  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@map("ci_change_detection_events")
 }
 
 model CompetitorAlert {
-  id          String   @id @default(cuid())
-  companyId   String
-  type        String
-  message     String
-  isRead      Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  
-  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  companyId String
+  type      String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@map("ci_competitor_alerts")
 }
 
 model AIStrategy {
-  id          String   @id @default(cuid())
-  companyId   String
-  type        String   // PRICING, MARKETING, SALES, etc.
-  strategy    String   // Detailed text/markdown
-  createdAt   DateTime @default(now())
-  
-  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  companyId String
+  type      String // PRICING, MARKETING, SALES, etc.
+  strategy  String // Detailed text/markdown
+  createdAt DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@map("ci_ai_strategies")
@@ -1215,13 +1216,33 @@ model AIStrategy {
 model GapAnalysis {
   id                 String   @id @default(cuid())
   companyId          String   @unique
-  missingFeatures    String   // JSON array
-  pricingDifferences String   // Detailed text
-  marketingGaps      String   // Detailed text
-  recommendations    String   // JSON array
+  missingFeatures    String // JSON array
+  pricingDifferences String // Detailed text
+  marketingGaps      String // Detailed text
+  recommendations    String // JSON array
   updatedAt          DateTime @updatedAt
-  
-  company            Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@map("ci_gap_analysis")
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  module      String // Sales, Inventory, Production, etc.
+  action      String // CREATE, UPDATE, DELETE, COMPLETE, APPROVE, PAY
+  title       String // e.g. "Invoice INV-2456 created"
+  description String? // Additional details
+  referenceId String? // ID or Number of the related record
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  iconType    String? // check-circle, package, dollar-sign, user, etc.
+  iconColor   String? // #22C55E, #4F8CFF, etc.
+  priority    String?  @default("normal") // low, normal, high, critical
+  deepLink    String? // e.g. /sales/invoices/INV-2456
+  createdAt   DateTime @default(now())
+
+  @@index([module])
+  @@index([createdAt])
+  @@map("activity_logs")
 }
