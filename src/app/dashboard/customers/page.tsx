@@ -99,26 +99,38 @@ export default function CustomersPage() {
     setIsCreateOpen(true);
   };
 
-  const handleExport = async () => {
+  const handleExport = async (mode: 'visible' | 'all' = 'all', visibleHeaders: string[] = []) => {
     try {
       const toastId = toast.loading('Exporting customers...');
       const res = await api.get(`/customers?limit=10000&search=${encodeURIComponent(search)}&status=${statusFilter}`);
       const exportData = res.data.data.data || [];
 
+      const allHeaders = ['Sl No.', 'Name', 'Location', 'Phone', 'Last Order', 'Next Follow-Up', 'Current Status', 'Notes', 'Last Selling Cost', 'Category'];
+      const headersToExport = mode === 'visible' ? allHeaders.filter(h => visibleHeaders.includes(h)) : allHeaders;
+
+      if (headersToExport.length === 0) {
+        toast.dismiss(toastId);
+        toast.error('No columns to export');
+        return;
+      }
+
       const csvContent = [
-        ['Sl No.', 'Name', 'Location', 'Phone', 'Last Order', 'Next Follow-Up', 'Current Status', 'Notes', 'Last Selling Cost', 'Category'],
-        ...exportData.map((c: any) => [
-          c.customerId,
-          `"${c.name || ''}"`,
-          `"${[c.district, c.state].filter(Boolean).join(', ') || c.address || 'N/A'}"`,
-          c.phone || 'N/A',
-          c.lastPurchaseDate ? new Date(c.lastPurchaseDate).toLocaleDateString('en-IN') : 'N/A',
-          c.nextFollowupDate ? new Date(c.nextFollowupDate).toLocaleDateString('en-IN') : 'N/A',
-          c.status,
-          `"${(c.notes || '').replace(/"/g, '""')}"`,
-          c.sellingPrice || 0,
-          customerTypeLabels[c.type as keyof typeof customerTypeLabels] || c.type
-        ])
+        headersToExport,
+        ...exportData.map((c: any) => {
+          const fullRow = {
+            'Sl No.': c.customerId,
+            'Name': `"${c.name || ''}"`,
+            'Location': `"${[c.district, c.state].filter(Boolean).join(', ') || c.address || 'N/A'}"`,
+            'Phone': c.phone || 'N/A',
+            'Last Order': c.lastPurchaseDate ? new Date(c.lastPurchaseDate).toLocaleDateString('en-IN') : 'N/A',
+            'Next Follow-Up': c.nextFollowupDate ? new Date(c.nextFollowupDate).toLocaleDateString('en-IN') : 'N/A',
+            'Current Status': c.status,
+            'Notes': `"${(c.notes || '').replace(/"/g, '""')}"`,
+            'Last Selling Cost': c.sellingPrice || 0,
+            'Category': customerTypeLabels[c.type as keyof typeof customerTypeLabels] || c.type
+          };
+          return headersToExport.map(h => fullRow[h as keyof typeof fullRow]);
+        })
       ].map(e => e.join(",")).join("\n");
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

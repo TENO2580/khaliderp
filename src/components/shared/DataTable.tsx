@@ -1,18 +1,36 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
   Search,
-  Filter,
   Download,
   Plus,
   Lock,
   Unlock,
+  Settings,
+  X,
+  GripVertical,
+  Pin,
+  List,
 } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+
+export interface ColumnPreference {
+  header: string;
+  visible: boolean;
+  order: number;
+  width?: number;
+  pinned?: 'left' | 'right' | null;
+}
+
+export interface TablePreferences {
+  density: 'compact' | 'comfortable' | 'spacious';
+  columns: ColumnPreference[];
+}
 
 export interface Column<T> {
   header: string;
@@ -35,7 +53,7 @@ interface DataTableProps<T> {
   page?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
-  onExportClick?: () => void;
+  onExportClick?: (mode: 'visible' | 'all', visibleHeaders: string[]) => void;
   isLoading?: boolean;
   limit?: number;
   onLimitChange?: (limit: number) => void;
@@ -80,17 +98,65 @@ export default function DataTable<T extends { id?: string }>({
   const pendingEditsRef = useRef<Record<string, Record<string, string>>>({});
   const [pendingCount, setPendingCount] = useState(0);
 
-  // Reorder columns so ACTIONS is always first
-  const reorderedColumns = React.useMemo(() => {
-    const actionsColIndex = columns.findIndex(col => col.header?.toUpperCase() === 'ACTIONS');
-    if (actionsColIndex > -1) {
-      const newCols = [...columns];
-      const [actionsCol] = newCols.splice(actionsColIndex, 1);
-      newCols.unshift(actionsCol);
-      return newCols;
+  // Column Management & Preferences
+  const pathname = usePathname();
+  const tablePrefKey = `tripidio_table_prefs_${pathname.replace(/\//g, '_')}`;
+
+  const defaultPrefs: TablePreferences = useMemo(() => ({
+    density: 'comfortable',
+    columns: columns.map((c, i) => ({
+      header: c.header,
+      visible: true,
+      order: i,
+      pinned: c.header.toUpperCase() === 'ACTIONS' ? 'left' : null
+    }))
+  }), [columns]);
+
+  const [prefs, setPrefs] = useState<TablePreferences>(defaultPrefs);
+  const [isColumnManagerOpen, setIsColumnManagerOpen] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(tablePrefKey);
+      if (saved) {
+        const parsed = JSON.parse(saved) as TablePreferences;
+        const mergedColumns = columns.map((c, i) => {
+          const savedCol = parsed.columns.find(sc => sc.header === c.header);
+          if (savedCol) return savedCol;
+          return { header: c.header, visible: true, order: 999 + i, pinned: c.header.toUpperCase() === 'ACTIONS' ? 'left' : null };
+        });
+        setPrefs({ density: parsed.density || 'comfortable', columns: mergedColumns });
+      } else {
+        setPrefs(defaultPrefs);
+      }
+    } catch (e) {
+      setPrefs(defaultPrefs);
     }
-    return columns;
-  }, [columns]);
+  }, [tablePrefKey, columns, defaultPrefs]);
+
+  const savePrefs = (newPrefs: TablePreferences) => {
+    setPrefs(newPrefs);
+    localStorage.setItem(tablePrefKey, JSON.stringify(newPrefs));
+  };
+
+  const reorderedColumns = useMemo(() => {
+    const colMap = new Map(columns.map(c => [c.header, c]));
+    const sortedPrefs = [...prefs.columns].sort((a, b) => {
+      if (a.pinned === 'left' && b.pinned !== 'left') return -1;
+      if (b.pinned === 'left' && a.pinned !== 'left') return 1;
+      return a.order - b.order;
+    });
+    
+    return sortedPrefs
+      .filter(p => p.visible)
+      .map(p => {
+         const col = colMap.get(p.header);
+         return col ? { ...col, _pref: p } : null;
+      })
+      .filter(Boolean) as (Column<T> & { _pref: ColumnPreference })[];
+  }, [columns, prefs]);
 
   // Client-side pagination state fallback
   const [internalPage, setInternalPage] = useState(1);
@@ -117,63 +183,16 @@ export default function DataTable<T extends { id?: string }>({
     }
   };
 
-  // Drag to scroll refs
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const isDragging = useRef(false);
-  const startX = useRef(0);
-  const startY = useRef(0);
-  const scrollLeft = useRef(0);
-  const scrollTop = useRef(0);
-
-  const handleMouseMove = useRef((e: MouseEvent) => {
-    if (!isDragging.current || !scrollRef.current) return;
-    e.preventDefault();
-    const x = e.pageX - scrollRef.current.offsetLeft;
-    const y = e.pageY - scrollRef.current.offsetTop;
-    const walkX = (x - startX.current) * 1.5;
-    const walkY = (y - startY.current) * 1.5;
-    scrollRef.current.scrollLeft = scrollLeft.current - walkX;
-    scrollRef.current.scrollTop = scrollTop.current - walkY;
-  }).current;
-
-  const handleMouseUp = useRef(() => {
-    isDragging.current = false;
-    if (scrollRef.current) {
-      scrollRef.current.style.cursor = '';
-      scrollRef.current.style.userSelect = '';
-      scrollRef.current.style.pointerEvents = '';
-    }
-    window.removeEventListener('mousemove', handleMouseMove);
-    window.removeEventListener('mouseup', handleMouseUp);
-  }).current;
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    // Prevent dragging if clicking an input, button, or select
-    const target = e.target as HTMLElement;
-    if (target.closest('button, input, select, a, [role="button"]')) {
-      return;
-    }
-    isDragging.current = true;
-    if (scrollRef.current) {
-      startX.current = e.pageX - scrollRef.current.offsetLeft;
-      startY.current = e.pageY - scrollRef.current.offsetTop;
-      scrollLeft.current = scrollRef.current.scrollLeft;
-      scrollRef.current.scrollTop = scrollRef.current.scrollTop;
-      scrollRef.current.style.cursor = 'grabbing';
-      scrollRef.current.style.userSelect = 'none';
-      scrollRef.current.style.pointerEvents = 'none'; // Prevents hover state lags while dragging
-    }
-    
-    window.addEventListener('mousemove', handleMouseMove, { passive: false });
-    window.addEventListener('mouseup', handleMouseUp);
-  };
-
+  // Click outside for export menu
   useEffect(() => {
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [handleMouseMove, handleMouseUp]);
+    function handleClickOutside(event: MouseEvent) {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+        setExportMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -186,7 +205,6 @@ export default function DataTable<T extends { id?: string }>({
       pendingEditsRef.current[rowId] = {};
     }
     pendingEditsRef.current[rowId][key] = value;
-    // Count total unique edits
     let count = 0;
     for (const rid of Object.keys(pendingEditsRef.current)) {
       count += Object.keys(pendingEditsRef.current[rid]).length;
@@ -211,19 +229,109 @@ export default function DataTable<T extends { id?: string }>({
     setIsUnlocked(!isUnlocked);
   };
 
+  // DND Logic for Drawer
+  const [draggedCol, setDraggedCol] = useState<string | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, header: string) => {
+    setDraggedCol(header);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, targetHeader: string) => {
+    e.preventDefault();
+    if (!draggedCol || draggedCol === targetHeader) return;
+
+    const newCols = [...prefs.columns];
+    const draggedIdx = newCols.findIndex(c => c.header === draggedCol);
+    const targetIdx = newCols.findIndex(c => c.header === targetHeader);
+    
+    if (draggedIdx > -1 && targetIdx > -1) {
+      const [removed] = newCols.splice(draggedIdx, 1);
+      newCols.splice(targetIdx, 0, removed);
+      newCols.forEach((c, idx) => { c.order = idx; });
+      savePrefs({ ...prefs, columns: newCols });
+    }
+    setDraggedCol(null);
+  };
+
+  // Resizing logic
+  const resizingCol = useRef<string | null>(null);
+  const startX = useRef(0);
+  const startWidth = useRef(0);
+
+  const onResizeStart = (e: React.MouseEvent, header: string, currentWidth: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    resizingCol.current = header;
+    startX.current = e.pageX;
+    startWidth.current = currentWidth;
+
+    const onMouseMove = (moveEvt: MouseEvent) => {
+      if (!resizingCol.current) return;
+      const diff = moveEvt.pageX - startX.current;
+      const newWidth = Math.max(80, startWidth.current + diff);
+      
+      setPrefs(prev => {
+        const next = { ...prev, columns: [...prev.columns] };
+        const col = next.columns.find(c => c.header === resizingCol.current);
+        if (col) col.width = newWidth;
+        return next;
+      });
+    };
+
+    const onMouseUp = () => {
+      if (resizingCol.current) {
+        setPrefs(prev => {
+          localStorage.setItem(tablePrefKey, JSON.stringify(prev));
+          return prev;
+        });
+      }
+      resizingCol.current = null;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  };
+
+  const onResizeDoubleClick = (header: string) => {
+    setPrefs(prev => {
+      const next = { ...prev, columns: [...prev.columns] };
+      const col = next.columns.find(c => c.header === header);
+      if (col) col.width = undefined; // Auto width
+      localStorage.setItem(tablePrefKey, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  // Density mapping
+  const densityClass = {
+    compact: 'px-2 py-1.5 text-xs',
+    comfortable: 'px-4 py-3 text-sm',
+    spacious: 'px-6 py-5 text-base'
+  };
+  const padClass = densityClass[prefs.density] || densityClass.comfortable;
+
   return (
-    <div className="flex flex-col max-h-[calc(100vh-8rem)] rounded-2xl border border-gray-200/80 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-      {/* Header controls */}
+    <div className="flex flex-col max-h-[calc(100vh-8rem)] rounded-2xl border border-gray-200/80 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 overflow-hidden relative">
       <div className="flex-none flex flex-col gap-4 border-b border-gray-200/80 p-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={handleSearchChange}
-            placeholder={searchPlaceholder}
-            className="w-full rounded-xl border border-gray-200 bg-gray-50/50 py-2 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:border-blue-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-          />
+        <div className="relative flex-1 max-w-md flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={handleSearchChange}
+              placeholder={searchPlaceholder}
+              className="w-full rounded-xl border border-gray-200 bg-gray-50/50 py-2 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:border-blue-500 focus:bg-white dark:focus:bg-gray-900 focus:outline-none dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+            />
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -236,7 +344,6 @@ export default function DataTable<T extends { id?: string }>({
               value={startDate || ''}
               onChange={(e) => onStartDateChange(e.target.value)}
               className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:[color-scheme:dark] min-w-[130px] flex-1 sm:flex-none"
-              title="Start Date"
             />
           )}
           {onEndDateChange && (
@@ -248,7 +355,6 @@ export default function DataTable<T extends { id?: string }>({
               value={endDate || ''}
               onChange={(e) => onEndDateChange(e.target.value)}
               className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:[color-scheme:dark] min-w-[130px] flex-1 sm:flex-none"
-              title="End Date"
             />
           )}
           {onStatusChange && statusOptions && (
@@ -259,21 +365,53 @@ export default function DataTable<T extends { id?: string }>({
             >
               <option value="">All Statuses</option>
               {statusOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
           )}
+
+          <button
+            onClick={() => setIsColumnManagerOpen(true)}
+            className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition-colors dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+          >
+            <Settings className="h-4 w-4" />
+            <span>Columns</span>
+          </button>
+
           {onExportClick && (
-            <button
-              onClick={onExportClick}
-              className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition-colors dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-            >
-              <Download className="h-4 w-4" />
-              <span>Export</span>
-            </button>
+            <div className="relative" ref={exportMenuRef}>
+              <button
+                onClick={() => setExportMenuOpen(!exportMenuOpen)}
+                className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition-colors dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+              >
+                <Download className="h-4 w-4" />
+                <span>Export</span>
+              </button>
+              {exportMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-gray-200 bg-white py-2 shadow-lg dark:border-gray-800 dark:bg-gray-900 z-50">
+                  <button 
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+                    onClick={() => {
+                      onExportClick('visible', reorderedColumns.map(c => c.header));
+                      setExportMenuOpen(false);
+                    }}
+                  >
+                    Export Visible Columns
+                  </button>
+                  <button 
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+                    onClick={() => {
+                      onExportClick('all', columns.map(c => c.header));
+                      setExportMenuOpen(false);
+                    }}
+                  >
+                    Export All Columns
+                  </button>
+                </div>
+              )}
+            </div>
           )}
+
           {onAddClick && (
             <button
               onClick={onAddClick}
@@ -305,24 +443,30 @@ export default function DataTable<T extends { id?: string }>({
         </div>
       </div>
 
-      {/* Table content */}
-      <div 
-        ref={scrollRef}
-        onMouseDown={handleMouseDown}
-        className="flex-1 overflow-auto w-full"
-      >
+      <div className="flex-1 overflow-x-auto w-full relative">
         <table className="w-full min-w-max text-left text-sm text-gray-600 dark:text-gray-400">
-          <thead className="sticky top-0 z-30 bg-gray-50 text-xs uppercase font-semibold tracking-wider text-gray-500 dark:bg-gray-950 dark:text-gray-400 outline outline-1 outline-gray-200 dark:outline-gray-800 shadow-sm">
+          <thead className="sticky top-0 z-30 bg-gray-50 text-xs uppercase font-semibold tracking-wider text-gray-500 dark:bg-gray-950 dark:text-gray-400 shadow-sm border-b border-gray-200 dark:border-gray-800">
             <tr>
               {reorderedColumns.map((col, idx) => (
                 <th
                   key={idx}
+                  style={{
+                    width: col._pref.width ? `${col._pref.width}px` : 'auto',
+                    minWidth: '80px'
+                  }}
                   className={cn(
-                    "px-6 py-3.5 whitespace-nowrap bg-gray-50 dark:bg-gray-950",
-                    idx === 0 && "sticky left-0 z-40"
+                    padClass,
+                    "whitespace-nowrap bg-gray-50 dark:bg-gray-950 relative group",
+                    col._pref.pinned === 'left' && "sticky left-0 z-40 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]",
+                    col._pref.pinned === 'right' && "sticky right-0 z-40 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]"
                   )}
                 >
                   {col.header}
+                  <div
+                    onMouseDown={(e) => onResizeStart(e, col.header, (e.target as HTMLElement).parentElement?.offsetWidth || 150)}
+                    onDoubleClick={() => onResizeDoubleClick(col.header)}
+                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-400/50 z-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                  />
                 </th>
               ))}
             </tr>
@@ -331,8 +475,8 @@ export default function DataTable<T extends { id?: string }>({
             {isLoading ? (
               Array.from({ length: Math.min(5, actualLimit) }).map((_, rIdx) => (
                 <tr key={rIdx} className="animate-pulse">
-                  {reorderedColumns.map((_, cIdx) => (
-                    <td key={cIdx} className="px-6 py-4">
+                  {reorderedColumns.map((col, cIdx) => (
+                    <td key={cIdx} className={cn(padClass, col._pref.pinned === 'left' && "sticky left-0 z-10 bg-white dark:bg-gray-900")}>
                       <div className="h-4 rounded bg-gray-200 dark:bg-gray-800 w-3/4" />
                     </td>
                   ))}
@@ -353,9 +497,14 @@ export default function DataTable<T extends { id?: string }>({
                   {reorderedColumns.map((col, cIdx) => (
                     <td
                       key={cIdx}
+                      style={{
+                        width: col._pref.width ? `${col._pref.width}px` : 'auto',
+                      }}
                       className={cn(
-                        "px-6 py-4 font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap border border-gray-200 dark:border-gray-800",
-                        cIdx === 0 && "sticky left-0 z-10 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800"
+                        padClass,
+                        "font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap overflow-hidden text-ellipsis border-r border-gray-100 dark:border-gray-800/50 last:border-r-0",
+                        col._pref.pinned === 'left' && "sticky left-0 z-10 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]",
+                        col._pref.pinned === 'right' && "sticky right-0 z-10 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.05)]"
                       )}
                     >
                       {isUnlocked && col.inlineEditable && col.editableKey ? (
@@ -391,11 +540,6 @@ export default function DataTable<T extends { id?: string }>({
                               trackEdit(rowId, col.editableKey, value);
                             }
                           }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              (e.target as HTMLInputElement).blur();
-                            }
-                          }}
                           className="w-full min-w-[80px] rounded border border-amber-400/50 bg-amber-50/30 px-2 py-1 text-sm text-gray-900 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:bg-amber-900/20 dark:text-gray-100 dark:border-amber-600/50"
                         />
                       ) : (
@@ -414,7 +558,6 @@ export default function DataTable<T extends { id?: string }>({
         </table>
       </div>
 
-      {/* Pagination Footer */}
       <div className="flex items-center justify-between border-t border-gray-200/80 px-6 py-4 dark:border-gray-800">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
@@ -428,7 +571,6 @@ export default function DataTable<T extends { id?: string }>({
               <option value={30}>30</option>
               <option value={50}>50</option>
               <option value={100}>100</option>
-              <option value={200}>200</option>
             </select>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -457,6 +599,97 @@ export default function DataTable<T extends { id?: string }>({
           </button>
         </div>
       </div>
+
+      {isColumnManagerOpen && (
+        <div className="absolute inset-y-0 right-0 w-80 bg-white dark:bg-gray-950 shadow-2xl border-l border-gray-200 dark:border-gray-800 z-50 flex flex-col animate-in slide-in-from-right">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
+            <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <Settings className="w-4 h-4" /> Customize Columns
+            </h3>
+            <button onClick={() => setIsColumnManagerOpen(false)} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          
+          <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">Display Density</label>
+            <div className="flex gap-2">
+              {(['compact', 'comfortable', 'spacious'] as const).map(d => (
+                <button
+                  key={d}
+                  onClick={() => savePrefs({...prefs, density: d})}
+                  className={cn(
+                    "flex-1 py-1.5 px-2 rounded-lg text-xs font-medium border capitalize transition-colors",
+                    prefs.density === d 
+                      ? "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300" 
+                      : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-800"
+                  )}
+                >
+                  {d}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-2">
+            {[...prefs.columns].sort((a,b) => a.order - b.order).map((c, idx) => (
+              <div 
+                key={c.header}
+                draggable
+                onDragStart={(e) => handleDragStart(e, c.header)}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, c.header)}
+                className={cn(
+                  "flex items-center justify-between p-2 mb-1 rounded-lg border bg-white dark:bg-gray-900 transition-colors group",
+                  draggedCol === c.header ? "opacity-50 border-blue-400 border-dashed" : "border-gray-100 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700"
+                )}
+              >
+                <div className="flex items-center gap-3 flex-1 overflow-hidden">
+                  <div className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                    <GripVertical className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={c.visible}
+                    onChange={(e) => {
+                      const newCols = [...prefs.columns];
+                      const col = newCols.find(x => x.header === c.header);
+                      if (col) col.visible = e.target.checked;
+                      savePrefs({...prefs, columns: newCols});
+                    }}
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">{c.header}</span>
+                </div>
+                
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    title="Pin Left"
+                    onClick={() => {
+                      const newCols = [...prefs.columns];
+                      const col = newCols.find(x => x.header === c.header);
+                      if (col) col.pinned = col.pinned === 'left' ? null : 'left';
+                      savePrefs({...prefs, columns: newCols});
+                    }}
+                    className={cn("p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800", c.pinned === 'left' ? "text-blue-600 dark:text-blue-400" : "text-gray-400")}
+                  >
+                    <Pin className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
+            <button
+              onClick={() => savePrefs(defaultPrefs)}
+              className="w-full py-2 text-sm font-medium text-gray-600 hover:text-gray-900 bg-white border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"
+            >
+              Reset to Default
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

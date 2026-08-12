@@ -99,6 +99,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="customers" />
       <Tabs.Screen name="employees" />
       <Tabs.Screen name="sales" />
+      <Tabs.Screen name="batches" />
       <Tabs.Screen name="expenses" />
       <Tabs.Screen name="production" />
       <Tabs.Screen name="purchase" />

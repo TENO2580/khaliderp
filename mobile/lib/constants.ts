@@ -32,9 +32,14 @@ export const NAV_ITEMS: NavItem[] = [
     permission: 'sales:read',
     children: [
       { title: 'Orders', href: '/(erp)/sales' },
-      { title: 'Batches', href: '/(erp)/batches' },
       { title: 'Invoices', href: '/(erp)/sales/invoices' },
     ],
+  },
+  {
+    title: 'Batches',
+    href: '/(erp)/batches',
+    icon: 'cube-outline',
+    permission: 'production:read',
   },
   {
     title: 'Production',

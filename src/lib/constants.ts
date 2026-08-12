@@ -50,9 +50,14 @@ export const NAV_ITEMS: NavItem[] = [
     permission: 'sales:read',
     children: [
       { title: 'Orders', href: '/dashboard/sales' },
-      { title: 'Batches', href: '/dashboard/batches' },
       { title: 'Invoices', href: '/dashboard/sales/invoices' },
     ],
+  },
+  {
+    title: 'Batches',
+    href: '/dashboard/batches',
+    icon: Layers,
+    permission: 'production:read',
   },
   {
     title: 'Production',

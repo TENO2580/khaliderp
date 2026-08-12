@@ -1,193 +1,143 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { StyleSheet, View, ActivityIndicator, TouchableOpacity, TextInput, Modal, ScrollView, Alert, KeyboardAvoidingView, Platform, InteractionManager } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, TextInput, Modal, ScrollView, Alert, KeyboardAvoidingView, Platform, InteractionManager, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/Themed';
 import api from '../../../lib/api';
-import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, Feather } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { DataTable, Column } from '../../../components/DataTable';
 import { getCachedData, setCachedData } from '../../../lib/cache';
 import SkeletonList from '../../../components/SkeletonList';
 import SearchableDropdown from '../../../components/SearchableDropdown';
-
-interface Batch {
-  id: string;
-  batchNumber: string;
-  purchaseDate: string;
-  productId: string;
-  product?: { name: string };
-  waxInitialQty: number;
-  waxRate: number;
-  waxStock: number;
-  producedQty: number;
-  soldQty: number;
-  remainingQty: number;
-  sellingPrice: number;
-  productionCost: number;
-  status: string;
-}
+import { useAuthStore } from '../../../store/authStore';
 
 export default function ProductionScreen() {
-  const [batches, setBatches] = useState<Batch[]>(getCachedData('production') || []);
-  const [products, setProducts] = useState<any[]>(getCachedData('production_products') || []);
-  const [loading, setLoading] = useState(!getCachedData('production'));
+  const [productions, setProductions] = useState<any[]>(getCachedData('production_runs') || []);
+  const [batches, setBatches] = useState<any[]>([]);
+  const [loading, setLoading] = useState(!getCachedData('production_runs'));
   const [isInteracting, setIsInteracting] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
+  const { user } = useAuthStore();
 
   // Modal State
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [isEdit, setIsEdit] = useState(false);
-  const [editId, setEditId] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const [productId, setProductId] = useState('');
-  
   const [formData, setFormData] = useState({
-    purchaseDate: new Date().toISOString().split('T')[0],
-    waxInitialQty: '',
-    waxRate: '',
-    waxStock: '',
-    producedQty: '',
+    date: new Date().toISOString().split('T')[0],
+    batchId: '',
+    operatorId: user?.id || '',
+    shift: 'DAY',
+    waxUsed: '100',
+    fragranceUsed: '2',
+    colorUsed: '0.5',
+    containerUsed: '500',
+    wickUsed: '500',
+    labourCost: '1500',
+    gasCost: '400',
+    electricityCost: '200',
+    otherCosts: '100',
+    quantityProduced: '100',
     sellingPrice: '350',
-    soldQty: '0',
-    status: 'IN_PRODUCTION'
+    notes: '',
   });
 
   const fetchData = async () => {
     try {
-      const [batchRes, prodRes] = await Promise.all([
-        api.get('/production/batches/list?limit=500'),
-        api.get('/inventory?limit=500')
+      const [prodRes, batchRes] = await Promise.all([
+        api.get('/production?limit=500'),
+        api.get('/production/batches/list?limit=500')
       ]);
-      const batchesList = batchRes.data.data.data || batchRes.data.data;
-      setBatches(batchesList);
-      setCachedData('production', batchesList);
-      
-      const productsList = prodRes.data.data.data || prodRes.data.data;
-      setProducts(productsList);
-      setCachedData('production_products', productsList);
-    } catch (error) {
-      console.error('Failed to fetch batches', error);
+      const prodList = prodRes.data.data.data || prodRes.data.data || [];
+      const batchList = batchRes.data.data.data || batchRes.data.data || [];
+      setProductions(Array.isArray(prodList) ? prodList : []);
+      setBatches(Array.isArray(batchList) ? batchList : []);
+      setCachedData('production_runs', Array.isArray(prodList) ? prodList : []);
+    } catch (err) {
+      console.error('Failed to fetch productions', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  useFocusEffect(useCallback(() => {
-    InteractionManager.runAfterInteractions(() => {
-      setIsInteracting(false);
-      fetchData();
-    });
-  }, []));
+  useFocusEffect(
+    useCallback(() => {
+      let task = InteractionManager.runAfterInteractions(() => {
+        setIsInteracting(false);
+        fetchData();
+      });
+      return () => task.cancel();
+    }, [])
+  );
 
   const handleOpenCreate = () => {
-    setProductId(products.length > 0 ? (products[0].product?.id || products[0].id) : '');
     setFormData({
-      purchaseDate: new Date().toISOString().split('T')[0],
-      waxInitialQty: '',
-      waxRate: '',
-      waxStock: '',
-      producedQty: '',
+      date: new Date().toISOString().split('T')[0],
+      batchId: '',
+      operatorId: user?.id || '',
+      shift: 'DAY',
+      waxUsed: '100',
+      fragranceUsed: '2',
+      colorUsed: '0.5',
+      containerUsed: '500',
+      wickUsed: '500',
+      labourCost: '1500',
+      gasCost: '400',
+      electricityCost: '200',
+      otherCosts: '100',
+      quantityProduced: '100',
       sellingPrice: '350',
-      soldQty: '0',
-      status: 'IN_PRODUCTION'
+      notes: '',
     });
-    setIsEdit(false);
-    setIsModalVisible(true);
-  };
-
-  const handleOpenEdit = (batch: Batch) => {
-    setProductId(batch.productId || '');
-    setFormData({
-      purchaseDate: batch.purchaseDate ? new Date(batch.purchaseDate).toISOString().split('T')[0] : '',
-      waxInitialQty: (batch.waxInitialQty || 0).toString(),
-      waxRate: (batch.waxRate || 0).toString(),
-      waxStock: (batch.waxStock || 0).toString(),
-      producedQty: (batch.producedQty || 0).toString(),
-      sellingPrice: (batch.sellingPrice || 0).toString(),
-      soldQty: (batch.soldQty || 0).toString(),
-      status: batch.status || 'IN_PRODUCTION',
-    });
-    setEditId(batch.id);
-    setIsEdit(true);
     setIsModalVisible(true);
   };
 
   const handleSave = async () => {
-    if (!formData.waxInitialQty || !formData.waxRate) {
-      Alert.alert('Error', 'Wax Initial Qty and Wax Rate are required');
+    if (!formData.batchId) {
+      Alert.alert('Error', 'Please select a batch');
       return;
     }
     
     setSaving(true);
     try {
-      const wInitial = Number(formData.waxInitialQty) || 0;
-      const wRate = Number(formData.waxRate) || 0;
-      const prodQty = Number(formData.producedQty) || 0;
-      const sQty = Number(formData.soldQty) || 0;
-
-      if (isEdit) {
-        await api.put(`/production/batches/${editId}`, {
-          purchaseDate: formData.purchaseDate,
-          waxInitialQty: wInitial,
-          waxRate: wRate,
-          waxStock: wInitial - prodQty,
-          producedQty: prodQty,
-          sellingPrice: Number(formData.sellingPrice) || 0,
-          soldQty: sQty,
-          remainingQty: prodQty - sQty,
-          productionCost: wInitial * wRate,
-          status: formData.status
-        });
-        Alert.alert('Success', 'Batch updated successfully');
-      } else {
-        await api.post('/production/batches', {
-          productId: productId || undefined,
-          purchaseDate: formData.purchaseDate,
-          sellingPrice: Number(formData.sellingPrice) || 0,
-          waxInitialQty: wInitial,
-          waxRate: wRate,
-          waxStock: Number(formData.waxStock) || 0,
-          producedQty: prodQty
-        });
-        Alert.alert('Success', 'New batch generated successfully');
-      }
+      await api.post('/production', {
+        ...formData,
+        waxUsed: Number(formData.waxUsed) || 0,
+        fragranceUsed: Number(formData.fragranceUsed) || 0,
+        colorUsed: Number(formData.colorUsed) || 0,
+        containerUsed: Number(formData.containerUsed) || 0,
+        wickUsed: Number(formData.wickUsed) || 0,
+        labourCost: Number(formData.labourCost) || 0,
+        gasCost: Number(formData.gasCost) || 0,
+        electricityCost: Number(formData.electricityCost) || 0,
+        otherCosts: Number(formData.otherCosts) || 0,
+        quantityProduced: Number(formData.quantityProduced) || 0,
+        sellingPrice: Number(formData.sellingPrice) || 0,
+      });
+      Alert.alert('Success', 'Production run logged successfully');
       setIsModalVisible(false);
       fetchData();
     } catch (err: any) {
-      Alert.alert('Error', err.response?.data?.message || 'Failed to save batch');
+      Alert.alert('Error', err.response?.data?.message || 'Failed to log production');
     } finally {
       setSaving(false);
     }
   };
 
-  const getStatusColor = (status: string) => {
-    return status === 'COMPLETED' ? '#10B981' : '#3B82F6';
-  };
-
   const columns: Column[] = [
-    { key: 'actions', title: 'Actions', width: 70, render: (item) => (
-        <TouchableOpacity style={styles.actionBtn} onPress={() => handleOpenEdit(item)}>
-          <Feather name="edit-2" size={16} color="#9CA3AF" />
-        </TouchableOpacity>
-      )
-    },
-    { key: 'product', title: 'Product', width: 120, render: (item) => <Text style={[styles.cellText, {fontWeight: 'bold'}]} numberOfLines={1}>{item.product?.name || 'General'}</Text> },
-    { key: 'producedQty', title: 'Produced', width: 80, render: (item) => <Text style={styles.cellText}>{Number(item.producedQty).toFixed(2)}</Text> },
-    { key: 'soldQty', title: 'Sold', width: 80, render: (item) => <Text style={[styles.cellText, { color: '#10B981' }]}>{Number(item.soldQty).toFixed(2)}</Text> },
-    { key: 'remainingQty', title: 'Remaining', width: 90, render: (item) => <Text style={[styles.cellText, { color: '#F59E0B' }]}>{Number(item.remainingQty).toFixed(2)}</Text> },
-    { key: 'status', title: 'Status', width: 110, render: (item) => (
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '20' }]}>
-          <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>{item.status.replace('_', ' ')}</Text>
+    { key: 'productionNumber', title: 'Prod #', width: 90, render: (item) => <Text style={[styles.cellText, { color: '#3B82F6', fontWeight: 'bold' }]}>{item.productionNumber}</Text> },
+    { key: 'date', title: 'Date & Shift', width: 100, render: (item) => (
+        <View>
+          <Text style={styles.cellText}>{new Date(item.date).toLocaleDateString()}</Text>
+          <Text style={[styles.cellText, { color: '#9CA3AF', fontSize: 10 }]}>{item.shift} Shift</Text>
         </View>
       )
     },
-    
+    { key: 'quantityProduced', title: 'Output Qty', width: 90, render: (item) => <Text style={[styles.cellText, {fontWeight: 'bold'}]}>{Number(item.quantityProduced).toFixed(2)} KG</Text> },
+    { key: 'notes', title: 'Notes', width: 150, render: (item) => <Text style={styles.cellText} numberOfLines={1}>{item.notes || '-'}</Text> }
   ];
-
-  // Removed loading early return
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -198,11 +148,11 @@ export default function ProductionScreen() {
           </TouchableOpacity>
           <View>
             <Text style={styles.pageTitle}>Production</Text>
-            <Text style={styles.pageSubtitle}>Batch tracking & manufacturing</Text>
+            <Text style={styles.pageSubtitle}>Log daily production runs</Text>
           </View>
         </View>
         <TouchableOpacity style={styles.newButton} onPress={handleOpenCreate}>
-          <Text style={styles.newButtonText}>+ New Batch</Text>
+          <Text style={styles.newButtonText}>+ Log Run</Text>
         </TouchableOpacity>
       </View>
 
@@ -211,7 +161,7 @@ export default function ProductionScreen() {
           <Ionicons name="search" size={20} color="#94A3B8" />
           <TextInput 
             style={styles.searchInput} 
-            placeholder="Search batch number..." 
+            placeholder="Search production #..." 
             placeholderTextColor="#64748B"
           />
         </View>
@@ -221,18 +171,18 @@ export default function ProductionScreen() {
       </View>
 
       <View style={styles.tableWrapper}>
-        {isInteracting || (loading && !refreshing && batches.length === 0) ? (
+        {isInteracting || (loading && !refreshing && productions.length === 0) ? (
           <SkeletonList />
         ) : (
-          <DataTable columns={columns} data={batches} showActions={false} />
+          <DataTable columns={columns} data={productions} showActions={false} />
         )}
       </View>
 
-      {/* CREATE / EDIT MODAL */}
+      {/* CREATE MODAL */}
       <Modal visible={isModalVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setIsModalVisible(false)}>
         <KeyboardAvoidingView style={styles.modalContainer} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{isEdit ? 'Edit Batch' : 'Generate Batch Code'}</Text>
+            <Text style={styles.modalTitle}>Log Daily Production Run</Text>
             <TouchableOpacity onPress={() => setIsModalVisible(false)}>
               <Ionicons name="close" size={24} color="#9CA3AF" />
             </TouchableOpacity>
@@ -241,93 +191,198 @@ export default function ProductionScreen() {
           <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalContent}>
             
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Target Product</Text>
+              <Text style={styles.label}>Select Batch *</Text>
               <SearchableDropdown
-                data={[{ id: '', name: 'General' }, ...products.map((p: any) => ({
-                  id: p.product?.id || p.id,
-                  name: p.product?.name || p.name
-                })).filter(p => p.id)]}
-                value={productId}
-                onSelect={setProductId}
-                placeholder="Select Target Product"
-                searchPlaceholder="Search product by name..."
+                data={batches.map((b: any) => ({
+                  id: b.id,
+                  name: `${b.batchNumber} (${b.product?.name || 'General'})`
+                }))}
+                value={formData.batchId}
+                onSelect={(val) => setFormData({...formData, batchId: val})}
+                placeholder="Select a batch..."
               />
             </View>
 
+            <View style={styles.formRow}>
+              <View style={[styles.formGroup, {flex: 1, marginRight: 8}]}>
+                <Text style={styles.label}>Date *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.date}
+                  onChangeText={(text) => setFormData({...formData, date: text})}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor="#6B7280"
+                />
+              </View>
+              <View style={[styles.formGroup, {flex: 1, marginLeft: 8}]}>
+                <Text style={styles.label}>Shift *</Text>
+                <View style={styles.chipContainer}>
+                  <TouchableOpacity 
+                    style={[styles.chip, formData.shift === 'DAY' && styles.chipActive]}
+                    onPress={() => setFormData({...formData, shift: 'DAY'})}
+                  >
+                    <Text style={[styles.chipText, formData.shift === 'DAY' && styles.chipTextActive]}>DAY</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.chip, formData.shift === 'NIGHT' && styles.chipActive]}
+                    onPress={() => setFormData({...formData, shift: 'NIGHT'})}
+                  >
+                    <Text style={[styles.chipText, formData.shift === 'NIGHT' && styles.chipTextActive]}>NIGHT</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+
+            <Text style={styles.sectionTitle}>Material Usage</Text>
+            <View style={styles.formRow}>
+              <View style={[styles.formGroup, {flex: 1, marginRight: 8}]}>
+                <Text style={styles.label}>Wax Used (KG) *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.waxUsed}
+                  onChangeText={(text) => setFormData({...formData, waxUsed: text})}
+                  keyboardType="numeric"
+                  placeholderTextColor="#6B7280"
+                />
+              </View>
+              <View style={[styles.formGroup, {flex: 1, marginLeft: 8}]}>
+                <Text style={styles.label}>Fragrance (KG) *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.fragranceUsed}
+                  onChangeText={(text) => setFormData({...formData, fragranceUsed: text})}
+                  keyboardType="numeric"
+                  placeholderTextColor="#6B7280"
+                />
+              </View>
+            </View>
+
+            <View style={styles.formRow}>
+              <View style={[styles.formGroup, {flex: 1, marginRight: 8}]}>
+                <Text style={styles.label}>Color (KG) *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.colorUsed}
+                  onChangeText={(text) => setFormData({...formData, colorUsed: text})}
+                  keyboardType="numeric"
+                  placeholderTextColor="#6B7280"
+                />
+              </View>
+              <View style={[styles.formGroup, {flex: 1, marginLeft: 8}]}>
+                <Text style={styles.label}>Containers *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.containerUsed}
+                  onChangeText={(text) => setFormData({...formData, containerUsed: text})}
+                  keyboardType="numeric"
+                  placeholderTextColor="#6B7280"
+                />
+              </View>
+            </View>
+
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Purchase Date *</Text>
-              <TextInput style={styles.input} value={formData.purchaseDate} onChangeText={(t) => setFormData({...formData, purchaseDate: t})} placeholder="YYYY-MM-DD" placeholderTextColor="#64748B" />
+              <Text style={styles.label}>Wicks Used *</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.wickUsed}
+                onChangeText={(text) => setFormData({...formData, wickUsed: text})}
+                keyboardType="numeric"
+                placeholderTextColor="#6B7280"
+              />
             </View>
 
+            <Text style={styles.sectionTitle}>Overhead Costs (₹)</Text>
             <View style={styles.formRow}>
-              <View style={[styles.formGroup, { flex: 1 }]}>
-                <Text style={styles.label}>Wax Initial Qty *</Text>
-                <TextInput style={styles.input} value={formData.waxInitialQty} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, waxInitialQty: t})} placeholder="KG" placeholderTextColor="#64748B" />
+              <View style={[styles.formGroup, {flex: 1, marginRight: 8}]}>
+                <Text style={styles.label}>Labour Cost *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.labourCost}
+                  onChangeText={(text) => setFormData({...formData, labourCost: text})}
+                  keyboardType="numeric"
+                  placeholderTextColor="#6B7280"
+                />
               </View>
-              <View style={[styles.formGroup, { flex: 1 }]}>
-                <Text style={styles.label}>Wax Rate (₹) *</Text>
-                <TextInput style={styles.input} value={formData.waxRate} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, waxRate: t})} placeholder="0.00" placeholderTextColor="#64748B" />
+              <View style={[styles.formGroup, {flex: 1, marginLeft: 8}]}>
+                <Text style={styles.label}>Gas Cost *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.gasCost}
+                  onChangeText={(text) => setFormData({...formData, gasCost: text})}
+                  keyboardType="numeric"
+                  placeholderTextColor="#6B7280"
+                />
               </View>
             </View>
-
-            {!isEdit && (
-              <View style={styles.formGroup}>
-                <Text style={styles.label}>Initial Wax Stock (KG) *</Text>
-                <TextInput style={styles.input} value={formData.waxStock} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, waxStock: t})} placeholder="KG" placeholderTextColor="#64748B" />
-              </View>
-            )}
-
             <View style={styles.formRow}>
-              <View style={[styles.formGroup, { flex: 1 }]}>
-                <Text style={styles.label}>Candles Produced</Text>
-                <TextInput style={styles.input} value={formData.producedQty} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, producedQty: t})} placeholder="KG" placeholderTextColor="#64748B" />
+              <View style={[styles.formGroup, {flex: 1, marginRight: 8}]}>
+                <Text style={styles.label}>Electricity *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.electricityCost}
+                  onChangeText={(text) => setFormData({...formData, electricityCost: text})}
+                  keyboardType="numeric"
+                  placeholderTextColor="#6B7280"
+                />
               </View>
-              <View style={[styles.formGroup, { flex: 1 }]}>
-                <Text style={styles.label}>Selling Price (₹)</Text>
-                <TextInput style={styles.input} value={formData.sellingPrice} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, sellingPrice: t})} placeholder="0.00" placeholderTextColor="#64748B" />
+              <View style={[styles.formGroup, {flex: 1, marginLeft: 8}]}>
+                <Text style={styles.label}>Other Costs *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.otherCosts}
+                  onChangeText={(text) => setFormData({...formData, otherCosts: text})}
+                  keyboardType="numeric"
+                  placeholderTextColor="#6B7280"
+                />
               </View>
             </View>
 
-            {isEdit && (
-              <>
-                <View style={styles.formRow}>
-                  <View style={[styles.formGroup, { flex: 1 }]}>
-                    <Text style={styles.label}>Candles Sold (KG)</Text>
-                    <TextInput style={styles.input} value={formData.soldQty} keyboardType="numeric" onChangeText={(t) => setFormData({...formData, soldQty: t})} placeholder="KG" placeholderTextColor="#64748B" />
-                  </View>
-                </View>
+            <Text style={styles.sectionTitle}>Production Output</Text>
+            <View style={styles.formRow}>
+              <View style={[styles.formGroup, {flex: 1, marginRight: 8}]}>
+                <Text style={styles.label}>Qty Produced (KG) *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.quantityProduced}
+                  onChangeText={(text) => setFormData({...formData, quantityProduced: text})}
+                  keyboardType="numeric"
+                  placeholderTextColor="#6B7280"
+                />
+              </View>
+              <View style={[styles.formGroup, {flex: 1, marginLeft: 8}]}>
+                <Text style={styles.label}>Target Selling Price *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.sellingPrice}
+                  onChangeText={(text) => setFormData({...formData, sellingPrice: text})}
+                  keyboardType="numeric"
+                  placeholderTextColor="#6B7280"
+                />
+              </View>
+            </View>
 
-                <View style={styles.formGroup}>
-                  <Text style={styles.label}>Status</Text>
-                  <View style={{ flexDirection: 'row', gap: 8 }}>
-                    <TouchableOpacity 
-                      style={[styles.pill, formData.status === 'IN_PRODUCTION' && styles.pillActive]}
-                      onPress={() => setFormData({...formData, status: 'IN_PRODUCTION'})}
-                    >
-                      <Text style={[styles.pillText, formData.status === 'IN_PRODUCTION' && styles.pillTextActive]}>In Production</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={[styles.pill, formData.status === 'COMPLETED' && styles.pillActive]}
-                      onPress={() => setFormData({...formData, status: 'COMPLETED'})}
-                    >
-                      <Text style={[styles.pillText, formData.status === 'COMPLETED' && styles.pillTextActive]}>Completed</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </>
-            )}
-
-            <View style={{ height: 40 }} />
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Notes</Text>
+              <TextInput
+                style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
+                value={formData.notes}
+                onChangeText={(text) => setFormData({...formData, notes: text})}
+                multiline
+                placeholder="Optional notes..."
+                placeholderTextColor="#6B7280"
+              />
+            </View>
+            
+            <View style={styles.modalFooter}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setIsModalVisible(false)} disabled={saving}>
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
+                {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveBtnText}>Log Production</Text>}
+              </TouchableOpacity>
+            </View>
+            
           </ScrollView>
-          
-          <View style={styles.modalFooter}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => setIsModalVisible(false)}>
-              <Text style={styles.cancelBtnText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
-              {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveBtnText}>{isEdit ? 'Save Changes' : 'Create Batch'}</Text>}
-            </TouchableOpacity>
-          </View>
         </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
@@ -335,44 +390,38 @@ export default function ProductionScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8 },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  backBtn: { padding: 4, marginLeft: -4 },
-  pageTitle: { fontSize: 20, fontWeight: 'bold', color: '#F8FAFC' },
-  pageSubtitle: { fontSize: 12, color: '#94A3B8', marginTop: 2 },
-  newButton: { backgroundColor: '#2996A8', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
-  newButtonText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
-  actionBar: { flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 12, gap: 12 },
-  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#1E1E1E', borderRadius: 8, paddingHorizontal: 12, height: 36, gap: 8 },
-  searchInput: { flex: 1, color: '#F8FAFC', fontSize: 14, height: '100%' },
-  actionIconBtn: { width: 36, height: 36, backgroundColor: '#1E1E1E', borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  tableWrapper: { flex: 1, paddingHorizontal: 16, paddingBottom: 80 },
-  cellText: { color: '#F8FAFC', fontSize: 14 },
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, alignSelf: 'flex-start' },
-  statusText: { fontSize: 10, fontWeight: 'bold' },
-  actionBtn: { padding: 8 },
-  
-  // Modal Styles
-  modalContainer: { flex: 1, backgroundColor: '#121212' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#1E1E1E', backgroundColor: '#121212' },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#F8FAFC' },
+  container: { flex: 1, backgroundColor: '#000' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 15 },
+  headerLeft: { flexDirection: 'row', alignItems: 'center' },
+  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#1F2937', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  pageTitle: { fontSize: 24, fontWeight: 'bold', color: '#FFF' },
+  pageSubtitle: { fontSize: 14, color: '#9CA3AF', marginTop: 4 },
+  newButton: { backgroundColor: '#2996A8', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
+  newButtonText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
+  actionBar: { flexDirection: 'row', paddingHorizontal: 20, marginBottom: 15, gap: 12 },
+  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#1F2937', borderRadius: 12, paddingHorizontal: 12, height: 44 },
+  searchInput: { flex: 1, color: '#FFF', marginLeft: 8, fontSize: 14 },
+  actionIconBtn: { width: 44, height: 44, backgroundColor: '#1F2937', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  tableWrapper: { flex: 1, paddingHorizontal: 20 },
+  cellText: { color: '#D1D5DB', fontSize: 13 },
+  modalContainer: { flex: 1, backgroundColor: '#000' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#1F2937' },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#FFF' },
   modalScroll: { flex: 1 },
-  modalContent: { padding: 20 },
-  formGroup: { marginBottom: 20 },
-  formRow: { flexDirection: 'row', gap: 16, marginBottom: 0 },
-  label: { fontSize: 12, fontWeight: 'bold', color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
-  input: { backgroundColor: '#1E1E1E', borderRadius: 12, padding: 16, color: '#F8FAFC', fontSize: 16, borderWidth: 1, borderColor: '#27272A' },
-  pillContainer: { flexDirection: 'row' },
-  pill: { backgroundColor: '#1E1E1E', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, marginRight: 8, borderWidth: 1, borderColor: '#27272A' },
-  pillActive: { backgroundColor: '#2996A8', borderColor: '#2996A8' },
-  pillText: { color: '#94A3B8', fontSize: 14, fontWeight: 'bold' },
-  pillTextActive: { color: '#FFFFFF' },
-  
-  modalFooter: { flexDirection: 'row', padding: 20, borderTopWidth: 1, borderTopColor: '#1E1E1E', backgroundColor: '#121212', gap: 12 },
-  cancelBtn: { flex: 1, padding: 16, borderRadius: 12, backgroundColor: '#1E1E1E', alignItems: 'center' },
-  cancelBtnText: { color: '#F8FAFC', fontSize: 16, fontWeight: 'bold' },
+  modalContent: { padding: 20, paddingBottom: 100 },
+  formRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  formGroup: { marginBottom: 16 },
+  label: { color: '#D1D5DB', fontSize: 13, fontWeight: '600', marginBottom: 8 },
+  input: { backgroundColor: '#1F2937', color: '#FFF', borderRadius: 12, padding: 12, fontSize: 14, borderWidth: 1, borderColor: '#374151' },
+  sectionTitle: { color: '#9CA3AF', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', marginTop: 8, marginBottom: 16, letterSpacing: 1 },
+  chipContainer: { flexDirection: 'row', gap: 8 },
+  chip: { flex: 1, backgroundColor: '#1F2937', paddingVertical: 10, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#374151' },
+  chipActive: { backgroundColor: '#2996A820', borderColor: '#2996A8' },
+  chipText: { color: '#9CA3AF', fontWeight: '600', fontSize: 13 },
+  chipTextActive: { color: '#2996A8' },
+  modalFooter: { flexDirection: 'row', gap: 12, marginTop: 24 },
+  cancelBtn: { flex: 1, padding: 16, borderRadius: 12, backgroundColor: '#1F2937', alignItems: 'center' },
+  cancelBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
   saveBtn: { flex: 2, padding: 16, borderRadius: 12, backgroundColor: '#2996A8', alignItems: 'center' },
-  saveBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
+  saveBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
 });
