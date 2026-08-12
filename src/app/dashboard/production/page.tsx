@@ -83,10 +83,6 @@ export default function ProductionPage() {
       cell: (p) => <span className="font-mono text-xs font-semibold text-blue-600 dark:text-blue-400">{p.productionNumber}</span>,
     },
     {
-      header: 'Batch #',
-      cell: (p) => <span className="font-mono text-xs font-medium text-gray-700 dark:text-gray-300">{p.batch?.batchNumber}</span>,
-    },
-    {
       header: 'Date & Shift',
       cell: (p) => (
         <div>
@@ -96,28 +92,8 @@ export default function ProductionPage() {
       ),
     },
     {
-      header: 'Wax Used',
-      cell: (p) => <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">{p.waxUsed} KG</span>,
-    },
-    {
       header: 'Output Qty',
       cell: (p) => <span className="font-bold text-gray-900 dark:text-white">{p.quantityProduced} KG</span>,
-    },
-    {
-      header: 'Cost / KG',
-      cell: (p) => <span className="text-xs font-medium text-gray-600">{formatCurrency(p.costPerKg)}</span>,
-    },
-    {
-      header: 'Total Cost',
-      cell: (p) => <span className="text-xs text-rose-600 font-medium">{formatCurrency(p.totalCost)}</span>,
-    },
-    {
-      header: 'Margin %',
-      cell: (p) => (
-        <span className="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
-          {formatPercent(p.margin)}
-        </span>
-      ),
     },
     {
       header: 'Notes',

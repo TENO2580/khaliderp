@@ -174,9 +174,7 @@ export default function ProductionScreen() {
         </TouchableOpacity>
       )
     },
-    { key: 'batchNumber', title: 'Batch #', width: 90, render: (item) => <Text style={[styles.cellText, { color: '#3B82F6', fontWeight: 'bold' }]}>{item.batchNumber}</Text> },
     { key: 'product', title: 'Product', width: 120, render: (item) => <Text style={[styles.cellText, {fontWeight: 'bold'}]} numberOfLines={1}>{item.product?.name || 'General'}</Text> },
-    { key: 'waxInitialQty', title: 'Wax (KG)', width: 80, render: (item) => <Text style={styles.cellText}>{Number(item.waxInitialQty).toFixed(2)}</Text> },
     { key: 'producedQty', title: 'Produced', width: 80, render: (item) => <Text style={styles.cellText}>{Number(item.producedQty).toFixed(2)}</Text> },
     { key: 'soldQty', title: 'Sold', width: 80, render: (item) => <Text style={[styles.cellText, { color: '#10B981' }]}>{Number(item.soldQty).toFixed(2)}</Text> },
     { key: 'remainingQty', title: 'Remaining', width: 90, render: (item) => <Text style={[styles.cellText, { color: '#F59E0B' }]}>{Number(item.remainingQty).toFixed(2)}</Text> },
