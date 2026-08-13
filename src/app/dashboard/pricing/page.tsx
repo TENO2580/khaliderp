@@ -412,14 +412,14 @@ export default function PricingEnginePage() {
             <table className="w-full text-center text-sm text-black border-collapse border border-black bg-white">
               <thead>
                 <tr>
-                  <th colSpan={profile.caseVariants?.length ? profile.caseVariants.length + 1 : 5} className="bg-[#1e3a5f] text-white py-2 text-lg font-bold border border-black">
+                  <th colSpan={profile.caseVariants?.length ? profile.caseVariants.length + 1 : 5} className="bg-gradient-to-b from-[#2b4c7e] to-[#1e3a5f] text-white py-2 text-lg font-bold border border-black shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
                     Item Unit Economics
                   </th>
                 </tr>
-                <tr className="bg-gray-200">
-                  <th className="px-2 py-1 font-bold border border-black text-center">Metric</th>
+                <tr className="bg-gradient-to-b from-[#f8f9fa] to-[#e5e7eb]">
+                  <th className="px-2 py-2 font-bold border border-black text-center text-black">Metric</th>
                   {profile.caseVariants?.map((variant: any, idx: number) => (
-                    <th key={idx} className="px-2 py-1 font-bold uppercase border border-black text-center">
+                    <th key={idx} className="px-2 py-2 font-bold uppercase border border-black text-center text-black">
                       {variant.name}
                     </th>
                   ))}
