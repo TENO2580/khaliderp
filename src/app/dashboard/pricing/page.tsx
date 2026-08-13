@@ -332,7 +332,7 @@ export default function PricingEnginePage() {
                     <td key={idx} className="px-4 py-3">
                       <input 
                         type="number" 
-                        value={variant.qty || 1} 
+                        value={variant.qty ?? 1} 
                         onChange={(e) => handleVariantChange(idx, 'qty', e.target.value)}
                         className="w-full text-center rounded border border-gray-200 p-1 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                       />
@@ -342,7 +342,7 @@ export default function PricingEnginePage() {
                 <tr className="bg-blue-50/50 dark:bg-blue-900/20">
                   <td className="px-4 py-3 font-semibold text-blue-900 dark:text-blue-100">Total Weight (KG)</td>
                   {profile.caseVariants?.map((variant: any, idx: number) => {
-                    const totalWeight = Number(variant.weightKg) * (Number(variant.qty) || 1);
+                    const totalWeight = Number(variant.weightKg) * Number(variant.qty ?? 1);
                     return (
                       <td key={idx} className="px-4 py-3 text-center font-semibold text-blue-900 dark:text-blue-100">
                         {totalWeight.toFixed(3)}
@@ -368,7 +368,7 @@ export default function PricingEnginePage() {
                   <td className="px-4 py-3 font-semibold text-gray-900 dark:text-white">Total Prod Cost</td>
                   {profile.caseVariants?.map((variant: any, idx: number) => {
                     const effectiveProdCostPerKg = variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : totalVariantCostPerKg;
-                    const totalWeight = Number(variant.weightKg) * (Number(variant.qty) || 1);
+                    const totalWeight = Number(variant.weightKg) * Number(variant.qty ?? 1);
                     return (
                       <td key={idx} className="px-4 py-3 text-center font-semibold text-gray-900 dark:text-white">
                         ₹{(totalWeight * effectiveProdCostPerKg).toFixed(2)}
@@ -392,7 +392,7 @@ export default function PricingEnginePage() {
                 <tr>
                   <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">Profit Margin (₹)</td>
                   {profile.caseVariants?.map((variant: any, idx: number) => {
-                    const totalWeight = Number(variant.weightKg) * (Number(variant.qty) || 1);
+                    const totalWeight = Number(variant.weightKg) * Number(variant.qty ?? 1);
                     const totalProdCost = totalWeight * totalVariantCostPerKg;
                     const marginAmt = Number(variant.sellingPrice) - totalProdCost;
                     return (
@@ -406,7 +406,7 @@ export default function PricingEnginePage() {
                   <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">Profit Margin (%)</td>
                   {profile.caseVariants?.map((variant: any, idx: number) => {
                     const effectiveProdCostPerKg = variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : totalVariantCostPerKg;
-                    const totalWeight = Number(variant.weightKg) * (Number(variant.qty) || 1);
+                    const totalWeight = Number(variant.weightKg) * Number(variant.qty ?? 1);
                     const totalProdCost = totalWeight * effectiveProdCostPerKg;
                     const marginAmt = Number(variant.sellingPrice) - totalProdCost;
                     const marginPct = Number(variant.sellingPrice) > 0 ? (marginAmt / Number(variant.sellingPrice)) * 100 : 0;
@@ -420,7 +420,7 @@ export default function PricingEnginePage() {
                 <tr className="bg-red-50 dark:bg-red-900/20">
                   <td className="px-4 py-3 font-bold text-red-600 dark:text-red-400 rounded-bl-lg">Selling Cost per KG</td>
                   {profile.caseVariants?.map((variant: any, idx: number) => {
-                    const totalWeight = Number(variant.weightKg) * (Number(variant.qty) || 1);
+                    const totalWeight = Number(variant.weightKg) * Number(variant.qty ?? 1);
                     const sellingCostKg = totalWeight > 0 ? Number(variant.sellingPrice) / totalWeight : 0;
                     return (
                       <td key={idx} className="px-4 py-3 text-center font-bold text-red-600 dark:text-red-400">
@@ -475,7 +475,7 @@ export default function PricingEnginePage() {
                       <td key={idx} className="px-4 py-3">
                         <input 
                           type="number" 
-                          value={variant.qty || 1} 
+                          value={variant.qty ?? 1} 
                           onChange={(e) => handleVariantChange(idx, 'qty', e.target.value)}
                           className="w-full text-center rounded border border-gray-200 p-1 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                         />
@@ -485,7 +485,7 @@ export default function PricingEnginePage() {
                   <tr className="bg-blue-50/50 dark:bg-blue-900/10">
                     <td className="px-4 py-3 font-semibold text-blue-900 dark:text-blue-100">Total Weight (KG)</td>
                     {profile.caseVariants?.map((variant: any, idx: number) => {
-                      const totalWeight = Number(variant.weightKg) * (Number(variant.qty) || 1);
+                      const totalWeight = Number(variant.weightKg) * Number(variant.qty ?? 1);
                       return (
                         <td key={idx} className="px-4 py-3 text-center font-semibold text-blue-900 dark:text-blue-100">
                           {totalWeight.toFixed(3)}
@@ -505,7 +505,7 @@ export default function PricingEnginePage() {
                     <td className="px-4 py-3 font-semibold text-gray-900 dark:text-white">Total Prod Cost</td>
                     {profile.caseVariants?.map((variant: any, idx: number) => {
                       const effectiveProdCostPerKg = variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : totalVariantCostPerKg;
-                      const totalWeight = Number(variant.weightKg) * (Number(variant.qty) || 1);
+                      const totalWeight = Number(variant.weightKg) * Number(variant.qty ?? 1);
                       return (
                         <td key={idx} className="px-4 py-3 text-center font-semibold text-gray-900 dark:text-white">
                           ₹{(totalWeight * effectiveProdCostPerKg).toFixed(2)}
@@ -524,7 +524,7 @@ export default function PricingEnginePage() {
                   <tr>
                     <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">Profit Margin (₹)</td>
                     {profile.caseVariants?.map((variant: any, idx: number) => {
-                      const totalWeight = Number(variant.weightKg) * (Number(variant.qty) || 1);
+                      const totalWeight = Number(variant.weightKg) * Number(variant.qty ?? 1);
                       const totalProdCost = totalWeight * totalVariantCostPerKg;
                       const marginAmt = Number(variant.sellingPrice) - totalProdCost;
                       return (
@@ -538,7 +538,7 @@ export default function PricingEnginePage() {
                     <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">Profit Margin (%)</td>
                     {profile.caseVariants?.map((variant: any, idx: number) => {
                       const effectiveProdCostPerKg = variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : totalVariantCostPerKg;
-                      const totalWeight = Number(variant.weightKg) * (Number(variant.qty) || 1);
+                      const totalWeight = Number(variant.weightKg) * Number(variant.qty ?? 1);
                       const totalProdCost = totalWeight * effectiveProdCostPerKg;
                       const marginAmt = Number(variant.sellingPrice) - totalProdCost;
                       const marginPct = Number(variant.sellingPrice) > 0 ? (marginAmt / Number(variant.sellingPrice)) * 100 : 0;
@@ -552,7 +552,7 @@ export default function PricingEnginePage() {
                   <tr className="bg-rose-50/50 dark:bg-rose-900/10">
                     <td className="px-4 py-3 font-medium text-rose-600 dark:text-rose-400">Selling Cost per KG</td>
                     {profile.caseVariants?.map((variant: any, idx: number) => {
-                      const totalWeight = Number(variant.weightKg) * (Number(variant.qty) || 1);
+                      const totalWeight = Number(variant.weightKg) * Number(variant.qty ?? 1);
                       const sellingCostKg = totalWeight > 0 ? Number(variant.sellingPrice) / totalWeight : 0;
                       return (
                         <td key={idx} className="px-4 py-3 text-center font-bold text-rose-600 dark:text-rose-400">
@@ -593,7 +593,7 @@ export default function PricingEnginePage() {
                     <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">Margin Amount</td>
                     {profile.caseVariants?.map((variant: any, idx: number) => {
                       const effectiveProdCostPerKg = variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : totalVariantCostPerKg;
-                      const totalWeight = Number(variant.weightKg) * (Number(variant.qty) || 1);
+                      const totalWeight = Number(variant.weightKg) * Number(variant.qty ?? 1);
                       const totalProdCost = totalWeight * effectiveProdCostPerKg;
                       const calicutRate = Number(variant.calicutRate) || 0;
                       const marginAmt = calicutRate > 0 ? calicutRate - totalProdCost : 0;
@@ -608,7 +608,7 @@ export default function PricingEnginePage() {
                     <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">Margin %</td>
                     {profile.caseVariants?.map((variant: any, idx: number) => {
                       const effectiveProdCostPerKg = variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : totalVariantCostPerKg;
-                      const totalWeight = Number(variant.weightKg) * (Number(variant.qty) || 1);
+                      const totalWeight = Number(variant.weightKg) * Number(variant.qty ?? 1);
                       const totalProdCost = totalWeight * effectiveProdCostPerKg;
                       const calicutRate = Number(variant.calicutRate) || 0;
                       const marginAmt = calicutRate > 0 ? calicutRate - totalProdCost : 0;
