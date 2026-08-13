@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { authenticateRequest, jsonResponse, errorResponse } from '@/lib/middleware-server';
+import { calculateProductPricing } from '@/lib/pricing-engine';
 
 export const dynamic = 'force-dynamic';
 
-
-// Default seed data based on requirements
 const DEFAULT_PRICING = {
   name: "Default Pricing",
   waxCost: 154.00,
@@ -16,21 +15,6 @@ const DEFAULT_PRICING = {
   transportCost: 2.00,
   packagingOverhead: 10.00,
   sellingPrice: 195.00,
-  caseVariants: {
-    create: [
-      { name: "3 CANDLE PACK", weightKg: 0.14, qty: 1, sellingPrice: 39.00, mrp: 60, calicutRate: 35 },
-      { name: "STAND CANDLE", weightKg: 0.16, qty: 1, sellingPrice: 44.00, mrp: 60, calicutRate: 39 },
-      { name: "TORCH SMALL", weightKg: 0.165, qty: 1, sellingPrice: 44.00, mrp: 70, calicutRate: 42 },
-      { name: "TORCH BIG", weightKg: 0.215, qty: 1, sellingPrice: 56.00, mrp: 100, calicutRate: 54 },
-    ]
-  },
-  rsCaseVariants: {
-    create: [
-      { name: "2 RS CASE", weightKg: 0.72, qty: 1, sellingPrice: 228.00 },
-      { name: "5 RS CASE", weightKg: 2.16, qty: 1, sellingPrice: 585.00 },
-      { name: "10 RS CASE", weightKg: 4.32, qty: 1, sellingPrice: 1170.00 },
-    ]
-  }
 };
 
 export async function GET(req: NextRequest) {
@@ -38,38 +22,18 @@ export async function GET(req: NextRequest) {
   if (error) return error;
 
   try {
-    let profile = await prisma.costingProfile.findFirst({
-      include: { 
-        caseVariants: { orderBy: { weightKg: 'asc' } },
-        rsCaseVariants: { orderBy: { weightKg: 'asc' } }
-      }
-    });
+    let profile = await prisma.costingProfile.findFirst();
 
     // Seed if none exists
     if (!profile) {
       profile = await prisma.costingProfile.create({
-        data: DEFAULT_PRICING,
-        include: { 
-          caseVariants: { orderBy: { weightKg: 'asc' } },
-          rsCaseVariants: { orderBy: { weightKg: 'asc' } }
-        }
-      });
-    } else if (profile.rsCaseVariants.length === 0) {
-      // Seed rsCaseVariants for existing profile
-      await prisma.rsCaseVariant.createMany({
-        data: DEFAULT_PRICING.rsCaseVariants.create.map(v => ({ ...v, profileId: profile!.id }))
-      });
-      profile = await prisma.costingProfile.findFirst({
-        include: { 
-          caseVariants: { orderBy: { weightKg: 'asc' } },
-          rsCaseVariants: { orderBy: { weightKg: 'asc' } }
-        }
+        data: DEFAULT_PRICING
       });
     }
 
-    return jsonResponse(profile, 200, 'Pricing data fetched');
+    return jsonResponse(profile, 200, 'Pricing profile fetched');
   } catch (err: any) {
-    return errorResponse(err.message || 'Failed to fetch pricing data', 500);
+    return errorResponse(err.message || 'Failed to fetch pricing profile', 500);
   }
 }
 
@@ -79,13 +43,12 @@ export async function PUT(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { id, waxCost, otherMaterials, labourCost, electricityCost, energyCost, transportCost, packagingOverhead, sellingPrice, caseVariants, rsCaseVariants } = body;
+    const { id, waxCost, otherMaterials, labourCost, electricityCost, energyCost, transportCost, packagingOverhead, sellingPrice } = body;
 
     if (!id) {
       return errorResponse('Profile ID is required', 400);
     }
 
-    // Use a transaction to update the profile and its variants
     const updatedProfile = await prisma.$transaction(async (tx) => {
       const profile = await tx.costingProfile.update({
         where: { id },
@@ -101,81 +64,29 @@ export async function PUT(req: NextRequest) {
         }
       });
 
-      // Update or create variants
-      if (caseVariants && Array.isArray(caseVariants)) {
-        for (const variant of caseVariants) {
-          if (variant.id) {
-            await tx.caseVariant.update({
-              where: { id: variant.id },
-              data: {
-                name: variant.name,
-                weightKg: Number(variant.weightKg),
-                qty: variant.qty ? Number(variant.qty) : 1,
-                prodCostPerKg: variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : null,
-                sellingPrice: Number(variant.sellingPrice),
-                mrp: variant.mrp ? Number(variant.mrp) : 0,
-                calicutRate: variant.calicutRate ? Number(variant.calicutRate) : 0,
-              }
-            });
-          } else {
-            await tx.caseVariant.create({
-              data: {
-                profileId: id,
-                name: variant.name,
-                weightKg: Number(variant.weightKg),
-                qty: variant.qty ? Number(variant.qty) : 1,
-                prodCostPerKg: variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : null,
-                sellingPrice: Number(variant.sellingPrice),
-                mrp: variant.mrp ? Number(variant.mrp) : 0,
-                calicutRate: variant.calicutRate ? Number(variant.calicutRate) : 0,
-              }
-            });
-          }
-        }
-      }
-
-      if (rsCaseVariants && Array.isArray(rsCaseVariants)) {
-        for (const variant of rsCaseVariants) {
-          if (variant.id) {
-            await tx.rsCaseVariant.update({
-              where: { id: variant.id },
-              data: {
-                name: variant.name,
-                weightKg: Number(variant.weightKg),
-                qty: variant.qty ? Number(variant.qty) : 1,
-                prodCostPerKg: variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : null,
-                sellingPrice: Number(variant.sellingPrice),
-                mrp: variant.mrp ? Number(variant.mrp) : 0,
-                calicutRate: variant.calicutRate ? Number(variant.calicutRate) : 0,
-              }
-            });
-          } else {
-            await tx.rsCaseVariant.create({
-              data: {
-                profileId: id,
-                name: variant.name,
-                weightKg: Number(variant.weightKg),
-                qty: variant.qty ? Number(variant.qty) : 1,
-                prodCostPerKg: variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : null,
-                sellingPrice: Number(variant.sellingPrice),
-                mrp: variant.mrp ? Number(variant.mrp) : 0,
-                calicutRate: variant.calicutRate ? Number(variant.calicutRate) : 0,
-              }
-            });
-          }
-        }
-      }
-
-      return await tx.costingProfile.findUnique({
-        where: { id },
-        include: { 
-          caseVariants: { orderBy: { weightKg: 'asc' } },
-          rsCaseVariants: { orderBy: { weightKg: 'asc' } }
-        }
+      // Recalculate all products that depend on this profile
+      const products = await tx.product.findMany({
+        where: { profileId: id }
       });
+
+      for (const prod of products) {
+        const calcs = calculateProductPricing(prod as any, profile);
+
+        await tx.product.update({
+          where: { id: prod.id },
+          data: {
+            totalProdCost: calcs.totalProdCost,
+            marginAmt: calcs.marginAmt,
+            marginPct: calcs.marginPct,
+            sellingCostPerKg: calcs.sellingCostPerKg
+          }
+        });
+      }
+
+      return profile;
     });
 
-    return jsonResponse(updatedProfile, 200, 'Pricing data updated');
+    return jsonResponse(updatedProfile, 200, 'Pricing data updated and products recalculated');
   } catch (err: any) {
     return errorResponse(err.message || 'Failed to update pricing data', 500);
   }

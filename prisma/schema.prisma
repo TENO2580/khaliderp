@@ -159,9 +159,24 @@ model Product {
   hsnCode      String?
   gstRate      Float    @default(18)
   sellingPrice Float    @default(0)
+  mrp          Float?   @default(0)
+  regionalPrice Float?  @default(0) // Formerly calicutRate
   isActive     Boolean  @default(true)
+  status       String   @default("ACTIVE") // ACTIVE, ARCHIVED
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  // Pricing Engine Fields
+  weightKg         Float?   @default(1)
+  qty              Int      @default(1)
+  prodCostPerKg    Float?
+  totalProdCost    Float    @default(0)
+  marginAmt        Float    @default(0)
+  marginPct        Float    @default(0)
+  sellingCostPerKg Float    @default(0)
+  
+  profileId        String?  // Links to CostingProfile
+  profile          CostingProfile? @relation(fields: [profileId], references: [id])
 
   // Relations
   inventory       Inventory?
@@ -844,6 +859,7 @@ model CostingProfile {
 
   caseVariants CaseVariant[]
   rsCaseVariants RsCaseVariant[]
+  products Product[]
 
   @@map("costing_profiles")
 }
