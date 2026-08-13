@@ -353,7 +353,24 @@ export default function SalesPage() {
           } else if (directKeys.includes(key)) {
             updateBody[key] = key === 'totalAmount' || key === 'outstanding' ? Number(value) || 0 : value;
           } else if (key === 'quantity') {
-            updateBody.quantity = Number(value) || 0;
+            const newQty = Number(value) || 0;
+            updateBody.quantity = newQty;
+            
+            const weightPerUnit = existingNotes.weightPerUnit || 0;
+            const prodCostPerKg = existingNotes.productionCostPerKg || 0;
+            const unitSelling = existingNotes.unitSellingPrice || (order.items?.[0]?.unitPrice || 0);
+
+            if (weightPerUnit > 0) {
+              const totalWeightKg = newQty * weightPerUnit;
+              const totalProdCost = totalWeightKg * prodCostPerKg;
+              const totalSellingCost = newQty * unitSelling;
+              
+              newNotes.totalWeightKg = totalWeightKg;
+              newNotes.productionCost = totalProdCost.toFixed(2);
+              newNotes.sellingCost = totalSellingCost.toFixed(2);
+              updateBody.totalAmount = totalSellingCost;
+              hasNotesChange = true;
+            }
           }
         }
 
@@ -412,13 +429,20 @@ export default function SalesPage() {
       },
     },
     {
-      header: 'Quantity (KG)',
+      header: 'Qty (Units)',
       editableKey: 'quantity',
       inlineEditable: true,
       inputType: 'number',
       cell: (o) => {
         const qty = o.items?.reduce((sum: number, i: any) => sum + i.quantity, 0) || 0;
-        return <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{qty.toFixed(2)}</span>;
+        return <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{qty}</span>;
+      },
+    },
+    {
+      header: 'Quantity (KG)',
+      cell: (o) => {
+        const data = parseNotes(o.notes);
+        return <span className="text-sm text-gray-900 dark:text-gray-100">{data.totalWeightKg ? data.totalWeightKg.toFixed(2) : '-'}</span>;
       },
     },
     {
