@@ -6,7 +6,7 @@ import axios from 'axios';
 import { NotificationCard, Notification } from '@/components/shared/NotificationCard';
 import { Bell, CheckCircle2, Filter, Search } from 'lucide-react';
 
-const fetcher = (url: string) => axios.get(url).then(res => res.data);
+const fetcher = (url: string) => axios.get(url).then(res => res.data.data);
 
 export default function DesktopNotifications() {
   const [filter, setFilter] = useState('ALL'); // ALL, UNREAD
