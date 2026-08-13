@@ -2,11 +2,11 @@
 
 import React, { useState } from 'react';
 import useSWR from 'swr';
-import axios from 'axios';
+import api from '@/lib/api';
 import { NotificationCard, Notification } from '@/components/shared/NotificationCard';
 import { Bell, CheckCircle2, Filter, Search } from 'lucide-react';
 
-const fetcher = (url: string) => axios.get(url).then(res => res.data.data);
+const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
 export default function MobileNotifications() {
   const [filter, setFilter] = useState('ALL'); // ALL, UNREAD
@@ -31,7 +31,7 @@ export default function MobileNotifications() {
     }, false);
     
     try {
-      await axios.patch(`/api/notifications/${id}`, { action: 'read' });
+      await api.patch(`/notifications/${id}`, { action: 'read' });
     } catch (e) {
       mutate();
     }
@@ -45,7 +45,7 @@ export default function MobileNotifications() {
     }, false);
     
     try {
-      await axios.patch('/api/notifications', { action: 'markAllRead' });
+      await api.patch('/notifications', { action: 'markAllRead' });
     } catch (e) {
       mutate();
     }
