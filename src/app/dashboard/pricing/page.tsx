@@ -175,7 +175,7 @@ export default function PricingEnginePage() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Wax Cost (₹)</label>
                   <input
-                    type="number"
+                    type="number" step="any"
                     value={profile.waxCost}
                     onChange={(e) => handleBaseCostChange('waxCost', e.target.value)}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
@@ -184,7 +184,7 @@ export default function PricingEnginePage() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Other Materials (₹)</label>
                   <input
-                    type="number"
+                    type="number" step="any"
                     value={profile.otherMaterials}
                     onChange={(e) => handleBaseCostChange('otherMaterials', e.target.value)}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
@@ -193,7 +193,7 @@ export default function PricingEnginePage() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Labour Cost (₹)</label>
                   <input
-                    type="number"
+                    type="number" step="any"
                     value={profile.labourCost}
                     onChange={(e) => handleBaseCostChange('labourCost', e.target.value)}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
@@ -202,7 +202,7 @@ export default function PricingEnginePage() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Electricity Cost (₹)</label>
                   <input
-                    type="number"
+                    type="number" step="any"
                     value={profile.electricityCost}
                     onChange={(e) => handleBaseCostChange('electricityCost', e.target.value)}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
@@ -211,7 +211,7 @@ export default function PricingEnginePage() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Energy (Gas/Wood) (₹)</label>
                   <input
-                    type="number"
+                    type="number" step="any"
                     value={profile.energyCost}
                     onChange={(e) => handleBaseCostChange('energyCost', e.target.value)}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
@@ -220,7 +220,7 @@ export default function PricingEnginePage() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Transport Cost (₹)</label>
                   <input
-                    type="number"
+                    type="number" step="any"
                     value={profile.transportCost}
                     onChange={(e) => handleBaseCostChange('transportCost', e.target.value)}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
@@ -229,7 +229,7 @@ export default function PricingEnginePage() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Packaging Overhead (₹/KG)</label>
                   <input
-                    type="number"
+                    type="number" step="any"
                     value={profile.packagingOverhead}
                     onChange={(e) => handleBaseCostChange('packagingOverhead', e.target.value)}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
@@ -246,7 +246,7 @@ export default function PricingEnginePage() {
                   <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Selling Price per KG</span>
                   <div className="w-32">
                     <input
-                      type="number"
+                      type="number" step="any"
                       value={profile.sellingPrice}
                       onChange={(e) => handleBaseCostChange('sellingPrice', e.target.value)}
                       className="w-full text-right font-bold rounded-xl border border-gray-200 p-1.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
@@ -318,7 +318,7 @@ export default function PricingEnginePage() {
                   {profile.caseVariants?.map((variant: any, idx: number) => (
                     <td key={idx} className="px-4 py-3">
                       <input 
-                        type="number" 
+                        type="number" step="any" 
                         value={variant.weightKg} 
                         onChange={(e) => handleVariantChange(idx, 'weightKg', e.target.value)}
                         className="w-full text-center rounded border border-gray-200 p-1 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
@@ -331,7 +331,7 @@ export default function PricingEnginePage() {
                   {profile.caseVariants?.map((variant: any, idx: number) => (
                     <td key={idx} className="px-4 py-3">
                       <input 
-                        type="number" 
+                        type="number" step="any" 
                         value={variant.qty ?? 1} 
                         onChange={(e) => handleVariantChange(idx, 'qty', e.target.value)}
                         className="w-full text-center rounded border border-gray-200 p-1 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
@@ -355,7 +355,7 @@ export default function PricingEnginePage() {
                   {profile.caseVariants?.map((variant: any, idx: number) => (
                     <td key={idx} className="px-4 py-3">
                       <input 
-                        type="number" 
+                        type="number" step="any" 
                         value={variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined ? variant.prodCostPerKg : ''} 
                         onChange={(e) => handleVariantChange(idx, 'prodCostPerKg', e.target.value)}
                         placeholder={totalVariantCostPerKg.toFixed(2)}
@@ -381,7 +381,7 @@ export default function PricingEnginePage() {
                   {profile.caseVariants?.map((variant: any, idx: number) => (
                     <td key={idx} className="px-4 py-3">
                        <input 
-                        type="number" 
+                        type="number" step="any" 
                         value={variant.sellingPrice} 
                         onChange={(e) => handleVariantChange(idx, 'sellingPrice', e.target.value)}
                         className="w-full text-center font-bold text-green-600 dark:text-green-400 rounded border border-gray-200 p-1 text-sm dark:border-gray-800 dark:bg-gray-950"
@@ -461,7 +461,7 @@ export default function PricingEnginePage() {
                     {profile.caseVariants?.map((variant: any, idx: number) => (
                       <td key={idx} className="px-4 py-3">
                         <input 
-                          type="number" 
+                          type="number" step="any" 
                           value={variant.weightKg} 
                           onChange={(e) => handleVariantChange(idx, 'weightKg', e.target.value)}
                           className="w-full text-center rounded border border-gray-200 p-1 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
@@ -474,7 +474,7 @@ export default function PricingEnginePage() {
                     {profile.caseVariants?.map((variant: any, idx: number) => (
                       <td key={idx} className="px-4 py-3">
                         <input 
-                          type="number" 
+                          type="number" step="any" 
                           value={variant.qty ?? 1} 
                           onChange={(e) => handleVariantChange(idx, 'qty', e.target.value)}
                           className="w-full text-center rounded border border-gray-200 p-1 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
@@ -498,7 +498,7 @@ export default function PricingEnginePage() {
                     {profile.caseVariants?.map((variant: any, idx: number) => (
                       <td key={idx} className="px-4 py-3">
                         <input 
-                          type="number" 
+                          type="number" step="any" 
                           value={variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined ? variant.prodCostPerKg : ''} 
                           onChange={(e) => handleVariantChange(idx, 'prodCostPerKg', e.target.value)}
                           placeholder={totalVariantCostPerKg.toFixed(2)}
@@ -572,7 +572,7 @@ export default function PricingEnginePage() {
                     {profile.caseVariants?.map((variant: any, idx: number) => (
                       <td key={idx} className="px-4 py-3">
                         <input 
-                          type="number" 
+                          type="number" step="any" 
                           value={variant.mrp || ''} 
                           onChange={(e) => handleVariantChange(idx, 'mrp', e.target.value)}
                           className="w-full text-center font-bold text-blue-700 dark:text-blue-400 rounded-lg border border-blue-200 dark:border-blue-800 bg-white dark:bg-gray-950 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all shadow-sm"
@@ -586,7 +586,7 @@ export default function PricingEnginePage() {
                     {profile.caseVariants?.map((variant: any, idx: number) => (
                       <td key={idx} className="px-4 py-3">
                         <input 
-                          type="number" 
+                          type="number" step="any" 
                           value={variant.calicutRate || ''} 
                           onChange={(e) => handleVariantChange(idx, 'calicutRate', e.target.value)}
                           className="w-full text-center font-bold text-teal-700 dark:text-teal-400 rounded-lg border border-teal-200 dark:border-teal-800 bg-white dark:bg-gray-950 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500/50 transition-all shadow-sm"
