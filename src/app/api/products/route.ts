@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
       data: {
         name: body.name,
         category: body.category || null,
-        sku: body.sku || null,
+        sku: body.sku || `SKU-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         description: body.description || null,
         status: body.status || 'ACTIVE',
         weightKg: Number(body.weightKg) || 0,
