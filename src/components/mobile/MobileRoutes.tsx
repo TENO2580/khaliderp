@@ -79,23 +79,21 @@ export default function MobileRoutes() {
 
     return (
       <div className="space-y-6 pb-20">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-start sm:items-center gap-3 min-w-0 pr-2">
-            <button 
-              onClick={() => setSelectedRoute(null)}
-              className="p-2 mt-1 sm:mt-0 shrink-0 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            </button>
-            <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 truncate">
-                <MapPin className="w-6 h-6 text-blue-500 shrink-0" />
-                <span className="truncate">Route: {selectedRoute}</span>
-              </h1>
-              <p className="text-sm text-gray-500 mt-1 line-clamp-1">Field Observation & Route Sales Tracking</p>
-            </div>
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <div className="min-w-0 flex-1 pr-2">
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2 truncate">
+              <button 
+                onClick={() => setSelectedRoute(null)}
+                className="hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors mr-1"
+              >
+                <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              </button>
+              <MapPin className="w-5 h-5 text-blue-500 shrink-0" />
+              <span className="truncate">{selectedRoute}</span>
+            </h1>
+            <p className="text-xs text-gray-500 mt-1 line-clamp-1">Manage field agent routes and stop order</p>
           </div>
-          <div className="flex justify-end w-full sm:w-auto shrink-0 mb-2 sm:mb-0">
+          <div className="flex shrink-0">
             <button
               onClick={toggleViewMode}
               className="rounded-xl bg-white p-2 text-gray-600 shadow-sm border border-gray-200 active:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:active:bg-gray-800"

@@ -302,12 +302,12 @@ export default function MobileCustomers() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="min-w-0 pr-2">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white truncate">Customer CRM</h1>
-          <p className="text-sm text-gray-500 line-clamp-1">Manage distributors, wholesalers, retailers & leads</p>
+      <div className="flex items-center justify-between gap-3 mb-2">
+        <div className="min-w-0 flex-1 pr-2">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate">Customer CRM</h1>
+          <p className="text-xs text-gray-500 line-clamp-1">Manage retailers, wholesalers, and field routes</p>
         </div>
-        <div className="flex justify-end shrink-0 mb-4 sm:mb-0">
+        <div className="flex shrink-0">
           <button
             onClick={toggleViewMode}
             className="rounded-xl bg-white p-2 text-gray-600 shadow-sm border border-gray-200 active:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:active:bg-gray-800"

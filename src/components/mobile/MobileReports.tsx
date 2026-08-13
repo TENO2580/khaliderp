@@ -391,10 +391,10 @@ export default function MobileReports() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="min-w-0 pr-2">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white truncate">Reports & Advanced Analytics</h1>
-          <p className="text-sm text-gray-500 line-clamp-1">Comprehensive business reports powered by your live Supabase data</p>
+      <div className="flex items-center justify-between gap-3 mb-2">
+        <div className="min-w-0 flex-1 pr-2">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate">Reports & Analytics</h1>
+          <p className="text-xs text-gray-500 line-clamp-1">Financial performance and custom exports</p>
         </div>
 
         <button

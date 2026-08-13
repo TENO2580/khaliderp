@@ -13,7 +13,7 @@ export default function MobilePricing() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [search, setSearch] = useState('');
-  
+
   // Create Product Modal State
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newProduct, setNewProduct] = useState({
@@ -38,7 +38,7 @@ export default function MobilePricing() {
         api.get('/pricing'),
         api.get('/products?limit=100') // Fetching all for now
       ]);
-      
+
       setProfile(profileRes.data.data);
       setProducts(productsRes.data.data.products);
     } catch (error) {
@@ -96,12 +96,12 @@ export default function MobilePricing() {
     );
   }
 
-  const totalCostPerKg = 
-    Number(profile.waxCost || 0) + 
-    Number(profile.otherMaterials || 0) + 
-    Number(profile.labourCost || 0) + 
-    Number(profile.electricityCost || 0) + 
-    Number(profile.energyCost || 0) + 
+  const totalCostPerKg =
+    Number(profile.waxCost || 0) +
+    Number(profile.otherMaterials || 0) +
+    Number(profile.labourCost || 0) +
+    Number(profile.electricityCost || 0) +
+    Number(profile.energyCost || 0) +
     Number(profile.transportCost || 0);
 
   const totalVariantCostPerKg = totalCostPerKg + Number(profile.packagingOverhead || 0);
@@ -112,17 +112,17 @@ export default function MobilePricing() {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      
+
       {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Unit Economics & Pricing Engine</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage global 1 KG costs and product-specific economics</p>
+      <div className="flex items-center justify-between gap-3 mb-2 px-2">
+        <div className="min-w-0 flex-1 pr-2">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate">Unit Economics & Pricing</h1>
+          <p className="text-xs text-gray-500 line-clamp-1">Manage global 1 KG costs and product pricing</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-        
+
         {/* Left Column: Global Costing Profile & Live Stock */}
         <div className="xl:col-span-1 space-y-6">
           <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900 shadow-sm">
@@ -140,7 +140,7 @@ export default function MobilePricing() {
                 <Save className="h-4 w-4" />
               </button>
             </div>
-            
+
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -185,9 +185,9 @@ export default function MobilePricing() {
               </div>
             </div>
           </div>
-          
+
           <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-indigo-50 to-blue-50 p-6 dark:border-gray-800 dark:bg-gradient-to-br dark:from-gray-900 dark:to-indigo-950/20 shadow-sm">
-             <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <Battery className="h-5 w-5 text-indigo-500" />
               Live Stock Level Summary
             </h2>
@@ -227,7 +227,7 @@ export default function MobilePricing() {
                 </button>
               </div>
             </div>
-            
+
             <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
               <table className="w-full text-left text-sm whitespace-nowrap">
                 <thead className="bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
@@ -295,12 +295,12 @@ export default function MobilePricing() {
             <form onSubmit={handleCreateProduct} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Product Name *</label>
-                <input required type="text" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950" />
+                <input required type="text" value={newProduct.name} onChange={e => setNewProduct({ ...newProduct, name: e.target.value })} className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Category</label>
-                  <select value={newProduct.category} onChange={e => setNewProduct({...newProduct, category: e.target.value})} className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950">
+                  <select value={newProduct.category} onChange={e => setNewProduct({ ...newProduct, category: e.target.value })} className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950">
                     <option value="CANDLES">CANDLES</option>
                     <option value="RS_CASE">RS_CASE</option>
                     <option value="RAW_MATERIAL">RAW_MATERIAL</option>
@@ -309,15 +309,15 @@ export default function MobilePricing() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Selling Price (₹) *</label>
-                  <input required type="number" step="any" value={newProduct.sellingPrice || ''} onChange={e => setNewProduct({...newProduct, sellingPrice: Number(e.target.value)})} className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950" />
+                  <input required type="number" step="any" value={newProduct.sellingPrice || ''} onChange={e => setNewProduct({ ...newProduct, sellingPrice: Number(e.target.value) })} className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Unit Weight (KG) *</label>
-                  <input required type="number" step="any" value={newProduct.weightKg || ''} onChange={e => setNewProduct({...newProduct, weightKg: Number(e.target.value)})} className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950" />
+                  <input required type="number" step="any" value={newProduct.weightKg || ''} onChange={e => setNewProduct({ ...newProduct, weightKg: Number(e.target.value) })} className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Quantity in Case *</label>
-                  <input required type="number" step="any" value={newProduct.qty || ''} onChange={e => setNewProduct({...newProduct, qty: Number(e.target.value)})} className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950" />
+                  <input required type="number" step="any" value={newProduct.qty || ''} onChange={e => setNewProduct({ ...newProduct, qty: Number(e.target.value) })} className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950" />
                 </div>
               </div>
               <div className="pt-4 flex justify-end gap-3">
