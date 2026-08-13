@@ -693,6 +693,27 @@ export default function SalesPage() {
                 </div>
 
                 <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Total Weight (KG)</label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={editFormData.totalWeightKg ? editFormData.totalWeightKg.toFixed(2) : '0.00'}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-gray-50 text-gray-900 font-semibold dark:border-gray-800 dark:bg-gray-900 dark:text-white cursor-not-allowed"
+                  />
+                  <p className="text-[10px] text-gray-500 mt-1">Auto-calculated: Qty × {editFormData.weightPerUnit} KG/Unit</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Unit Production Cost (₹)</label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={editFormData.productionCostPerKg ? editFormData.productionCostPerKg.toFixed(2) : '0.00'}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-gray-50 text-gray-900 font-semibold dark:border-gray-800 dark:bg-gray-900 dark:text-white cursor-not-allowed"
+                  />
+                  <p className="text-[10px] text-gray-500 mt-1">From Product Pricing Engine</p>
+                </div>
+
+                <div>
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Total Production Cost (₹)</label>
                   <input
                     type="text"
