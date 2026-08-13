@@ -409,17 +409,17 @@ export default function PricingEnginePage() {
         {/* COMPONENT 3: Regional Pricing Engine (Styled exactly like screenshot) */}
         <div className="lg:col-span-3 mt-8">
           <div className="overflow-x-auto shadow-md">
-            <table className="w-full text-center text-sm text-black border-collapse border border-black bg-white">
+            <table className="w-full text-center text-[15px] font-['Arial',sans-serif] text-black border-collapse border border-black bg-white">
               <thead>
                 <tr>
-                  <th colSpan={profile.caseVariants?.length ? profile.caseVariants.length + 1 : 5} className="bg-gradient-to-b from-[#2b4c7e] to-[#1e3a5f] text-white py-2 text-lg font-bold border border-black shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
+                  <th colSpan={profile.caseVariants?.length ? profile.caseVariants.length + 1 : 5} className="bg-[#1f3864] text-white py-3 text-[18px] font-bold border border-black">
                     Item Unit Economics
                   </th>
                 </tr>
-                <tr className="bg-gradient-to-b from-[#f8f9fa] to-[#e5e7eb]">
-                  <th className="px-2 py-2 font-bold border border-black text-center text-black">Metric</th>
+                <tr className="bg-gradient-to-b from-[#f2f2f2] to-[#d9d9d9]">
+                  <th className="px-4 py-3 font-bold border border-black text-center text-black">Metric</th>
                   {profile.caseVariants?.map((variant: any, idx: number) => (
-                    <th key={idx} className="px-2 py-2 font-bold uppercase border border-black text-center text-black">
+                    <th key={idx} className="px-4 py-3 font-bold uppercase border border-black text-center text-black">
                       {variant.name}
                     </th>
                   ))}
