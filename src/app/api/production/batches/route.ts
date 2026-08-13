@@ -33,14 +33,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { productId, producedQty, sellingPrice, notes, purchaseDate, waxInitialQty, waxRate, waxStock, batchNumber: providedBatchNumber } = body;
 
-    // Validation: Check if the most recent batch is fully consumed
-    const latestBatch = await prisma.batch.findFirst({
-      orderBy: { createdAt: 'desc' },
-    });
-
-    if (latestBatch && latestBatch.remainingQty > 0) {
-      return errorResponse(`Batch ${latestBatch.batchNumber} still has ${latestBatch.remainingQty} KG remaining. Complete this batch before creating the next batch.`, 400);
-    }
+    // Validation removed: User requested to allow creating a new batch even if the previous batch has remaining stock.
 
     const count = await prisma.batch.count();
     const batchNumber = providedBatchNumber || `BATCH-${String(count).padStart(3, '0')}`;
