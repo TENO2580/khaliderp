@@ -671,7 +671,6 @@ export default function SalesPage() {
                   />
                   <p className="text-[10px] text-gray-500 mt-1">Auto-calculated: {editFormData.totalWeightKg.toFixed(2)} KG × ₹{editFormData.productionCostPerKg.toFixed(2)}/KG</p>
                 </div>
-                </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Unit Selling Price (₹)</label>
                   <input
