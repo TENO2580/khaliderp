@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Scale, Package, Battery, Save, Search, Plus, FileSpreadsheet, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import api from '@/lib/api';
 
 export default function PricingEngine() {
   const [profile, setProfile] = useState<any>(null);
@@ -33,15 +34,12 @@ export default function PricingEngine() {
     setIsLoading(true);
     try {
       const [profileRes, productsRes] = await Promise.all([
-        fetch('/api/pricing'),
-        fetch('/api/products?limit=100') // Fetching all for now
+        api.get('/pricing'),
+        api.get('/products?limit=100') // Fetching all for now
       ]);
       
-      const profileData = await profileRes.json();
-      const productsData = await productsRes.json();
-      
-      if (profileRes.ok) setProfile(profileData.data);
-      if (productsRes.ok) setProducts(productsData.data.products);
+      setProfile(profileRes.data.data);
+      setProducts(productsRes.data.data.products);
     } catch (error) {
       toast.error('Failed to fetch pricing data');
     } finally {
@@ -56,13 +54,7 @@ export default function PricingEngine() {
   const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
-      const res = await fetch('/api/pricing', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(profile),
-      });
-
-      if (!res.ok) throw new Error('Failed to save');
+      await api.put('/pricing', profile);
       toast.success('Global pricing updated & products recalculated!');
       fetchData(); // Refresh everything
     } catch (error) {
@@ -75,13 +67,7 @@ export default function PricingEngine() {
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newProduct),
-      });
-
-      if (!res.ok) throw new Error('Failed to create product');
+      await api.post('/products', newProduct);
       toast.success('Product created successfully!');
       setShowCreateModal(false);
       fetchData();
@@ -93,8 +79,7 @@ export default function PricingEngine() {
   const handleDeleteProduct = async (id: string) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
     try {
-      const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to delete');
+      await api.delete(`/products/${id}`);
       toast.success('Product deleted');
       setProducts(products.filter(p => p.id !== id));
     } catch (error) {

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Save, Package, TrendingUp, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { calculateProductPricing } from '@/lib/pricing-engine';
+import api from '@/lib/api';
 
 export default function ProductPricingDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -18,21 +19,15 @@ export default function ProductPricingDetail({ params }: { params: Promise<{ id:
     const fetchData = async () => {
       try {
         const [prodRes, profRes] = await Promise.all([
-          fetch(`/api/products/${id}`),
-          fetch('/api/pricing')
+          api.get(`/products/${id}`),
+          api.get('/pricing')
         ]);
         
-        if (prodRes.ok && profRes.ok) {
-          const prodData = await prodRes.json();
-          const profData = await profRes.json();
-          setProduct(prodData.data);
-          setGlobalProfile(profData.data);
-        } else {
-          toast.error('Failed to load data');
-          router.push('/dashboard/pricing');
-        }
+        setProduct(prodRes.data.data);
+        setGlobalProfile(profRes.data.data);
       } catch (e) {
-        toast.error('Error fetching data');
+        toast.error('Failed to load data');
+        router.push('/dashboard/pricing');
       } finally {
         setIsLoading(false);
       }
@@ -66,13 +61,7 @@ export default function ProductPricingDetail({ params }: { params: Promise<{ id:
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const res = await fetch(`/api/products/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(product),
-      });
-
-      if (!res.ok) throw new Error('Failed to save');
+      await api.put(`/products/${id}`, product);
       toast.success('Product updated successfully!');
       router.push('/dashboard/pricing');
     } catch (e) {
