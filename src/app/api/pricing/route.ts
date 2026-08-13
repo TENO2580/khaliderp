@@ -18,9 +18,10 @@ const DEFAULT_PRICING = {
   sellingPrice: 195.00,
   caseVariants: {
     create: [
-      { name: "2 RS CASE", weightKg: 0.72, sellingPrice: 228.00 },
-      { name: "5 RS CASE", weightKg: 2.16, sellingPrice: 585.00 },
-      { name: "10 RS CASE", weightKg: 4.32, sellingPrice: 1170.00 },
+      { name: "3 CANDLE PACK", weightKg: 0.14, sellingPrice: 39.00, mrp: 60, calicutRate: 35 },
+      { name: "STAND CANDLE", weightKg: 0.16, sellingPrice: 44.00, mrp: 60, calicutRate: 39 },
+      { name: "TORCH SMALL", weightKg: 0.165, sellingPrice: 44.00, mrp: 70, calicutRate: 42 },
+      { name: "TORCH BIG", weightKg: 0.215, sellingPrice: 56.00, mrp: 100, calicutRate: 54 },
     ]
   }
 };
@@ -86,7 +87,9 @@ export async function PUT(req: NextRequest) {
                 name: variant.name,
                 weightKg: Number(variant.weightKg),
                 prodCostPerKg: variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : null,
-                sellingPrice: Number(variant.sellingPrice)
+                sellingPrice: Number(variant.sellingPrice),
+                mrp: variant.mrp ? Number(variant.mrp) : 0,
+                calicutRate: variant.calicutRate ? Number(variant.calicutRate) : 0,
               }
             });
           } else {
@@ -96,7 +99,9 @@ export async function PUT(req: NextRequest) {
                 name: variant.name,
                 weightKg: Number(variant.weightKg),
                 prodCostPerKg: variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : null,
-                sellingPrice: Number(variant.sellingPrice)
+                sellingPrice: Number(variant.sellingPrice),
+                mrp: variant.mrp ? Number(variant.mrp) : 0,
+                calicutRate: variant.calicutRate ? Number(variant.calicutRate) : 0,
               }
             });
           }

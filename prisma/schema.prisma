@@ -854,6 +854,8 @@ model CaseVariant {
   weightKg      Float // e.g., 0.72
   prodCostPerKg Float? // Optional override for Prod Cost/KG
   sellingPrice  Float // e.g., 228.00
+  mrp           Float? @default(0)
+  calicutRate   Float? @default(0)
 
   profile CostingProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
