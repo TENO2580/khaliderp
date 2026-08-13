@@ -406,8 +406,6 @@ export default function PricingEnginePage() {
           </div>
         </div>
 
-        {/* COMPONENT 3: Regional Pricing Engine */}
-        <div className="lg:col-span-3 space-y-6 mt-4">
         {/* COMPONENT 3: Regional Pricing Engine (Styled exactly like screenshot) */}
         <div className="lg:col-span-3 mt-8">
           <div className="overflow-x-auto shadow-md">
