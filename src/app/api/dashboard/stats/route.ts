@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
         (SELECT COUNT(*) FROM "customers") as "totalCustomers",
         (SELECT COUNT(*) FROM "customers" WHERE "status" = 'ACTIVE') as "activeCustomers",
         (SELECT COALESCE(SUM("outstanding"), 0) FROM "sales_orders" WHERE "outstanding" > 0) as "outstandingCredit",
-        (SELECT COALESCE(SUM("currentStock"), 0) FROM "raw_materials" WHERE "category" = 'WAX') as "waxStock",
+        (SELECT COALESCE(SUM("waxInitialQty" - "producedQty"), 0) FROM "batches") as "waxStock",
         (SELECT COALESCE(SUM("currentStock"), 0) FROM "inventory") as "finishedGoodsStock",
         (SELECT COALESCE(SUM("value"), 0) FROM "inventory") as "inventoryValue",
         (SELECT COALESCE(SUM("quantityProduced"), 0) FROM "productions" WHERE "date" >= ${todayStart} AND "date" < ${todayEnd}) as "productionToday",
