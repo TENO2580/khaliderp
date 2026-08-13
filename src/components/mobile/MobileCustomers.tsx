@@ -12,6 +12,7 @@ import api from '@/lib/api';
 import { toast } from 'sonner';
 import useSWR from 'swr';
 import { useViewMode } from '@/hooks/useViewMode';
+import MobileFilterBar from './MobileFilterBar';
 
 const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
@@ -305,13 +306,34 @@ export default function MobileCustomers() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Customer CRM</h1>
           <p className="text-sm text-gray-500">Manage distributors, wholesalers, retailers & leads</p>
         </div>
-        <button
-          onClick={toggleViewMode}
-          className="rounded-xl bg-white p-2 text-gray-600 shadow-sm border border-gray-200 active:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:active:bg-gray-800"
-        >
-          {viewMode === 'card' ? <Table className="h-5 w-5" /> : <LayoutGrid className="h-5 w-5" />}
-        </button>
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={toggleViewMode}
+            className="rounded-xl bg-white p-2 text-gray-600 shadow-sm border border-gray-200 active:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:active:bg-gray-800"
+          >
+            {viewMode === 'card' ? <Table className="h-5 w-5" /> : <LayoutGrid className="h-5 w-5" />}
+          </button>
+        </div>
       </div>
+
+      {viewMode === 'card' && (
+        <MobileFilterBar
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search customers..."
+          startDate={startDate}
+          onStartDateChange={setStartDate}
+          endDate={endDate}
+          onEndDateChange={setEndDate}
+          statusFilter={statusFilter}
+          onStatusChange={setStatusFilter}
+          statusOptions={[
+            { label: 'Active', value: 'ACTIVE' },
+            { label: 'Inactive', value: 'INACTIVE' },
+            { label: 'Lead', value: 'LEAD' }
+          ]}
+        />
+      )}
 
       {viewMode === 'table' ? (
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">

@@ -8,6 +8,7 @@ import api from '@/lib/api';
 import { toast } from 'sonner';
 import useSWR from 'swr';
 import { useViewMode } from '@/hooks/useViewMode';
+import MobileFilterBar from './MobileFilterBar';
 
 const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
@@ -105,7 +106,7 @@ export default function MobileProductionPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
+      <div className="flex justify-end mb-4">
         <button
           onClick={toggleViewMode}
           className="rounded-xl bg-white p-2 text-gray-600 shadow-sm border border-gray-200 active:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:active:bg-gray-800"
@@ -113,6 +114,15 @@ export default function MobileProductionPage() {
           {viewMode === 'card' ? <Table className="h-5 w-5" /> : <LayoutGrid className="h-5 w-5" />}
         </button>
       </div>
+
+      {viewMode === 'card' && (
+        <MobileFilterBar
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search production logs..."
+        />
+      )}
+
       {viewMode === 'table' ? (
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
           <DataTable columns={columns} data={productions} />

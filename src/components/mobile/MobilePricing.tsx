@@ -5,6 +5,7 @@ import { Scale, Package, Battery, Save, Search, Plus, FileSpreadsheet, Edit, Tra
 import { toast } from 'sonner';
 import Link from 'next/link';
 import api from '@/lib/api';
+import MobileFilterBar from './MobileFilterBar';
 
 export default function MobilePricing() {
   const [profile, setProfile] = useState<any>(null);
@@ -211,17 +212,12 @@ export default function MobilePricing() {
                 <Package className="h-5 w-5 text-green-500" />
                 Dynamic Products
               </h2>
-              <div className="flex gap-3">
-                <div className="relative w-64">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search products..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-800 dark:bg-gray-950 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+              <div className="flex gap-3 items-start flex-col sm:flex-row sm:items-center">
+                <MobileFilterBar
+                  search={search}
+                  onSearchChange={setSearch}
+                  searchPlaceholder="Search products..."
+                />
                 <button
                   onClick={() => setShowCreateModal(true)}
                   className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"

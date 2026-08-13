@@ -10,6 +10,7 @@ import api from '@/lib/api';
 import { toast } from 'sonner';
 import useSWR from 'swr';
 import { useViewMode } from '@/hooks/useViewMode';
+import MobileFilterBar from './MobileFilterBar';
 
 const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
@@ -546,13 +547,34 @@ export default function MobileSales() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Sales & Orders</h1>
           <p className="text-sm text-gray-500">Create orders, generate GST invoices, track receivables</p>
         </div>
-        <button
-          onClick={toggleViewMode}
-          className="rounded-xl bg-white p-2 text-gray-600 shadow-sm border border-gray-200 active:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:active:bg-gray-800"
-        >
-          {viewMode === 'card' ? <Table className="h-5 w-5" /> : <LayoutGrid className="h-5 w-5" />}
-        </button>
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={toggleViewMode}
+            className="rounded-xl bg-white p-2 text-gray-600 shadow-sm border border-gray-200 active:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:active:bg-gray-800"
+          >
+            {viewMode === 'card' ? <Table className="h-5 w-5" /> : <LayoutGrid className="h-5 w-5" />}
+          </button>
+        </div>
       </div>
+
+      {viewMode === 'card' && (
+        <MobileFilterBar
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search sales..."
+          startDate={startDate}
+          onStartDateChange={setStartDate}
+          endDate={endDate}
+          onEndDateChange={setEndDate}
+          statusFilter={statusFilter}
+          onStatusChange={setStatusFilter}
+          statusOptions={[
+            { label: 'Pending', value: 'PENDING' },
+            { label: 'Delivered', value: 'DELIVERED' },
+            { label: 'Cancelled', value: 'CANCELLED' }
+          ]}
+        />
+      )}
 
       {/* Mobile Card List instead of DataTable */}
       {viewMode === 'table' ? (

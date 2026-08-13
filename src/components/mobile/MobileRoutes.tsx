@@ -8,6 +8,7 @@ import { MapPin, Users, IndianRupee, ArrowLeft, ChevronRight, Store, Search, Lay
 import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { useViewMode } from '@/hooks/useViewMode';
+import MobileFilterBar from './MobileFilterBar';
 
 const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 const paginationFetcher = (url: string) => api.get(url).then(res => res.data);
@@ -97,20 +98,27 @@ export default function MobileRoutes() {
           </button>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Shops in Route</h2>
-            <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search shops..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-              />
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm mb-4">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl">
+              <Store className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Shops</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{customers.length}</p>
             </div>
           </div>
+        </div>
+
+        {viewMode === 'card' && (
+          <MobileFilterBar
+            search={search}
+            onSearchChange={setSearch}
+            searchPlaceholder="Search customers in route..."
+          />
+        )}
+
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
           <div className="mt-6">
             {viewMode === 'table' ? (
               <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">

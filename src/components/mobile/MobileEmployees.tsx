@@ -9,6 +9,7 @@ import { CalendarCheck, Edit, Trash2, Plus, X, LayoutGrid, Table } from 'lucide-
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { useViewMode } from '@/hooks/useViewMode';
+import MobileFilterBar from './MobileFilterBar';
 
 export default function MobileEmployees() {
   const { viewMode, toggleViewMode } = useViewMode();
@@ -135,7 +136,7 @@ export default function MobileEmployees() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
+      <div className="flex justify-end mb-4">
         <button
           onClick={toggleViewMode}
           className="rounded-xl bg-white p-2 text-gray-600 shadow-sm border border-gray-200 active:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:active:bg-gray-800"
@@ -143,6 +144,14 @@ export default function MobileEmployees() {
           {viewMode === 'card' ? <Table className="h-5 w-5" /> : <LayoutGrid className="h-5 w-5" />}
         </button>
       </div>
+
+      {viewMode === 'card' && (
+        <MobileFilterBar
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search employees..."
+        />
+      )}
 
       {/* Mobile Attendance Stats */}
       {attendanceStats && (

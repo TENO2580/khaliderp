@@ -3,13 +3,15 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ChevronRight, LogOut } from 'lucide-react';
+import { ChevronRight, LogOut, Sun, Moon } from 'lucide-react';
 import { NAV_ITEMS, hasPermission } from '@/lib/constants';
 import { useAuth } from '@/lib/auth';
+import { useTheme } from 'next-themes';
 
 export default function MobileMenu() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
 
   const filteredNavItems = NAV_ITEMS.filter((item) => {
     if (!item.permission || !user) return true;
@@ -52,7 +54,17 @@ export default function MobileMenu() {
         </div>
 
         {/* List Navigation for Settings & Logout */}
-        <div className="mt-8 bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+        <div className="mt-8 bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden divide-y divide-gray-100 dark:divide-gray-800">
+          <button 
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="w-full flex items-center justify-between p-4 active:bg-gray-50 dark:active:bg-gray-800 transition-colors"
+          >
+            <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
+              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              <span className="font-medium">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+            </div>
+          </button>
+          
           <button 
             onClick={handleLogout}
             className="w-full flex items-center justify-between p-4 active:bg-gray-50 dark:active:bg-gray-800 transition-colors"

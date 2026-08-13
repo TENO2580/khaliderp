@@ -8,6 +8,7 @@ import { Search, Plus, Filter, ArrowUpRight, X, Truck, CheckCircle2, LayoutGrid,
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { useViewMode } from '@/hooks/useViewMode';
+import MobileFilterBar from './MobileFilterBar';
 
 export default function MobilePurchase() {
   const { viewMode, toggleViewMode } = useViewMode();
@@ -96,7 +97,7 @@ export default function MobilePurchase() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
+      <div className="flex justify-end mb-4">
         <button
           onClick={toggleViewMode}
           className="rounded-xl bg-white p-2 text-gray-600 shadow-sm border border-gray-200 active:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:active:bg-gray-800"
@@ -104,6 +105,25 @@ export default function MobilePurchase() {
           {viewMode === 'card' ? <Table className="h-5 w-5" /> : <LayoutGrid className="h-5 w-5" />}
         </button>
       </div>
+
+      {viewMode === 'card' && (
+        <MobileFilterBar
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search POs..."
+          startDate={startDate}
+          onStartDateChange={setStartDate}
+          endDate={endDate}
+          onEndDateChange={setEndDate}
+          statusFilter={statusFilter}
+          onStatusChange={setStatusFilter}
+          statusOptions={[
+            { label: 'Pending', value: 'PENDING' },
+            { label: 'Delivered', value: 'DELIVERED' },
+            { label: 'Cancelled', value: 'CANCELLED' }
+          ]}
+        />
+      )}
 
       {viewMode === 'table' ? (
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
