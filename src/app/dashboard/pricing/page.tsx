@@ -57,6 +57,15 @@ export default function PricingEnginePage() {
     setProfile({ ...profile, caseVariants: updatedVariants });
   };
 
+  const handleRsVariantChange = (index: number, field: string, value: string) => {
+    const updatedVariants = [...(profile.rsCaseVariants || [])];
+    updatedVariants[index] = {
+      ...updatedVariants[index],
+      [field]: value
+    };
+    setProfile({ ...profile, rsCaseVariants: updatedVariants });
+  };
+
   // Live Stock Data Extraction
   const waxStock = stats?.overview?.waxStock || 0; 
   const finishedGoods = stats?.overview?.finishedGoods || 0;
@@ -628,6 +637,137 @@ export default function PricingEnginePage() {
                       return (
                         <td key={idx} className={`px-4 py-3 text-center font-bold ${marginPct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                           {marginPct.toFixed(2)}%
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {/* COMPONENT 4: RS Case Unit Economics */}
+        <div className="lg:col-span-3 mt-8">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900 shadow-sm overflow-x-auto relative overflow-hidden">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+              <Package className="h-5 w-5 text-indigo-500" />
+              Case Unit Economics (RS Cases)
+            </h2>
+            
+            <div className="border border-gray-200 dark:border-gray-800 overflow-hidden">
+              <table className="w-full text-left text-sm text-gray-700 dark:text-gray-300">
+                <thead className="bg-[#2b4c7e] text-white">
+                  <tr>
+                    <th className="px-4 py-3 font-semibold text-center border-r border-[#1a355b]/30">Metric</th>
+                    {profile.rsCaseVariants?.map((variant: any, idx: number) => (
+                      <th key={idx} className="px-4 py-3 font-semibold text-center border-r border-[#1a355b]/30 last:border-r-0">
+                        <input 
+                          type="text" 
+                          value={variant.name} 
+                          onChange={(e) => handleRsVariantChange(idx, 'name', e.target.value)}
+                          className="w-full bg-transparent text-center font-bold focus:outline-none focus:border-b border-white"
+                        />
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
+                  <tr>
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-800">Weight (KG)</td>
+                    {profile.rsCaseVariants?.map((variant: any, idx: number) => (
+                      <td key={idx} className="px-4 py-3 border-r border-gray-200 dark:border-gray-800 last:border-r-0">
+                        <input 
+                          type="number" step="any"
+                          value={variant.weightKg} 
+                          onChange={(e) => handleRsVariantChange(idx, 'weightKg', e.target.value)}
+                          className="w-full text-right rounded border border-gray-200 p-1 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-800">Prod Cost/KG</td>
+                    {profile.rsCaseVariants?.map((variant: any, idx: number) => (
+                      <td key={idx} className="px-4 py-3 border-r border-gray-200 dark:border-gray-800 last:border-r-0 text-right">
+                        <div className="flex items-center justify-end">
+                          <span className="text-gray-500 mr-1">₹</span>
+                          <input 
+                            type="number" step="any"
+                            value={variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined ? variant.prodCostPerKg : ''} 
+                            onChange={(e) => handleRsVariantChange(idx, 'prodCostPerKg', e.target.value)}
+                            placeholder={totalVariantCostPerKg.toFixed(2)}
+                            className="w-20 text-right rounded border border-gray-200 p-1 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                          />
+                        </div>
+                      </td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-800">Total Prod Cost</td>
+                    {profile.rsCaseVariants?.map((variant: any, idx: number) => {
+                      const effectiveProdCostPerKg = variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : totalVariantCostPerKg;
+                      const totalWeight = Number(variant.weightKg) * Number(variant.qty ?? 1);
+                      return (
+                        <td key={idx} className="px-4 py-3 text-right font-medium text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-800 last:border-r-0">
+                          ₹{(totalWeight * effectiveProdCostPerKg).toFixed(2)}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-800">Selling Price</td>
+                    {profile.rsCaseVariants?.map((variant: any, idx: number) => (
+                      <td key={idx} className="px-4 py-3 border-r border-gray-200 dark:border-gray-800 last:border-r-0">
+                        <div className="flex items-center justify-end">
+                          <span className="text-gray-500 mr-1">₹</span>
+                          <input 
+                            type="number" step="any"
+                            value={variant.sellingPrice} 
+                            onChange={(e) => handleRsVariantChange(idx, 'sellingPrice', e.target.value)}
+                            className="w-20 text-right font-medium rounded border border-gray-200 p-1 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                          />
+                        </div>
+                      </td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-800">Profit Margin (₹)</td>
+                    {profile.rsCaseVariants?.map((variant: any, idx: number) => {
+                      const effectiveProdCostPerKg = variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : totalVariantCostPerKg;
+                      const totalWeight = Number(variant.weightKg) * Number(variant.qty ?? 1);
+                      const totalProdCost = totalWeight * effectiveProdCostPerKg;
+                      const marginAmt = Number(variant.sellingPrice) - totalProdCost;
+                      return (
+                        <td key={idx} className="px-4 py-3 text-right font-medium text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-800 last:border-r-0">
+                          ₹{marginAmt.toFixed(2)}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-800">Profit Margin (%)</td>
+                    {profile.rsCaseVariants?.map((variant: any, idx: number) => {
+                      const effectiveProdCostPerKg = variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : totalVariantCostPerKg;
+                      const totalWeight = Number(variant.weightKg) * Number(variant.qty ?? 1);
+                      const totalProdCost = totalWeight * effectiveProdCostPerKg;
+                      const marginAmt = Number(variant.sellingPrice) - totalProdCost;
+                      const marginPct = Number(variant.sellingPrice) > 0 ? (marginAmt / Number(variant.sellingPrice)) * 100 : 0;
+                      return (
+                        <td key={idx} className="px-4 py-3 text-right font-medium text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-800 last:border-r-0">
+                          {marginPct.toFixed(2)}%
+                        </td>
+                      );
+                    })}
+                  </tr>
+                  <tr className="bg-[#ff0000] text-white">
+                    <td className="px-4 py-3 font-bold border-r border-[#cc0000]">Selling Cost per KG</td>
+                    {profile.rsCaseVariants?.map((variant: any, idx: number) => {
+                      const totalWeight = Number(variant.weightKg) * Number(variant.qty ?? 1);
+                      const sellingCostKg = totalWeight > 0 ? Number(variant.sellingPrice) / totalWeight : 0;
+                      return (
+                        <td key={idx} className="px-4 py-3 text-right font-bold border-r border-[#cc0000] last:border-r-0">
+                          ₹{sellingCostKg.toFixed(2)}
                         </td>
                       );
                     })}

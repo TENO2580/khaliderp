@@ -843,6 +843,7 @@ model CostingProfile {
   updatedAt         DateTime @updatedAt
 
   caseVariants CaseVariant[]
+  rsCaseVariants RsCaseVariant[]
 
   @@map("costing_profiles")
 }
@@ -862,6 +863,23 @@ model CaseVariant {
 
   @@index([profileId])
   @@map("case_variants")
+}
+
+model RsCaseVariant {
+  id            String @id @default(cuid())
+  profileId     String
+  name          String 
+  weightKg      Float 
+  qty           Int?   @default(1) 
+  prodCostPerKg Float? 
+  sellingPrice  Float 
+  mrp           Float? @default(0)
+  calicutRate   Float? @default(0)
+
+  profile CostingProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+  @@map("rs_case_variants")
 }
 
 // ============================================

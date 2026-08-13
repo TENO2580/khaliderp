@@ -23,6 +23,13 @@ const DEFAULT_PRICING = {
       { name: "TORCH SMALL", weightKg: 0.165, qty: 1, sellingPrice: 44.00, mrp: 70, calicutRate: 42 },
       { name: "TORCH BIG", weightKg: 0.215, qty: 1, sellingPrice: 56.00, mrp: 100, calicutRate: 54 },
     ]
+  },
+  rsCaseVariants: {
+    create: [
+      { name: "2 RS CASE", weightKg: 0.72, qty: 1, sellingPrice: 228.00 },
+      { name: "5 RS CASE", weightKg: 2.16, qty: 1, sellingPrice: 585.00 },
+      { name: "10 RS CASE", weightKg: 4.32, qty: 1, sellingPrice: 1170.00 },
+    ]
   }
 };
 
@@ -32,14 +39,20 @@ export async function GET(req: NextRequest) {
 
   try {
     let profile = await prisma.costingProfile.findFirst({
-      include: { caseVariants: { orderBy: { weightKg: 'asc' } } }
+      include: { 
+        caseVariants: { orderBy: { weightKg: 'asc' } },
+        rsCaseVariants: { orderBy: { weightKg: 'asc' } }
+      }
     });
 
     // Seed if none exists
     if (!profile) {
       profile = await prisma.costingProfile.create({
         data: DEFAULT_PRICING,
-        include: { caseVariants: { orderBy: { weightKg: 'asc' } } }
+        include: { 
+          caseVariants: { orderBy: { weightKg: 'asc' } },
+          rsCaseVariants: { orderBy: { weightKg: 'asc' } }
+        }
       });
     }
 
@@ -55,7 +68,7 @@ export async function PUT(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { id, waxCost, otherMaterials, labourCost, electricityCost, energyCost, transportCost, packagingOverhead, sellingPrice, caseVariants } = body;
+    const { id, waxCost, otherMaterials, labourCost, electricityCost, energyCost, transportCost, packagingOverhead, sellingPrice, caseVariants, rsCaseVariants } = body;
 
     if (!id) {
       return errorResponse('Profile ID is required', 400);
@@ -107,12 +120,48 @@ export async function PUT(req: NextRequest) {
               }
             });
           }
+          }
+        }
+      }
+
+      if (rsCaseVariants && Array.isArray(rsCaseVariants)) {
+        for (const variant of rsCaseVariants) {
+          if (variant.id) {
+            await tx.rsCaseVariant.update({
+              where: { id: variant.id },
+              data: {
+                name: variant.name,
+                weightKg: Number(variant.weightKg),
+                qty: variant.qty ? Number(variant.qty) : 1,
+                prodCostPerKg: variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : null,
+                sellingPrice: Number(variant.sellingPrice),
+                mrp: variant.mrp ? Number(variant.mrp) : 0,
+                calicutRate: variant.calicutRate ? Number(variant.calicutRate) : 0,
+              }
+            });
+          } else {
+            await tx.rsCaseVariant.create({
+              data: {
+                profileId: id,
+                name: variant.name,
+                weightKg: Number(variant.weightKg),
+                qty: variant.qty ? Number(variant.qty) : 1,
+                prodCostPerKg: variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : null,
+                sellingPrice: Number(variant.sellingPrice),
+                mrp: variant.mrp ? Number(variant.mrp) : 0,
+                calicutRate: variant.calicutRate ? Number(variant.calicutRate) : 0,
+              }
+            });
+          }
         }
       }
 
       return await tx.costingProfile.findUnique({
         where: { id },
-        include: { caseVariants: { orderBy: { weightKg: 'asc' } } }
+        include: { 
+          caseVariants: { orderBy: { weightKg: 'asc' } },
+          rsCaseVariants: { orderBy: { weightKg: 'asc' } }
+        }
       });
     });
 
