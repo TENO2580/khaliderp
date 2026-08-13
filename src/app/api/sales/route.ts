@@ -136,7 +136,10 @@ export async function POST(req: NextRequest) {
         item.productId = defaultProduct.id;
       }
       
-      let requiredQty = Number(item.quantity);
+      let requiredUnits = Number(item.quantity);
+      const weightPerUnit = Number(notes?.weightPerUnit) > 0 ? Number(notes.weightPerUnit) : 1;
+      let requiredKg = requiredUnits * weightPerUnit;
+      
       // Allow batches with matching productId or legacy batches with null productId
       let productBatches = availableBatches.filter(b => 
         (b.productId === item.productId || b.productId === null) && b.remainingQty > 0
@@ -148,19 +151,23 @@ export async function POST(req: NextRequest) {
       }
       
       const itemDiscount = Number(item.discount || 0);
-      const discountPerKg = itemDiscount / (requiredQty || 1);
+      const discountPerUnit = itemDiscount / (requiredUnits || 1);
       
-      if (productBatches.length === 0 && requiredQty > 0) {
+      if (productBatches.length === 0 && requiredKg > 0) {
         throw new Error(`Insufficient stock in batches for product ID ${item.productId}`);
       }
 
       for (const batch of productBatches) {
-        if (requiredQty <= 0) break;
+        if (requiredKg <= 0) break;
         
-        const takeQty = Math.min(requiredQty, batch.remainingQty);
-        requiredQty -= takeQty;
-        batch.remainingQty -= takeQty;
-        batch.soldQty += takeQty;
+        const takeKg = Math.min(requiredKg, batch.remainingQty);
+        const takeUnits = Number((takeKg / weightPerUnit).toFixed(4));
+        
+        requiredKg -= takeKg;
+        requiredUnits -= takeUnits;
+        
+        batch.remainingQty -= takeKg;
+        batch.soldQty += takeKg;
         
         let newStatus = batch.status;
         if (batch.remainingQty <= 0) {
@@ -176,8 +183,8 @@ export async function POST(req: NextRequest) {
           status: newStatus
         });
 
-        const splitDiscount = discountPerKg * takeQty;
-        const itemSubtotal = (takeQty * Number(item.unitPrice)) - splitDiscount;
+        const splitDiscount = discountPerUnit * takeUnits;
+        const itemSubtotal = (takeUnits * Number(item.unitPrice)) - splitDiscount;
         subtotal += itemSubtotal;
         
         const gstRate = Number(item.gstRate || 18);
@@ -186,7 +193,7 @@ export async function POST(req: NextRequest) {
         orderItemsData.push({
           productId: item.productId,
           batchId: batch.id,
-          quantity: takeQty,
+          quantity: takeUnits,
           unitPrice: Number(item.unitPrice),
           discount: splitDiscount,
           gstRate,
@@ -195,8 +202,8 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      if (requiredQty > 0) {
-         throw new Error(`Insufficient stock in batches for product ID ${item.productId}. Short by ${requiredQty} KG.`);
+      if (requiredKg > 0.001) { // Floating point precision check
+         throw new Error(`Insufficient stock in batches for product ID ${item.productId}. Short by ${requiredKg.toFixed(2)} KG.`);
       }
     }
 

@@ -42,23 +42,30 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       // Handle Cancelled status
       if (isNewlyCancelled) {
         // Revert all wax to batches
+        const orderNotes = typeof existingOrder.notes === 'string' ? JSON.parse(existingOrder.notes) : (existingOrder.notes || {});
+        const weightPerUnit = Number(orderNotes.weightPerUnit) > 0 ? Number(orderNotes.weightPerUnit) : 1;
+
         for (const item of existingOrder.items) {
           if (!item.batchId) continue;
           const batch = await tx.batch.findUnique({ where: { id: item.batchId } });
           if (batch) {
+             const revertKg = item.quantity * weightPerUnit;
              await tx.batch.update({
                where: { id: batch.id },
                data: {
-                 remainingQty: batch.remainingQty + item.quantity,
-                 soldQty: Math.max(0, batch.soldQty - item.quantity),
+                 remainingQty: batch.remainingQty + revertKg,
+                 soldQty: Math.max(0, batch.soldQty - revertKg),
                  status: batch.status === 'FULLY_SOLD' ? 'PARTIALLY_SOLD' : batch.status
                }
              });
           }
         }
-      } 
+      }
       // If quantity changes, re-allocate using FIFO
       else if (quantity !== undefined && status !== 'CANCELLED') {
+        const orderNotes = notes || (typeof existingOrder.notes === 'string' ? JSON.parse(existingOrder.notes) : (existingOrder.notes || {}));
+        const weightPerUnit = Number(orderNotes.weightPerUnit) > 0 ? Number(orderNotes.weightPerUnit) : 1;
+        
         const oldTotalQty = existingOrder.items.reduce((acc, item) => acc + item.quantity, 0);
         let newQty = Number(quantity);
 
@@ -68,11 +75,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             if (!item.batchId) continue;
             const batch = await tx.batch.findUnique({ where: { id: item.batchId } });
             if (batch) {
+               const revertKg = item.quantity * weightPerUnit;
                await tx.batch.update({
                  where: { id: batch.id },
                  data: {
-                   remainingQty: batch.remainingQty + item.quantity,
-                   soldQty: Math.max(0, batch.soldQty - item.quantity),
+                   remainingQty: batch.remainingQty + revertKg,
+                   soldQty: Math.max(0, batch.soldQty - revertKg),
                    status: batch.status === 'FULLY_SOLD' ? 'PARTIALLY_SOLD' : batch.status
                  }
                });
@@ -84,7 +92,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
           // 3. Re-allocate using strict FIFO
           const productId = existingOrder.items[0].productId;
-          let requiredQty = newQty;
+          let requiredUnits = newQty;
+          let requiredKg = requiredUnits * weightPerUnit;
           
           const availableBatches = await tx.batch.findMany({
             where: { remainingQty: { gt: 0 } },
@@ -95,7 +104,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             (b.productId === productId || b.productId === null) && b.remainingQty > 0
           );
 
-          if (productBatches.length === 0 && requiredQty > 0) {
+          if (productBatches.length === 0 && requiredKg > 0) {
             throw new Error(`Insufficient stock in batches for product ID ${productId}`);
           }
 
@@ -103,21 +112,24 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
           const gstRate = existingOrder.items[0].gstRate;
 
           for (const batch of productBatches) {
-            if (requiredQty <= 0) break;
+            if (requiredKg <= 0) break;
             
-            const takeQty = Math.min(requiredQty, batch.remainingQty);
-            requiredQty -= takeQty;
+            const takeKg = Math.min(requiredKg, batch.remainingQty);
+            const takeUnits = Number((takeKg / weightPerUnit).toFixed(4));
+            
+            requiredKg -= takeKg;
+            requiredUnits -= takeUnits;
             
             await tx.batch.update({
               where: { id: batch.id },
               data: {
-                remainingQty: batch.remainingQty - takeQty,
-                soldQty: batch.soldQty + takeQty,
-                status: (batch.remainingQty - takeQty <= 0) ? 'FULLY_SOLD' : 'PARTIALLY_SOLD'
+                remainingQty: batch.remainingQty - takeKg,
+                soldQty: batch.soldQty + takeKg,
+                status: (batch.remainingQty - takeKg <= 0) ? 'FULLY_SOLD' : 'PARTIALLY_SOLD'
               }
             });
 
-            const itemSubtotal = takeQty * Number(unitPrice);
+            const itemSubtotal = takeUnits * Number(unitPrice);
             const gstAmount = (itemSubtotal * Number(gstRate)) / 100;
 
             await tx.salesOrderItem.create({
@@ -125,7 +137,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
                 orderId: id,
                 productId,
                 batchId: batch.id,
-                quantity: takeQty,
+                quantity: takeUnits,
                 unitPrice: Number(unitPrice),
                 discount: 0, // Keep simple for edit re-allocation
                 gstRate: Number(gstRate),
@@ -135,8 +147,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             });
           }
 
-          if (requiredQty > 0) {
-            throw new Error(`Insufficient stock in batches. Short by ${requiredQty} KG`);
+          if (requiredKg > 0.001) {
+            throw new Error(`Insufficient stock in batches. Short by ${requiredKg.toFixed(2)} KG`);
           }
 
           finalItems = await tx.salesOrderItem.findMany({ where: { orderId: id } });
