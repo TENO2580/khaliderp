@@ -1,5 +1,5 @@
-backend/
-mobile/
+/backend/
+/mobile/
 node_modules/
 .next/
 *.db
