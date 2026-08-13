@@ -789,7 +789,12 @@ export default function SalesPage() {
                         className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                       >
                         <option value="PENDING">Pending</option>
-                        <option value="DELIVERED">Delivered</option>
+                        <option 
+                          value="DELIVERED" 
+                          disabled={editFormData.deliveryDate ? editFormData.deliveryDate > new Date().toISOString().split('T')[0] : false}
+                        >
+                          {editFormData.deliveryDate && editFormData.deliveryDate > new Date().toISOString().split('T')[0] ? 'Delivered (Invalid: Future Date)' : 'Delivered'}
+                        </option>
                         <option value="CANCELLED">Cancelled</option>
                       </select>
                     </div>
