@@ -4,11 +4,13 @@ import React, { useEffect, useState } from 'react';
 import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { Search, Plus, Filter, ArrowUpRight, X, Truck, CheckCircle2 } from 'lucide-react';
+import { Search, Plus, Filter, ArrowUpRight, X, Truck, CheckCircle2, LayoutGrid, Table } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import { useViewMode } from '@/hooks/useViewMode';
 
 export default function MobilePurchase() {
+  const { viewMode, toggleViewMode } = useViewMode();
   const [orders, setOrders] = useState<any[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -94,10 +96,21 @@ export default function MobilePurchase() {
 
   return (
     <div className="space-y-6">
-      {/* Title section removed, handled by MobileTopBar */}
+      <div className="flex justify-end">
+        <button
+          onClick={toggleViewMode}
+          className="rounded-xl bg-white p-2 text-gray-600 shadow-sm border border-gray-200 active:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:active:bg-gray-800"
+        >
+          {viewMode === 'card' ? <Table className="h-5 w-5" /> : <LayoutGrid className="h-5 w-5" />}
+        </button>
+      </div>
 
-      {/* Mobile Card List instead of DataTable */}
-      <div className="space-y-4">
+      {viewMode === 'table' ? (
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+          <DataTable columns={columns} data={orders} />
+        </div>
+      ) : (
+        <div className="space-y-4">
         {orders.length === 0 && !isLoading && (
           <div className="text-center py-10 text-gray-500">No purchase orders found.</div>
         )}
@@ -124,6 +137,7 @@ export default function MobilePurchase() {
           </div>
         ))}
       </div>
+      )}
       
       {/* Floating Action Button for Create PO */}
       <button 

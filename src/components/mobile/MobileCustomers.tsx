@@ -6,15 +6,17 @@ import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, customerTypeLabels } from '@/lib/utils';
 import { 
   Users, Search, Plus, X, Filter, Download, Building, MapPin, 
-  Phone, Mail, Calendar, TrendingUp, AlertCircle, Edit, History, Pencil, Trash2 
+  Phone, Mail, Calendar, TrendingUp, AlertCircle, Edit, History, Pencil, Trash2, LayoutGrid, Table
 } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import useSWR from 'swr';
+import { useViewMode } from '@/hooks/useViewMode';
 
 const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
 export default function MobileCustomers() {
+  const { viewMode, toggleViewMode } = useViewMode();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -303,32 +305,44 @@ export default function MobileCustomers() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Customer CRM</h1>
           <p className="text-sm text-gray-500">Manage distributors, wholesalers, retailers & leads</p>
         </div>
+        <button
+          onClick={toggleViewMode}
+          className="rounded-xl bg-white p-2 text-gray-600 shadow-sm border border-gray-200 active:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:active:bg-gray-800"
+        >
+          {viewMode === 'card' ? <Table className="h-5 w-5" /> : <LayoutGrid className="h-5 w-5" />}
+        </button>
       </div>
 
-      <div className="space-y-4">
-        {customers.length === 0 && !isLoading && (
-          <div className="text-center py-10 text-gray-500">No customers found.</div>
-        )}
-        {customers.map((c: any) => (
-          <div key={c.id} className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-800" onClick={() => handleEditClick(c)}>
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <div className="font-semibold text-gray-900 dark:text-gray-100">{c.name}</div>
-                <div className="text-sm text-gray-500">{[c.district, c.state].filter(Boolean).join(', ') || c.address || 'N/A'}</div>
+      {viewMode === 'table' ? (
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+          <DataTable columns={columns} data={customers} />
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {customers.length === 0 && !isLoading && (
+            <div className="text-center py-10 text-gray-500">No customers found.</div>
+          )}
+          {customers.map((c: any) => (
+            <div key={c.id} className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-800" onClick={() => handleEditClick(c)}>
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <div className="font-semibold text-gray-900 dark:text-gray-100">{c.name}</div>
+                  <div className="text-sm text-gray-500">{[c.district, c.state].filter(Boolean).join(', ') || c.address || 'N/A'}</div>
+                </div>
+                <StatusBadge status={c.status} />
               </div>
-              <StatusBadge status={c.status} />
-            </div>
-            <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                {c.phone || 'No Phone'}
-              </span>
-              <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                {c.sellingPrice ? formatCurrency(c.sellingPrice) : '-'}
+              <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {c.phone || 'No Phone'}
+                </span>
+                <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  {c.sellingPrice ? formatCurrency(c.sellingPrice) : '-'}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
       
       {/* Floating Action Button for Create Customer */}
       <button 

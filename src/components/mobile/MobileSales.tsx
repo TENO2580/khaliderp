@@ -5,14 +5,16 @@ import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { SearchableSelect } from '@/components/shared/SearchableSelect';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { Plus, X, Pencil, Trash2, TrendingUp, CheckCircle, Package, Search } from 'lucide-react';
+import { Plus, X, Pencil, Trash2, TrendingUp, CheckCircle, Package, Search, Table, LayoutGrid } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import useSWR from 'swr';
+import { useViewMode } from '@/hooks/useViewMode';
 
 const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
 export default function MobileSales() {
+  const { viewMode, toggleViewMode } = useViewMode();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -544,40 +546,52 @@ export default function MobileSales() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Sales & Orders</h1>
           <p className="text-sm text-gray-500">Create orders, generate GST invoices, track receivables</p>
         </div>
+        <button
+          onClick={toggleViewMode}
+          className="rounded-xl bg-white p-2 text-gray-600 shadow-sm border border-gray-200 active:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:active:bg-gray-800"
+        >
+          {viewMode === 'card' ? <Table className="h-5 w-5" /> : <LayoutGrid className="h-5 w-5" />}
+        </button>
       </div>
 
       {/* Mobile Card List instead of DataTable */}
-      <div className="space-y-4">
-        {orders.length === 0 && !isLoading && (
-          <div className="text-center py-10 text-gray-500">No sales orders found.</div>
-        )}
-        {orders.map((order: any) => (
-          <div key={order.id} className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-800" onClick={() => handleEditClick(order)}>
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <div className="font-semibold text-gray-900 dark:text-gray-100">{order.orderNumber}</div>
-                <div className="text-sm text-gray-500">{order.customer?.name}</div>
+      {viewMode === 'table' ? (
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+          <DataTable columns={columns} data={orders} />
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {orders.length === 0 && !isLoading && (
+            <div className="text-center py-10 text-gray-500">No sales orders found.</div>
+          )}
+          {orders.map((order: any) => (
+            <div key={order.id} className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-800" onClick={() => handleEditClick(order)}>
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <div className="font-semibold text-gray-900 dark:text-gray-100">{order.orderNumber}</div>
+                  <div className="text-sm text-gray-500">{order.customer?.name}</div>
+                </div>
+                <div className="text-right">
+                  <div className="font-bold text-gray-900 dark:text-gray-100">{formatCurrency(order.totalAmount)}</div>
+                  <div className="text-xs text-gray-400">{new Date(order.orderDate).toLocaleDateString()}</div>
+                </div>
               </div>
-              <div className="text-right">
-                <div className="font-bold text-gray-900 dark:text-gray-100">{formatCurrency(order.totalAmount)}</div>
-                <div className="text-xs text-gray-400">{new Date(order.orderDate).toLocaleDateString()}</div>
+              <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  order.status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-800' :
+                  order.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+                  'bg-blue-100 text-blue-800'
+                }`}>
+                  {order.status}
+                </span>
+                <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  {order.items?.reduce((sum: number, i: any) => sum + i.quantity, 0)} Units
+                </div>
               </div>
             </div>
-            <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                order.status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-800' :
-                order.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
-                'bg-blue-100 text-blue-800'
-              }`}>
-                {order.status}
-              </span>
-              <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                {order.items?.reduce((sum: number, i: any) => sum + i.quantity, 0)} Units
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
       
       {/* Floating Action Button for Create Order */}
       <button 

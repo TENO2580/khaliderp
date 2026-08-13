@@ -4,14 +4,16 @@ import React, { useState } from 'react';
 import useSWR from 'swr';
 import api from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
-import { MapPin, Users, IndianRupee, ArrowLeft, ChevronRight, Store, Search } from 'lucide-react';
+import { MapPin, Users, IndianRupee, ArrowLeft, ChevronRight, Store, Search, LayoutGrid, Table } from 'lucide-react';
 import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
+import { useViewMode } from '@/hooks/useViewMode';
 
 const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 const paginationFetcher = (url: string) => api.get(url).then(res => res.data);
 
 export default function MobileRoutes() {
+  const { viewMode, toggleViewMode } = useViewMode();
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
   const [search, setSearch] = useState('');
 
@@ -71,20 +73,28 @@ export default function MobileRoutes() {
 
     return (
       <div className="space-y-6 pb-20">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => setSelectedRoute(null)}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <MapPin className="w-6 h-6 text-blue-500" />
-              Route: {selectedRoute}
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">Field Observation & Route Sales Tracking</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setSelectedRoute(null)}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <MapPin className="w-6 h-6 text-blue-500" />
+                Route: {selectedRoute}
+              </h1>
+              <p className="text-sm text-gray-500 mt-1">Field Observation & Route Sales Tracking</p>
+            </div>
           </div>
+          <button
+            onClick={toggleViewMode}
+            className="rounded-xl bg-white p-2 text-gray-600 shadow-sm border border-gray-200 active:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:active:bg-gray-800"
+          >
+            {viewMode === 'card' ? <Table className="h-5 w-5" /> : <LayoutGrid className="h-5 w-5" />}
+          </button>
         </div>
 
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
@@ -101,38 +111,46 @@ export default function MobileRoutes() {
               />
             </div>
           </div>
-          <div className="space-y-4 mt-6">
-            {customers.length === 0 && !loadingCustomers && (
-              <div className="text-center py-10 text-gray-500">No shops found in this route.</div>
-            )}
-            {customers.map((c: any) => (
-              <div key={c.id} className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-800">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <div className="font-semibold text-gray-900 dark:text-white">{c.name}</div>
-                    <div className="text-xs text-gray-500">{c.customerId}</div>
-                  </div>
-                  <StatusBadge status={c.status} />
-                </div>
-                <div className="text-xs text-gray-600 dark:text-gray-300 mb-3">
-                  {c.ownerName || 'N/A'} • {c.phone || 'N/A'}
-                </div>
-                <div className="flex justify-between items-center pt-3 border-t border-gray-100 dark:border-gray-800">
-                  <div>
-                    <div className="text-[10px] text-gray-500 uppercase">Outstanding</div>
-                    <span className={`font-bold ${c.outstanding > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
-                      {formatCurrency(c.outstanding || 0)}
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[10px] text-gray-500 uppercase">Last Purchase</div>
-                    <span className="text-sm text-gray-600 dark:text-gray-300">
-                      {c.lastPurchaseDate ? new Date(c.lastPurchaseDate).toLocaleDateString('en-IN') : 'Never'}
-                    </span>
-                  </div>
-                </div>
+          <div className="mt-6">
+            {viewMode === 'table' ? (
+              <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
+                <DataTable columns={columns} data={customers} />
               </div>
-            ))}
+            ) : (
+              <div className="space-y-4">
+                {customers.length === 0 && !loadingCustomers && (
+                  <div className="text-center py-10 text-gray-500">No shops found in this route.</div>
+                )}
+                {customers.map((c: any) => (
+                  <div key={c.id} className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-800">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <div className="font-semibold text-gray-900 dark:text-white">{c.name}</div>
+                        <div className="text-xs text-gray-500">{c.customerId}</div>
+                      </div>
+                      <StatusBadge status={c.status} />
+                    </div>
+                    <div className="text-xs text-gray-600 dark:text-gray-300 mb-3">
+                      {c.ownerName || 'N/A'} • {c.phone || 'N/A'}
+                    </div>
+                    <div className="flex justify-between items-center pt-3 border-t border-gray-100 dark:border-gray-800">
+                      <div>
+                        <div className="text-[10px] text-gray-500 uppercase">Outstanding</div>
+                        <span className={`font-bold ${c.outstanding > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
+                          {formatCurrency(c.outstanding || 0)}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[10px] text-gray-500 uppercase">Last Purchase</div>
+                        <span className="text-sm text-gray-600 dark:text-gray-300">
+                          {c.lastPurchaseDate ? new Date(c.lastPurchaseDate).toLocaleDateString('en-IN') : 'Never'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

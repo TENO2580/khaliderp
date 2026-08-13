@@ -4,14 +4,16 @@ import React, { useEffect, useState } from 'react';
 import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { Edit3, Trash2, Plus, X } from 'lucide-react';
+import { Edit3, Trash2, Plus, X, LayoutGrid, Table } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import useSWR from 'swr';
+import { useViewMode } from '@/hooks/useViewMode';
 
 const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
 export default function MobileBatches() {
+  const { viewMode, toggleViewMode } = useViewMode();
   const [search, setSearch] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -95,46 +97,203 @@ export default function MobileBatches() {
     }
   };
 
+  const columns: Column<any>[] = [
+    {
+      header: 'Batch #',
+      accessorKey: 'batchNumber',
+      cell: (b) => <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">{b.batchNumber}</span>,
+    },
+    {
+      header: 'Product',
+      cell: (b) => <span className="font-medium text-gray-900 dark:text-white">{b.product?.name || 'General Batch'}</span>,
+    },
+    {
+      header: 'Date',
+      cell: (b) => <span className="text-xs text-gray-500">{formatDate(b.purchaseDate)}</span>,
+    },
+    {
+      header: 'Wax Initial Qty',
+      editableKey: 'waxInitialQty',
+      inlineEditable: true,
+      inputType: 'number',
+      cell: (b) => <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{Number(b.waxInitialQty).toFixed(2)} KG</span>,
+    },
+    {
+      header: 'Wax Rate',
+      editableKey: 'waxRate',
+      inlineEditable: true,
+      inputType: 'number',
+      cell: (b) => <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{formatCurrency(b.waxRate)}</span>,
+    },
+    {
+      header: 'Candle Selling Price',
+      editableKey: 'sellingPrice',
+      inlineEditable: true,
+      inputType: 'number',
+      cell: (b) => <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">{formatCurrency(b.sellingPrice)}</span>,
+    },
+    {
+      header: 'Produced',
+      editableKey: 'producedQty',
+      inlineEditable: true,
+      inputType: 'number',
+      cell: (b) => <span className="font-semibold text-gray-900 dark:text-white">{b.producedQty} KG</span>,
+    },
+    {
+      header: 'SOLD',
+      cell: (b) => <span className="text-xs text-emerald-600 font-medium">{Number(b.soldQty).toFixed(2)} KG</span>,
+    },
+    {
+      header: 'REMAINING',
+      cell: (b) => <span className="text-xs text-orange-600 font-medium">{Number(b.remainingQty).toFixed(2)} KG</span>,
+    },
+    {
+      header: 'Wax Stock',
+      cell: (b) => {
+        const stock = (Number(b.waxInitialQty) || 0) - (Number(b.producedQty) || 0);
+        return <span className="text-xs text-blue-600 font-medium">{stock.toFixed(2)} KG</span>;
+      },
+    },
+    {
+      header: 'Completion %',
+      cell: (b) => {
+        const pct = b.producedQty > 0 ? ((b.soldQty / b.producedQty) * 100).toFixed(0) : 0;
+        return (
+          <div className="flex items-center gap-2">
+            <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden dark:bg-gray-700">
+              <div 
+                className="h-full bg-emerald-500" 
+                style={{ width: `${pct}%` }} 
+              />
+            </div>
+            <span className="text-xs text-gray-500 font-medium">{pct}%</span>
+          </div>
+        );
+      }
+    },
+    {
+      header: 'Prod Cost',
+      editableKey: 'productionCost',
+      inlineEditable: true,
+      inputType: 'number',
+      cell: (b) => <span className="text-xs text-gray-600">{formatCurrency(b.productionCost)}</span>,
+    },
+    {
+      header: 'Status',
+      editableKey: 'status',
+      inlineEditable: true,
+      cell: (b) => <StatusBadge status={b.status} />,
+    },
+    {
+      header: 'Action',
+      cell: (b) => (
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setEditBatch({ ...b, purchaseDate: new Date(b.purchaseDate).toISOString().split('T')[0] })}
+            className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-blue-600 dark:hover:bg-gray-800"
+          >
+            <Edit3 className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => handleDelete(b.id)}
+            className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-600 dark:hover:bg-gray-800"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      ),
+    },
+  ];
+
+  const handleBatchSave = async (edits: { rowId: string; key: string; value: string }[]) => {
+    try {
+      const grouped: Record<string, Record<string, string>> = {};
+      for (const edit of edits) {
+        if (!grouped[edit.rowId]) grouped[edit.rowId] = {};
+        grouped[edit.rowId][edit.key] = edit.value;
+      }
+      for (const [rowId, fields] of Object.entries(grouped)) {
+        const batch = batches.find((b: any) => b.id === rowId);
+        if (!batch) continue;
+        const updateBody: any = { ...batch };
+        for (const [key, value] of Object.entries(fields)) {
+          if (['producedQty', 'productionCost', 'sellingPrice', 'waxInitialQty', 'waxRate', 'waxStock'].includes(key)) {
+            updateBody[key] = Number(value) || 0;
+          } else {
+            updateBody[key] = value;
+          }
+        }
+        
+        // Auto-calculate dependencies
+        updateBody.waxStock = (Number(updateBody.waxInitialQty) || 0) - (Number(updateBody.producedQty) || 0);
+        updateBody.productionCost = (Number(updateBody.waxInitialQty) || 0) * (Number(updateBody.waxRate) || 0);
+        updateBody.remainingQty = (Number(updateBody.producedQty) || 0) - (Number(updateBody.soldQty) || 0);
+
+        await api.put(`/production/batches/${rowId}`, updateBody);
+      }
+      toast.success(`${Object.keys(grouped).length} batch(es) updated!`);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to save');
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Title section removed, handled by MobileTopBar */}
-
-      {/* Mobile Card List instead of DataTable */}
-      <div className="space-y-4">
-        {batches.length === 0 && !isLoading && (
-          <div className="text-center py-10 text-gray-500">No batches found.</div>
-        )}
-        {batches.map((b: any) => {
-          const pct = b.producedQty > 0 ? ((b.soldQty / b.producedQty) * 100).toFixed(0) : 0;
-          return (
-            <div key={b.id} className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-800" onClick={() => setEditBatch({ ...b, purchaseDate: new Date(b.purchaseDate).toISOString().split('T')[0] })}>
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <div className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">{b.batchNumber}</div>
-                  <div className="text-sm font-medium text-gray-900 dark:text-white mt-1">{b.product?.name || 'General Batch'}</div>
-                </div>
-                <StatusBadge status={b.status} />
-              </div>
-              <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 text-sm">
-                <div>
-                  <div className="text-xs text-gray-500">Produced</div>
-                  <div className="font-semibold text-gray-900 dark:text-white">{b.producedQty} KG</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs text-gray-500">Remaining</div>
-                  <div className="font-semibold text-orange-600">{Number(b.remainingQty).toFixed(2)} KG</div>
-                </div>
-              </div>
-              <div className="mt-3 flex items-center gap-2">
-                <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden dark:bg-gray-700">
-                  <div className="h-full bg-emerald-500" style={{ width: `${pct}%` }} />
-                </div>
-                <span className="text-xs text-gray-500 font-medium">{pct}% Sold</span>
-              </div>
-            </div>
-          );
-        })}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Batch Tracking</h1>
+          <p className="text-sm text-gray-500">Track candle manufacturing batches</p>
+        </div>
+        <button
+          onClick={toggleViewMode}
+          className="rounded-xl bg-white p-2 text-gray-600 shadow-sm border border-gray-200 active:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:active:bg-gray-800"
+        >
+          {viewMode === 'card' ? <Table className="h-5 w-5" /> : <LayoutGrid className="h-5 w-5" />}
+        </button>
       </div>
+
+      {viewMode === 'table' ? (
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+          <DataTable columns={columns} data={batches} onBatchSave={handleBatchSave} />
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {batches.length === 0 && !isLoading && (
+            <div className="text-center py-10 text-gray-500">No batches found.</div>
+          )}
+          {batches.map((b: any) => {
+            const pct = b.producedQty > 0 ? ((b.soldQty / b.producedQty) * 100).toFixed(0) : 0;
+            return (
+              <div key={b.id} className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-800" onClick={() => setEditBatch({ ...b, purchaseDate: new Date(b.purchaseDate).toISOString().split('T')[0] })}>
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <div className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">{b.batchNumber}</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white mt-1">{b.product?.name || 'General Batch'}</div>
+                  </div>
+                  <StatusBadge status={b.status} />
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 text-sm">
+                  <div>
+                    <div className="text-xs text-gray-500">Produced</div>
+                    <div className="font-semibold text-gray-900 dark:text-white">{b.producedQty} KG</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-gray-500">Remaining</div>
+                    <div className="font-semibold text-orange-600">{Number(b.remainingQty).toFixed(2)} KG</div>
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden dark:bg-gray-700">
+                    <div className="h-full bg-emerald-500" style={{ width: `${pct}%` }} />
+                  </div>
+                  <span className="text-xs text-gray-500 font-medium">{pct}% Sold</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
       
       {/* Floating Action Button for Create Batch */}
       <button 

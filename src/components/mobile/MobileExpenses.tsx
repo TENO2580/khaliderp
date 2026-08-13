@@ -4,14 +4,16 @@ import React, { useEffect, useState } from 'react';
 import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { Check, Edit3, Trash2, Receipt, Plus, X } from 'lucide-react';
+import { Check, Edit3, Trash2, Receipt, Plus, X, LayoutGrid, Table } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import useSWR from 'swr';
+import { useViewMode } from '@/hooks/useViewMode';
 
 const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
 export default function MobileExpenses() {
+  const { viewMode, toggleViewMode } = useViewMode();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -220,7 +222,14 @@ export default function MobileExpenses() {
 
   return (
     <div className="space-y-6">
-      {/* Title section removed, handled by MobileTopBar */}
+      <div className="flex justify-end">
+        <button
+          onClick={toggleViewMode}
+          className="rounded-xl bg-white p-2 text-gray-600 shadow-sm border border-gray-200 active:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:active:bg-gray-800"
+        >
+          {viewMode === 'card' ? <Table className="h-5 w-5" /> : <LayoutGrid className="h-5 w-5" />}
+        </button>
+      </div>
 
       {/* Mobile Expense Stats */}
       {stats && (
@@ -240,34 +249,39 @@ export default function MobileExpenses() {
         </div>
       )}
 
-      {/* Mobile Card List instead of DataTable */}
-      <div className="space-y-4">
-        {expenses.length === 0 && !isLoading && (
-          <div className="text-center py-10 text-gray-500">No expenses found.</div>
-        )}
-        {expenses.map((e: any) => (
-          <div key={e.id} className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-800" onClick={() => openEdit(e)}>
-            <div className="flex justify-between items-start mb-2">
-              <div className="flex items-center gap-2">
-                <Receipt className="h-4 w-4 text-blue-600" />
-                <div className="font-semibold text-gray-900 dark:text-white">{e.category?.name}</div>
+      {viewMode === 'table' ? (
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+          <DataTable columns={columns} data={expenses} onBatchSave={handleBatchSave} />
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {expenses.length === 0 && !isLoading && (
+            <div className="text-center py-10 text-gray-500">No expenses found.</div>
+          )}
+          {expenses.map((e: any) => (
+            <div key={e.id} className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-800" onClick={() => openEdit(e)}>
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex items-center gap-2">
+                  <Receipt className="h-4 w-4 text-blue-600" />
+                  <div className="font-semibold text-gray-900 dark:text-white">{e.category?.name}</div>
+                </div>
+                <StatusBadge status={e.status} />
               </div>
-              <StatusBadge status={e.status} />
-            </div>
-            <div className="text-xs text-gray-500 mb-2">
-              {formatDate(e.date)} • {e.createdBy?.name || 'Admin'}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
-              {e.description || 'No description provided.'}
-            </div>
-            <div className="flex justify-between items-center pt-3 border-t border-gray-100 dark:border-gray-800">
-              <div className="text-lg font-bold text-gray-900 dark:text-white">
-                {formatCurrency(e.amount)}
+              <div className="text-xs text-gray-500 mb-2">
+                {formatDate(e.date)} • {e.createdBy?.name || 'Admin'}
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
+                {e.description || 'No description provided.'}
+              </div>
+              <div className="flex justify-between items-center pt-3 border-t border-gray-100 dark:border-gray-800">
+                <div className="text-lg font-bold text-gray-900 dark:text-white">
+                  {formatCurrency(e.amount)}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
       
       {/* Floating Action Button for Create Expense */}
       <button 

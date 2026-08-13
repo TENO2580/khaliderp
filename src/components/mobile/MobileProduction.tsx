@@ -3,14 +3,16 @@
 import React, { useEffect, useState } from 'react';
 import DataTable, { Column } from '@/components/shared/DataTable';
 import { formatCurrency, formatDate, formatPercent } from '@/lib/utils';
-import { Factory, Flame, Layers, Plus, X } from 'lucide-react';
+import { Factory, Flame, Layers, Plus, X, LayoutGrid, Table } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import useSWR from 'swr';
+import { useViewMode } from '@/hooks/useViewMode';
 
 const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
 export default function MobileProductionPage() {
+  const { viewMode, toggleViewMode } = useViewMode();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -103,33 +105,44 @@ export default function MobileProductionPage() {
 
   return (
     <div className="space-y-6">
-      {/* Title section removed, handled by MobileTopBar */}
-
-      {/* Mobile Card List instead of DataTable */}
-      <div className="space-y-4">
-        {productions.length === 0 && !isLoading && (
-          <div className="text-center py-10 text-gray-500">No production logs found.</div>
-        )}
-        {productions.map((p: any) => (
-          <div key={p.id} className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-800">
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <div className="font-mono text-xs font-semibold text-blue-600 dark:text-blue-400">{p.productionNumber}</div>
-                <div className="text-xs font-medium text-gray-900 dark:text-white mt-1">{formatDate(p.date)} - {p.shift} Shift</div>
-              </div>
-              <div className="text-right">
-                <div className="font-bold text-gray-900 dark:text-white">{p.quantityProduced} KG</div>
-                <div className="text-[10px] text-gray-400 mt-1 uppercase">Output Qty</div>
-              </div>
-            </div>
-            {p.notes && (
-              <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 text-xs text-gray-500">
-                {p.notes}
-              </div>
-            )}
-          </div>
-        ))}
+      <div className="flex justify-end">
+        <button
+          onClick={toggleViewMode}
+          className="rounded-xl bg-white p-2 text-gray-600 shadow-sm border border-gray-200 active:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:active:bg-gray-800"
+        >
+          {viewMode === 'card' ? <Table className="h-5 w-5" /> : <LayoutGrid className="h-5 w-5" />}
+        </button>
       </div>
+      {viewMode === 'table' ? (
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+          <DataTable columns={columns} data={productions} />
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {productions.length === 0 && !isLoading && (
+            <div className="text-center py-10 text-gray-500">No production logs found.</div>
+          )}
+          {productions.map((p: any) => (
+            <div key={p.id} className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-800">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <div className="font-mono text-xs font-semibold text-blue-600 dark:text-blue-400">{p.productionNumber}</div>
+                  <div className="text-xs font-medium text-gray-900 dark:text-white mt-1">{formatDate(p.date)} - {p.shift} Shift</div>
+                </div>
+                <div className="text-right">
+                  <div className="font-bold text-gray-900 dark:text-white">{p.quantityProduced} KG</div>
+                  <div className="text-[10px] text-gray-400 mt-1 uppercase">Output Qty</div>
+                </div>
+              </div>
+              {p.notes && (
+                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 text-xs text-gray-500">
+                  {p.notes}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
       
       {/* Floating Action Button for Log Production */}
       <button 

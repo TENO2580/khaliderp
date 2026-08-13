@@ -5,11 +5,13 @@ import Link from 'next/link';
 import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { CalendarCheck, Edit, Trash2, Plus, X } from 'lucide-react';
+import { CalendarCheck, Edit, Trash2, Plus, X, LayoutGrid, Table } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import { useViewMode } from '@/hooks/useViewMode';
 
 export default function MobileEmployees() {
+  const { viewMode, toggleViewMode } = useViewMode();
   const [employees, setEmployees] = useState<any[]>([]);
   const [attendanceStats, setAttendanceStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -133,7 +135,14 @@ export default function MobileEmployees() {
 
   return (
     <div className="space-y-6">
-      {/* Title section removed, handled by MobileTopBar */}
+      <div className="flex justify-end">
+        <button
+          onClick={toggleViewMode}
+          className="rounded-xl bg-white p-2 text-gray-600 shadow-sm border border-gray-200 active:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:active:bg-gray-800"
+        >
+          {viewMode === 'card' ? <Table className="h-5 w-5" /> : <LayoutGrid className="h-5 w-5" />}
+        </button>
+      </div>
 
       {/* Mobile Attendance Stats */}
       {attendanceStats && (
@@ -157,38 +166,43 @@ export default function MobileEmployees() {
         </div>
       )}
 
-      {/* Mobile Card List instead of DataTable */}
-      <div className="space-y-4">
-        {employees.length === 0 && !isLoading && (
-          <div className="text-center py-10 text-gray-500">No employees found.</div>
-        )}
-        {employees.map((e: any) => (
-          <div key={e.id} className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-800">
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <div className="font-semibold text-gray-900 dark:text-white">{e.name}</div>
-                <div className="text-xs font-semibold text-gray-800 dark:text-gray-200 mt-1">{e.designation}</div>
-                <div className="text-xs text-gray-500">{e.department}</div>
+      {viewMode === 'table' ? (
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+          <DataTable columns={columns} data={employees} />
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {employees.length === 0 && !isLoading && (
+            <div className="text-center py-10 text-gray-500">No employees found.</div>
+          )}
+          {employees.map((e: any) => (
+            <div key={e.id} className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-800">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <div className="font-semibold text-gray-900 dark:text-white">{e.name}</div>
+                  <div className="text-xs font-semibold text-gray-800 dark:text-gray-200 mt-1">{e.designation}</div>
+                  <div className="text-xs text-gray-500">{e.department}</div>
+                </div>
+                <StatusBadge status={e.status} />
               </div>
-              <StatusBadge status={e.status} />
+              <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                <span className="font-semibold text-gray-900 dark:text-white">
+                  {formatCurrency(e.salary)}<span className="text-[10px] text-gray-500 font-normal">/mo</span>
+                </span>
+                <button
+                  onClick={() => {
+                    setSelectedEmp(e);
+                    setIsAttendanceOpen(true);
+                  }}
+                  className="flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-400"
+                >
+                  <CalendarCheck className="h-3.5 w-3.5" /> Mark Today
+                </button>
+              </div>
             </div>
-            <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-              <span className="font-semibold text-gray-900 dark:text-white">
-                {formatCurrency(e.salary)}<span className="text-[10px] text-gray-500 font-normal">/mo</span>
-              </span>
-              <button
-                onClick={() => {
-                  setSelectedEmp(e);
-                  setIsAttendanceOpen(true);
-                }}
-                className="flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-400"
-              >
-                <CalendarCheck className="h-3.5 w-3.5" /> Mark Today
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
       
       {/* Link to advanced Attendance View & Add New Employee */}
       <div className="fixed bottom-[88px] right-4 flex flex-col gap-3 z-40">
