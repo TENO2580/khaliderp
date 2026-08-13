@@ -2,7 +2,6 @@ import { NextRequest } from 'next/server';
 import prisma from '@/lib/db';
 import { authenticateRequest, jsonResponse, errorResponse } from '@/lib/middleware-server';
 import { NotificationService } from '@/lib/services/NotificationService';
-import { calculateStrictFifoMapping } from '@/lib/fifo-calculator';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,7 +71,9 @@ export async function GET(req: NextRequest) {
             quantity: true,
             unitPrice: true,
             gstRate: true,
-            product: { select: { name: true } }
+            batchId: true,
+            product: { select: { name: true } },
+            batch: { select: { batchNumber: true } }
           }
         }
       },
@@ -80,15 +81,21 @@ export async function GET(req: NextRequest) {
     prisma.salesOrder.count({ where }),
   ]);
 
-  const fifoMapping = await calculateStrictFifoMapping();
-
-  const dataWithFifo = data.map((order: any) => ({
-    ...order,
-    fifoBatches: fifoMapping.orderToBatches[order.id] || '-'
-  }));
+  // Derive batch names from actual SalesOrderItem.batchId relationships
+  const dataWithBatches = data.map((order: any) => {
+    const batchNames = order.items
+      .filter((item: any) => item.batch)
+      .map((item: any) => item.batch.batchNumber);
+    // Deduplicate batch names while preserving order
+    const uniqueBatches = [...new Set(batchNames)] as string[];
+    return {
+      ...order,
+      fifoBatches: uniqueBatches.length > 0 ? uniqueBatches.join(', ') : '-'
+    };
+  });
 
   return jsonResponse({
-    data: dataWithFifo,
+    data: dataWithBatches,
     pagination: {
       page,
       limit,

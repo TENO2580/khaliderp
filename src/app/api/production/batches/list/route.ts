@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/db';
 import { authenticateRequest, jsonResponse } from '@/lib/middleware-server';
-import { calculateStrictFifoMapping } from '@/lib/fifo-calculator';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,21 +56,32 @@ export async function GET(req: NextRequest) {
         soldQty: true,
         remainingQty: true,
         status: true,
-        product: { select: { name: true } }
+        product: { select: { name: true } },
+        salesOrderItems: {
+          select: {
+            order: { select: { orderNumber: true } }
+          }
+        }
       },
     }),
     prisma.batch.count({ where }),
   ]);
 
-  const fifoMapping = await calculateStrictFifoMapping();
-  
-  const dataWithFifo = data.map((b: any) => ({
-    ...b,
-    fifoOrders: fifoMapping.batchToOrders[b.id] || '-'
-  }));
+  // Derive order numbers from actual SalesOrderItem relationships
+  const dataWithOrders = data.map((b: any) => {
+    const orderNumbers = b.salesOrderItems
+      .map((item: any) => item.order.orderNumber);
+    // Deduplicate order numbers
+    const uniqueOrders = [...new Set(orderNumbers)] as string[];
+    return {
+      ...b,
+      salesOrderItems: undefined, // Remove raw relation data
+      fifoOrders: uniqueOrders.length > 0 ? uniqueOrders.join(', ') : '-'
+    };
+  });
 
   return jsonResponse({
-    data: dataWithFifo,
+    data: dataWithOrders,
     pagination: {
       page,
       limit,
