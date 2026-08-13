@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Scale, Package, Battery, Save, Search, Plus, FileSpreadsheet, Edit, Trash2 } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import Link from 'next/link';
 
 export default function PricingEngine() {

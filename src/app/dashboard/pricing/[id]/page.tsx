@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Save, Package, TrendingUp, AlertCircle } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import { calculateProductPricing } from '@/lib/pricing-engine';
 
 export default function ProductPricingDetail({ params }: { params: { id: string } }) {
