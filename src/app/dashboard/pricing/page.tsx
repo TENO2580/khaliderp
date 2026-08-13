@@ -522,16 +522,22 @@ export default function PricingEnginePage() {
                   <tr>
                     <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">Selling Price</td>
                     {profile.caseVariants?.map((variant: any, idx: number) => (
-                      <td key={idx} className="px-4 py-3 text-center font-bold text-gray-900 dark:text-white">
-                        ₹{variant.sellingPrice}
+                      <td key={idx} className="px-4 py-3">
+                        <input 
+                          type="number" step="any" 
+                          value={variant.sellingPrice || ''} 
+                          onChange={(e) => handleVariantChange(idx, 'sellingPrice', e.target.value)}
+                          className="w-full text-center font-bold text-green-600 dark:text-green-400 rounded border border-gray-200 p-1 text-sm dark:border-gray-800 dark:bg-gray-950"
+                        />
                       </td>
                     ))}
                   </tr>
                   <tr>
                     <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">Profit Margin (₹)</td>
                     {profile.caseVariants?.map((variant: any, idx: number) => {
+                      const effectiveProdCostPerKg = variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : totalVariantCostPerKg;
                       const totalWeight = Number(variant.weightKg) * Number(variant.qty ?? 1);
-                      const totalProdCost = totalWeight * totalVariantCostPerKg;
+                      const totalProdCost = totalWeight * effectiveProdCostPerKg;
                       const marginAmt = Number(variant.sellingPrice) - totalProdCost;
                       return (
                         <td key={idx} className={`px-4 py-3 text-center font-bold ${marginAmt >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
