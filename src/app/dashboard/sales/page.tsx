@@ -34,6 +34,13 @@ export default function SalesPage() {
     orderDate: '',
     deliveryDate: '',
     type: '',
+    productId: '',
+    weightPerUnit: 0,
+    totalWeightKg: 0,
+    productionCostPerKg: 0,
+    profitAmt: 0,
+    mrp: 0,
+    regionalPrice: 0,
     productionCost: '',
     sellingCost: '',
     margin: '',
@@ -48,7 +55,7 @@ export default function SalesPage() {
     fetcher
   );
   const { data: customersRes } = useSWR('/customers?limit=100', fetcher);
-  const { data: productsRes } = useSWR('/inventory?limit=100', fetcher);
+  const { data: productsRes } = useSWR('/products?limit=100', fetcher);
   const { data: batchesRes } = useSWR('/production/batches', fetcher);
 
   const orders = salesRes?.data || [];
@@ -56,7 +63,7 @@ export default function SalesPage() {
   const totalItems = salesRes?.pagination?.total || 0;
   
   const customers = customersRes?.data || [];
-  const products = productsRes?.data || [];
+  const products = productsRes?.products || [];
   const batches = batchesRes?.data || (Array.isArray(batchesRes) ? batchesRes : []);
 
   const isLoading = isSalesLoading;
@@ -105,25 +112,43 @@ export default function SalesPage() {
   useEffect(() => {
     const qty = Number(items[0].quantity) || 0;
     const unitSellingPrice = Number(items[0].unitPrice) || 0;
-    const unitProdCost = Number(editFormData.productionCost) || 0;
+    const prodCostPerKg = Number(editFormData.productionCostPerKg) || 0;
+    const weightPerUnit = Number(editFormData.weightPerUnit) || 0;
     
+    const totalWeightKg = qty * weightPerUnit;
     const totalSellingCost = qty * unitSellingPrice;
-    const totalProdCost = qty * unitProdCost;
+    const totalProdCost = totalWeightKg * prodCostPerKg;
     
-    setEditFormData(prev => ({ ...prev, totalAmount: totalSellingCost }));
-
-    if (totalSellingCost > 0 || totalProdCost > 0) {
-      const marginAmt = totalSellingCost - totalProdCost;
-      const marginPct = totalSellingCost > 0 ? ((marginAmt / totalSellingCost) * 100).toFixed(2) : '0';
-      const marginStr = `${marginPct}% (₹${marginAmt.toFixed(2)})`;
+    setEditFormData(prev => {
+      let marginStr = '';
+      let profitAmt = 0;
       
-      if (editFormData.margin !== marginStr) {
-        setEditFormData(prev => ({ ...prev, margin: marginStr }));
+      if (totalSellingCost > 0 || totalProdCost > 0) {
+        profitAmt = totalSellingCost - totalProdCost;
+        const marginPct = totalSellingCost > 0 ? ((profitAmt / totalSellingCost) * 100).toFixed(2) : '0';
+        marginStr = `${marginPct}% (₹${profitAmt.toFixed(2)})`;
       }
-    } else if (editFormData.margin !== '') {
-      setEditFormData(prev => ({ ...prev, margin: '' }));
-    }
-  }, [items, editFormData.productionCost]);
+
+      if (
+        prev.totalAmount !== totalSellingCost || 
+        prev.margin !== marginStr ||
+        prev.totalWeightKg !== totalWeightKg ||
+        prev.productionCost !== totalProdCost.toFixed(2) ||
+        prev.sellingCost !== totalSellingCost.toFixed(2)
+      ) {
+        return {
+          ...prev, 
+          totalAmount: totalSellingCost,
+          sellingCost: totalSellingCost.toFixed(2),
+          productionCost: totalProdCost.toFixed(2),
+          profitAmt: profitAmt,
+          totalWeightKg: totalWeightKg,
+          margin: marginStr
+        };
+      }
+      return prev;
+    });
+  }, [items, editFormData.productionCostPerKg, editFormData.weightPerUnit]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,11 +173,20 @@ export default function SalesPage() {
           outstanding: editFormData.outstanding,
           quantity: items[0].quantity,
           notes: {
-            batchUsed: editFormData.batchUsed,
+            productId: editFormData.productId,
             type: editFormData.type,
+            weightPerUnit: editFormData.weightPerUnit,
+            quantityUnits: Number(items[0].quantity) || 0,
+            totalWeightKg: editFormData.totalWeightKg,
+            productionCostPerKg: editFormData.productionCostPerKg,
             productionCost: editFormData.productionCost,
+            unitSellingPrice: items[0].unitPrice,
             sellingCost: editFormData.sellingCost,
+            profitAmt: editFormData.profitAmt,
             margin: editFormData.margin,
+            mrp: editFormData.mrp,
+            regionalPrice: editFormData.regionalPrice,
+            batchUsed: editFormData.batchUsed,
             creditNotes: editFormData.creditNotes,
           }
         });
@@ -193,11 +227,20 @@ export default function SalesPage() {
           deliveryDate: editFormData.deliveryDate,
           status: editFormData.status,
           notes: {
-            batchUsed: editFormData.batchUsed,
+            productId: editFormData.productId,
             type: editFormData.type,
+            weightPerUnit: editFormData.weightPerUnit,
+            quantityUnits: qty,
+            totalWeightKg: editFormData.totalWeightKg,
+            productionCostPerKg: editFormData.productionCostPerKg,
             productionCost: editFormData.productionCost,
+            unitSellingPrice: items[0].unitPrice,
             sellingCost: editFormData.sellingCost,
+            profitAmt: editFormData.profitAmt,
             margin: editFormData.margin,
+            mrp: editFormData.mrp,
+            regionalPrice: editFormData.regionalPrice,
+            batchUsed: editFormData.batchUsed,
             creditNotes: editFormData.creditNotes,
           }
         });
@@ -238,6 +281,13 @@ export default function SalesPage() {
       orderDate: order.orderDate ? new Date(order.orderDate).toISOString().split('T')[0] : '',
       deliveryDate: order.deliveryDate ? new Date(order.deliveryDate).toISOString().split('T')[0] : '',
       type: data.type || '',
+      productId: data.productId || order.items?.[0]?.productId || '',
+      weightPerUnit: data.weightPerUnit || 0,
+      totalWeightKg: data.totalWeightKg || 0,
+      productionCostPerKg: data.productionCostPerKg || 0,
+      profitAmt: data.profitAmt || 0,
+      mrp: data.mrp || 0,
+      regionalPrice: data.regionalPrice || 0,
       productionCost: data.productionCost || '',
       sellingCost: data.sellingCost || (order.items?.[0]?.unitPrice || ''),
       margin: data.margin || '',
@@ -569,16 +619,33 @@ export default function SalesPage() {
               <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100 dark:border-gray-800">
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Product Type</label>
-                  <input
-                    type="text"
+                  <SearchableSelect
                     required
-                    value={editFormData.type}
-                    onChange={(e) => setEditFormData({ ...editFormData, type: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                    value={editFormData.productId}
+                    onChange={(val) => {
+                      const selectedProduct = products.find((p: any) => p.id === val);
+                      if (!selectedProduct) return;
+                      const weightPerUnit = selectedProduct.weightKg || 0;
+                      const prodCostPerKg = selectedProduct.prodCostPerKg || (selectedProduct.totalProdCost / selectedProduct.weightKg) || 0;
+                      
+                      setItems([{ ...items[0], productId: val, unitPrice: selectedProduct.sellingPrice || 0 }]);
+                      
+                      setEditFormData({
+                        ...editFormData,
+                        productId: val,
+                        type: selectedProduct.name,
+                        weightPerUnit,
+                        productionCostPerKg: prodCostPerKg,
+                        mrp: selectedProduct.mrp || 0,
+                        regionalPrice: selectedProduct.regionalPrice || 0,
+                      });
+                    }}
+                    placeholder="-- Choose Product --"
+                    options={products.map((p: any) => ({ value: p.id, label: p.name }))}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Quantity (KG)</label>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Quantity (Units)</label>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -595,17 +662,15 @@ export default function SalesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Unit Production Cost (₹)</label>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Total Production Cost (₹)</label>
                   <input
                     type="text"
-                    inputMode="numeric"
+                    readOnly
                     value={editFormData.productionCost}
-                    onChange={(e) => {
-                      if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) return;
-                      setEditFormData({ ...editFormData, productionCost: e.target.value });
-                    }}
-                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-gray-50 text-gray-900 font-semibold dark:border-gray-800 dark:bg-gray-900 dark:text-white cursor-not-allowed"
                   />
+                  <p className="text-[10px] text-gray-500 mt-1">Auto-calculated: {editFormData.totalWeightKg.toFixed(2)} KG × ₹{editFormData.productionCostPerKg.toFixed(2)}/KG</p>
+                </div>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Unit Selling Price (₹)</label>
