@@ -406,157 +406,160 @@ export default function PricingEnginePage() {
           </div>
         </div>
 
-        {/* COMPONENT 3: Regional Pricing Engine (Styled exactly like screenshot) */}
+        {/* COMPONENT 3: Regional Pricing Engine (Modern UI) */}
         <div className="lg:col-span-3 mt-8">
-          <div className="overflow-x-auto shadow-md">
-            <table className="w-full text-center text-[15px] font-['Arial',sans-serif] text-black border-collapse border border-black bg-white">
-              <thead>
-                <tr>
-                  <th colSpan={profile.caseVariants?.length ? profile.caseVariants.length + 1 : 5} className="bg-[#1f3864] text-white py-3 text-[18px] font-bold border border-black">
-                    Item Unit Economics
-                  </th>
-                </tr>
-                <tr className="bg-gradient-to-b from-[#f2f2f2] to-[#d9d9d9]">
-                  <th className="px-4 py-3 font-bold border border-black text-center text-black">Metric</th>
-                  {profile.caseVariants?.map((variant: any, idx: number) => (
-                    <th key={idx} className="px-4 py-3 font-bold uppercase border border-black text-center text-black">
-                      {variant.name}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="px-2 py-1 font-medium border border-black text-left bg-gray-100">Weight (KG)</td>
-                  {profile.caseVariants?.map((variant: any, idx: number) => (
-                    <td key={idx} className="px-2 py-1 border border-black text-right pr-4">
-                      {variant.weightKg}
-                    </td>
-                  ))}
-                </tr>
-                <tr>
-                  <td className="px-2 py-1 font-medium border border-black text-left bg-gray-100">Prod Cost/KG</td>
-                  {profile.caseVariants?.map((variant: any, idx: number) => (
-                    <td key={idx} className="px-2 py-1 border border-black text-right pr-4">
-                      ₹{variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined ? variant.prodCostPerKg : totalVariantCostPerKg.toFixed(2)}
-                    </td>
-                  ))}
-                </tr>
-                <tr>
-                  <td className="px-2 py-1 font-medium border border-black text-left bg-gray-100">Total Prod Cost</td>
-                  {profile.caseVariants?.map((variant: any, idx: number) => {
-                    const effectiveProdCostPerKg = variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : totalVariantCostPerKg;
-                    return (
-                      <td key={idx} className="px-2 py-1 border border-black text-right pr-4">
-                        ₹{(Number(variant.weightKg) * effectiveProdCostPerKg).toFixed(2)}
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900 shadow-sm overflow-x-auto relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-teal-400 to-emerald-500"></div>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-blue-500" />
+              Regional Pricing Engine
+            </h2>
+            
+            <div className="rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+              <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
+                <thead className="bg-gray-50 text-xs uppercase text-gray-700 dark:bg-gray-800/50 dark:text-gray-300">
+                  <tr>
+                    <th className="px-4 py-4 font-semibold">Metric</th>
+                    {profile.caseVariants?.map((variant: any, idx: number) => (
+                      <th key={idx} className="px-4 py-4 font-semibold text-center">
+                        {variant.name}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
+                  <tr>
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">Weight (KG)</td>
+                    {profile.caseVariants?.map((variant: any, idx: number) => (
+                      <td key={idx} className="px-4 py-3 text-center">
+                        {variant.weightKg}
                       </td>
-                    );
-                  })}
-                </tr>
-                <tr>
-                  <td className="px-2 py-1 font-medium border border-black text-left bg-gray-100">Selling Price</td>
-                  {profile.caseVariants?.map((variant: any, idx: number) => (
-                    <td key={idx} className="px-2 py-1 border border-black text-right pr-4">
-                      ₹{variant.sellingPrice}
-                    </td>
-                  ))}
-                </tr>
-                <tr>
-                  <td className="px-2 py-1 font-medium border border-black text-left bg-gray-100">Profit Margin (₹)</td>
-                  {profile.caseVariants?.map((variant: any, idx: number) => {
-                    const totalProdCost = Number(variant.weightKg) * totalVariantCostPerKg;
-                    const marginAmt = Number(variant.sellingPrice) - totalProdCost;
-                    return (
-                      <td key={idx} className="px-2 py-1 border border-black text-right pr-4">
-                        ₹{marginAmt.toFixed(2)}
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">Prod Cost/KG</td>
+                    {profile.caseVariants?.map((variant: any, idx: number) => (
+                      <td key={idx} className="px-4 py-3 text-center">
+                        ₹{variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined ? variant.prodCostPerKg : totalVariantCostPerKg.toFixed(2)}
                       </td>
-                    );
-                  })}
-                </tr>
-                <tr>
-                  <td className="px-2 py-1 font-medium border border-black text-left bg-gray-100">Profit Margin (%)</td>
-                  {profile.caseVariants?.map((variant: any, idx: number) => {
-                    const effectiveProdCostPerKg = variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : totalVariantCostPerKg;
-                    const totalProdCost = Number(variant.weightKg) * effectiveProdCostPerKg;
-                    const marginAmt = Number(variant.sellingPrice) - totalProdCost;
-                    const marginPct = Number(variant.sellingPrice) > 0 ? (marginAmt / Number(variant.sellingPrice)) * 100 : 0;
-                    return (
-                      <td key={idx} className="px-2 py-1 border border-black text-right pr-4">
-                        {marginPct.toFixed(2)}%
+                    ))}
+                  </tr>
+                  <tr className="bg-gray-50/50 dark:bg-gray-800/20">
+                    <td className="px-4 py-3 font-semibold text-gray-900 dark:text-white">Total Prod Cost</td>
+                    {profile.caseVariants?.map((variant: any, idx: number) => {
+                      const effectiveProdCostPerKg = variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : totalVariantCostPerKg;
+                      return (
+                        <td key={idx} className="px-4 py-3 text-center font-semibold text-gray-900 dark:text-white">
+                          ₹{(Number(variant.weightKg) * effectiveProdCostPerKg).toFixed(2)}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">Selling Price</td>
+                    {profile.caseVariants?.map((variant: any, idx: number) => (
+                      <td key={idx} className="px-4 py-3 text-center font-bold text-gray-900 dark:text-white">
+                        ₹{variant.sellingPrice}
                       </td>
-                    );
-                  })}
-                </tr>
-                <tr className="bg-red-600 text-white font-bold">
-                  <td className="px-2 py-1 border border-black text-left">Selling Cost per</td>
-                  {profile.caseVariants?.map((variant: any, idx: number) => {
-                    const sellingCostKg = Number(variant.weightKg) > 0 ? Number(variant.sellingPrice) / Number(variant.weightKg) : 0;
-                    return (
-                      <td key={idx} className="px-2 py-1 border border-black text-right pr-4">
-                        ₹{sellingCostKg.toFixed(2)}
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">Profit Margin (₹)</td>
+                    {profile.caseVariants?.map((variant: any, idx: number) => {
+                      const totalProdCost = Number(variant.weightKg) * totalVariantCostPerKg;
+                      const marginAmt = Number(variant.sellingPrice) - totalProdCost;
+                      return (
+                        <td key={idx} className={`px-4 py-3 text-center font-bold ${marginAmt >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                          ₹{marginAmt.toFixed(2)}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">Profit Margin (%)</td>
+                    {profile.caseVariants?.map((variant: any, idx: number) => {
+                      const effectiveProdCostPerKg = variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : totalVariantCostPerKg;
+                      const totalProdCost = Number(variant.weightKg) * effectiveProdCostPerKg;
+                      const marginAmt = Number(variant.sellingPrice) - totalProdCost;
+                      const marginPct = Number(variant.sellingPrice) > 0 ? (marginAmt / Number(variant.sellingPrice)) * 100 : 0;
+                      return (
+                        <td key={idx} className={`px-4 py-3 text-center font-bold ${marginPct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                          {marginPct.toFixed(2)}%
+                        </td>
+                      );
+                    })}
+                  </tr>
+                  <tr className="bg-rose-50/50 dark:bg-rose-900/10">
+                    <td className="px-4 py-3 font-medium text-rose-600 dark:text-rose-400">Selling Cost per</td>
+                    {profile.caseVariants?.map((variant: any, idx: number) => {
+                      const sellingCostKg = Number(variant.weightKg) > 0 ? Number(variant.sellingPrice) / Number(variant.weightKg) : 0;
+                      return (
+                        <td key={idx} className="px-4 py-3 text-center font-bold text-rose-600 dark:text-rose-400">
+                          ₹{sellingCostKg.toFixed(2)}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                  <tr className="bg-blue-50/50 dark:bg-blue-900/10 border-t-2 border-blue-100 dark:border-blue-900">
+                    <td className="px-4 py-3 font-semibold text-blue-700 dark:text-blue-400">MRP</td>
+                    {profile.caseVariants?.map((variant: any, idx: number) => (
+                      <td key={idx} className="px-4 py-3">
+                        <input 
+                          type="number" 
+                          value={variant.mrp || ''} 
+                          onChange={(e) => handleVariantChange(idx, 'mrp', e.target.value)}
+                          className="w-full text-center font-bold text-blue-700 dark:text-blue-400 rounded-lg border border-blue-200 dark:border-blue-800 bg-white dark:bg-gray-950 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all shadow-sm"
+                          placeholder="0"
+                        />
                       </td>
-                    );
-                  })}
-                </tr>
-                <tr className="bg-[#0f766e] text-white font-bold">
-                  <td className="px-2 py-1 border border-black text-left">MRP</td>
-                  {profile.caseVariants?.map((variant: any, idx: number) => (
-                    <td key={idx} className="px-2 py-1 border border-black p-0">
-                      <input 
-                        type="number" 
-                        value={variant.mrp || ''} 
-                        onChange={(e) => handleVariantChange(idx, 'mrp', e.target.value)}
-                        className="w-full h-full text-right pr-4 font-bold bg-transparent text-white placeholder-teal-200 outline-none p-1"
-                        placeholder="0"
-                      />
-                    </td>
-                  ))}
-                </tr>
-                <tr className="bg-[#0f766e] text-white font-bold">
-                  <td className="px-2 py-1 border border-black text-left">CALICUT RATE</td>
-                  {profile.caseVariants?.map((variant: any, idx: number) => (
-                    <td key={idx} className="px-2 py-1 border border-black p-0">
-                      <input 
-                        type="number" 
-                        value={variant.calicutRate || ''} 
-                        onChange={(e) => handleVariantChange(idx, 'calicutRate', e.target.value)}
-                        className="w-full h-full text-right pr-4 font-bold bg-transparent text-white placeholder-teal-200 outline-none p-1"
-                        placeholder="0"
-                      />
-                    </td>
-                  ))}
-                </tr>
-                <tr>
-                  <td className="px-2 py-1 font-medium border border-black text-left bg-gray-100">Margin Amount</td>
-                  {profile.caseVariants?.map((variant: any, idx: number) => {
-                    const effectiveProdCostPerKg = variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : totalVariantCostPerKg;
-                    const totalProdCost = Number(variant.weightKg) * effectiveProdCostPerKg;
-                    const calicutRate = Number(variant.calicutRate) || 0;
-                    const marginAmt = calicutRate > 0 ? calicutRate - totalProdCost : 0;
-                    return (
-                      <td key={idx} className="px-2 py-1 border border-black text-right pr-4">
-                        ₹{marginAmt.toFixed(2)}
+                    ))}
+                  </tr>
+                  <tr className="bg-teal-50/50 dark:bg-teal-900/10 border-t border-teal-100 dark:border-teal-900/50">
+                    <td className="px-4 py-3 font-semibold text-teal-700 dark:text-teal-400">CALICUT RATE</td>
+                    {profile.caseVariants?.map((variant: any, idx: number) => (
+                      <td key={idx} className="px-4 py-3">
+                        <input 
+                          type="number" 
+                          value={variant.calicutRate || ''} 
+                          onChange={(e) => handleVariantChange(idx, 'calicutRate', e.target.value)}
+                          className="w-full text-center font-bold text-teal-700 dark:text-teal-400 rounded-lg border border-teal-200 dark:border-teal-800 bg-white dark:bg-gray-950 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500/50 transition-all shadow-sm"
+                          placeholder="0"
+                        />
                       </td>
-                    );
-                  })}
-                </tr>
-                <tr>
-                  <td className="px-2 py-1 font-medium border border-black text-left bg-gray-100">Margin %</td>
-                  {profile.caseVariants?.map((variant: any, idx: number) => {
-                    const effectiveProdCostPerKg = variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : totalVariantCostPerKg;
-                    const totalProdCost = Number(variant.weightKg) * effectiveProdCostPerKg;
-                    const calicutRate = Number(variant.calicutRate) || 0;
-                    const marginAmt = calicutRate > 0 ? calicutRate - totalProdCost : 0;
-                    const marginPct = calicutRate > 0 ? (marginAmt / calicutRate) * 100 : 0;
-                    return (
-                      <td key={idx} className="px-2 py-1 border border-black text-right pr-4">
-                        {marginPct.toFixed(2)}%
-                      </td>
-                    );
-                  })}
-                </tr>
-              </tbody>
-            </table>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">Margin Amount</td>
+                    {profile.caseVariants?.map((variant: any, idx: number) => {
+                      const effectiveProdCostPerKg = variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : totalVariantCostPerKg;
+                      const totalProdCost = Number(variant.weightKg) * effectiveProdCostPerKg;
+                      const calicutRate = Number(variant.calicutRate) || 0;
+                      const marginAmt = calicutRate > 0 ? calicutRate - totalProdCost : 0;
+                      return (
+                        <td key={idx} className={`px-4 py-3 text-center font-bold ${marginAmt >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                          ₹{marginAmt.toFixed(2)}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">Margin %</td>
+                    {profile.caseVariants?.map((variant: any, idx: number) => {
+                      const effectiveProdCostPerKg = variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : totalVariantCostPerKg;
+                      const totalProdCost = Number(variant.weightKg) * effectiveProdCostPerKg;
+                      const calicutRate = Number(variant.calicutRate) || 0;
+                      const marginAmt = calicutRate > 0 ? calicutRate - totalProdCost : 0;
+                      const marginPct = calicutRate > 0 ? (marginAmt / calicutRate) * 100 : 0;
+                      return (
+                        <td key={idx} className={`px-4 py-3 text-center font-bold ${marginPct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                          {marginPct.toFixed(2)}%
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
