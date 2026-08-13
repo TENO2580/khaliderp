@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import useSWR from 'swr';
 import { useViewMode } from '@/hooks/useViewMode';
 import MobileFilterBar from './MobileFilterBar';
+import MobilePagination from './MobilePagination';
 
 const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
@@ -577,7 +578,15 @@ export default function MobileSales() {
       {/* Mobile Card List instead of DataTable */}
       {viewMode === 'table' ? (
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
-          <DataTable columns={columns} data={orders} hideToolbar={true} />
+          <DataTable 
+            columns={columns} 
+            data={orders} 
+            hideToolbar={true} 
+            totalItems={totalItems}
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
         </div>
       ) : (
         <div className="space-y-4">
@@ -610,6 +619,13 @@ export default function MobileSales() {
               </div>
             </div>
           ))}
+
+          <MobilePagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalItems={totalItems}
+          />
         </div>
       )}
       

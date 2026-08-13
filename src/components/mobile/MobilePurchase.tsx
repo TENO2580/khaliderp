@@ -9,6 +9,7 @@ import api from '@/lib/api';
 import { toast } from 'sonner';
 import { useViewMode } from '@/hooks/useViewMode';
 import MobileFilterBar from './MobileFilterBar';
+import MobilePagination from './MobilePagination';
 
 export default function MobilePurchase() {
   const { viewMode, toggleViewMode } = useViewMode();
@@ -18,8 +19,9 @@ export default function MobilePurchase() {
   
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [search, setSearch] = useState('');
-  const totalItems = orders.length;
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -37,8 +39,10 @@ export default function MobilePurchase() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const res = await api.get(`/purchase?search=${encodeURIComponent(search)}&startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`);
+      const res = await api.get(`/purchase?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`);
       setOrders(res.data.data.data);
+      setTotalPages(res.data.data.pagination?.totalPages || 1);
+      setTotalItems(res.data.data.pagination?.total || 0);
     } catch {
       setOrders([]);
     } finally {
@@ -48,7 +52,7 @@ export default function MobilePurchase() {
 
   useEffect(() => {
     fetchData();
-  }, [search, limit, startDate, endDate, statusFilter]);
+  }, [search, page, limit, startDate, endDate, statusFilter]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,7 +129,15 @@ export default function MobilePurchase() {
 
       {viewMode === 'table' ? (
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
-          <DataTable columns={columns} data={orders} hideToolbar={true} />
+          <DataTable 
+            columns={columns} 
+            data={orders} 
+            hideToolbar={true} 
+            totalItems={totalItems}
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
         </div>
       ) : (
         <div className="space-y-4">
@@ -154,6 +166,13 @@ export default function MobilePurchase() {
             </div>
           </div>
         ))}
+
+        <MobilePagination
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          totalItems={totalItems}
+        />
       </div>
       )}
       

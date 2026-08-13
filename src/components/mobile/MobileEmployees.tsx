@@ -10,6 +10,7 @@ import api from '@/lib/api';
 import { toast } from 'sonner';
 import { useViewMode } from '@/hooks/useViewMode';
 import MobileFilterBar from './MobileFilterBar';
+import MobilePagination from './MobilePagination';
 
 export default function MobileEmployees() {
   const { viewMode, toggleViewMode } = useViewMode();
@@ -19,7 +20,8 @@ export default function MobileEmployees() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const totalItems = employees.length;
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
   // Modals
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -41,10 +43,12 @@ export default function MobileEmployees() {
     setIsLoading(true);
     try {
       const [eRes, aRes] = await Promise.all([
-        api.get(`/employees?search=${encodeURIComponent(search)}`),
+        api.get(`/employees?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`),
         api.get('/employees/attendance/stats'),
       ]);
       setEmployees(eRes.data.data.data);
+      setTotalPages(eRes.data.data.pagination?.totalPages || 1);
+      setTotalItems(eRes.data.data.pagination?.total || 0);
       setAttendanceStats(aRes.data.data);
     } catch {
       toast.error('Failed to load employee list');
@@ -55,7 +59,7 @@ export default function MobileEmployees() {
 
   useEffect(() => {
     fetchData();
-  }, [search, limit]);
+  }, [search, page, limit]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -175,7 +179,15 @@ export default function MobileEmployees() {
 
       {viewMode === 'table' ? (
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
-          <DataTable columns={columns} data={employees} hideToolbar={true} />
+          <DataTable 
+            columns={columns} 
+            data={employees} 
+            hideToolbar={true} 
+            totalItems={totalItems}
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
         </div>
       ) : (
         <div className="space-y-4">
@@ -208,6 +220,13 @@ export default function MobileEmployees() {
               </div>
             </div>
           ))}
+
+          <MobilePagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalItems={totalItems}
+          />
         </div>
       )}
       

@@ -9,6 +9,7 @@ import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { useViewMode } from '@/hooks/useViewMode';
 import MobileFilterBar from './MobileFilterBar';
+import MobilePagination from './MobilePagination';
 
 const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 const paginationFetcher = (url: string) => api.get(url).then(res => res.data);
@@ -17,17 +18,20 @@ export default function MobileRoutes() {
   const { viewMode, toggleViewMode } = useViewMode();
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
 
   // Fetch summary of all routes
   const { data: routes, isLoading: loadingRoutes } = useSWR('/routes', fetcher);
 
   // Fetch customers for the selected route
   const { data: routeCustomersData, isLoading: loadingCustomers } = useSWR(
-    selectedRoute ? `/customers?route=${encodeURIComponent(selectedRoute)}&limit=100&search=${encodeURIComponent(search)}` : null,
+    selectedRoute ? `/customers?route=${encodeURIComponent(selectedRoute)}&page=${page}&limit=20&search=${encodeURIComponent(search)}` : null,
     paginationFetcher
   );
 
   const customers = routeCustomersData?.data?.data || routeCustomersData?.data || [];
+  const totalPages = routeCustomersData?.pagination?.totalPages || 1;
+  const totalItems = routeCustomersData?.pagination?.total || 0;
 
   if (selectedRoute) {
     // Route Detail View
@@ -120,7 +124,15 @@ export default function MobileRoutes() {
           <div className="mt-6">
             {viewMode === 'table' ? (
               <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
-                <DataTable columns={columns} data={customers} hideToolbar={true} />
+                <DataTable 
+                  columns={columns} 
+                  data={customers} 
+                  hideToolbar={true} 
+                  totalItems={totalItems}
+                  page={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                />
               </div>
             ) : (
               <div className="space-y-4">
@@ -155,6 +167,13 @@ export default function MobileRoutes() {
                     </div>
                   </div>
                 ))}
+                
+                <MobilePagination
+                  page={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  totalItems={totalItems}
+                />
               </div>
             )}
           </div>
