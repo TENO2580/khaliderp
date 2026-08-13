@@ -459,16 +459,26 @@ export default function PricingEnginePage() {
                   <tr>
                     <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">Weight (KG)</td>
                     {profile.caseVariants?.map((variant: any, idx: number) => (
-                      <td key={idx} className="px-4 py-3 text-center">
-                        {variant.weightKg}
+                      <td key={idx} className="px-4 py-3">
+                        <input 
+                          type="number" 
+                          value={variant.weightKg} 
+                          onChange={(e) => handleVariantChange(idx, 'weightKg', e.target.value)}
+                          className="w-full text-center rounded border border-gray-200 p-1 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                        />
                       </td>
                     ))}
                   </tr>
                   <tr>
                     <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">Quantity</td>
                     {profile.caseVariants?.map((variant: any, idx: number) => (
-                      <td key={idx} className="px-4 py-3 text-center">
-                        {variant.qty || 1}
+                      <td key={idx} className="px-4 py-3">
+                        <input 
+                          type="number" 
+                          value={variant.qty || 1} 
+                          onChange={(e) => handleVariantChange(idx, 'qty', e.target.value)}
+                          className="w-full text-center rounded border border-gray-200 p-1 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                        />
                       </td>
                     ))}
                   </tr>
