@@ -33,6 +33,22 @@ const nunito = Nunito({
 export const metadata: Metadata = {
   title: 'Tripidio ERP — Cloud Manufacturing & Enterprise System',
   description: 'Enterprise Cloud ERP System for Lakshmi Candles',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Tripidio',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport = {
+  themeColor: '#080810',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
