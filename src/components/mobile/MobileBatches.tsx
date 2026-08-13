@@ -242,12 +242,12 @@ export default function MobileBatches() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Batch Tracking</h1>
-          <p className="text-sm text-gray-500">Track candle manufacturing batches</p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="min-w-0 pr-2">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white truncate">Batch Tracking</h1>
+          <p className="text-sm text-gray-500 line-clamp-1">Track candle manufacturing batches</p>
         </div>
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-end shrink-0 mb-4 sm:mb-0">
           <button
             onClick={toggleViewMode}
             className="rounded-xl bg-white p-2 text-gray-600 shadow-sm border border-gray-200 active:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:active:bg-gray-800"

@@ -391,22 +391,22 @@ export default function MobileReports() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reports & Advanced Analytics</h1>
-          <p className="text-sm text-gray-500">Comprehensive business reports powered by your live Supabase data</p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="min-w-0 pr-2">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white truncate">Reports & Advanced Analytics</h1>
+          <p className="text-sm text-gray-500 line-clamp-1">Comprehensive business reports powered by your live Supabase data</p>
         </div>
 
         <button
           onClick={handleExportCSV}
-          className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 shadow-sm transition-colors"
+          className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 shadow-sm transition-colors whitespace-nowrap shrink-0"
         >
           <FileSpreadsheet className="h-4 w-4" /> Export CSV / Excel
         </button>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex gap-2 border-b border-gray-200 dark:border-gray-800 pb-px">
+      <div className="flex gap-2 border-b border-gray-200 dark:border-gray-800 pb-2 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
         {reportTabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;

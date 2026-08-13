@@ -79,28 +79,30 @@ export default function MobileRoutes() {
 
     return (
       <div className="space-y-6 pb-20">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-start sm:items-center gap-3 min-w-0 pr-2">
             <button 
               onClick={() => setSelectedRoute(null)}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              className="p-2 mt-1 sm:mt-0 shrink-0 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <MapPin className="w-6 h-6 text-blue-500" />
-                Route: {selectedRoute}
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 truncate">
+                <MapPin className="w-6 h-6 text-blue-500 shrink-0" />
+                <span className="truncate">Route: {selectedRoute}</span>
               </h1>
-              <p className="text-sm text-gray-500 mt-1">Field Observation & Route Sales Tracking</p>
+              <p className="text-sm text-gray-500 mt-1 line-clamp-1">Field Observation & Route Sales Tracking</p>
             </div>
           </div>
-          <button
-            onClick={toggleViewMode}
-            className="rounded-xl bg-white p-2 text-gray-600 shadow-sm border border-gray-200 active:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:active:bg-gray-800"
-          >
-            {viewMode === 'card' ? <Table className="h-5 w-5" /> : <LayoutGrid className="h-5 w-5" />}
-          </button>
+          <div className="flex justify-end w-full sm:w-auto shrink-0 mb-2 sm:mb-0">
+            <button
+              onClick={toggleViewMode}
+              className="rounded-xl bg-white p-2 text-gray-600 shadow-sm border border-gray-200 active:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:active:bg-gray-800"
+            >
+              {viewMode === 'card' ? <Table className="h-5 w-5" /> : <LayoutGrid className="h-5 w-5" />}
+            </button>
+          </div>
         </div>
 
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm mb-4">

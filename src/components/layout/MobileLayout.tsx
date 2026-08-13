@@ -33,8 +33,8 @@ export default function MobileLayout({ children }: { children: React.ReactNode }
     <div className="flex flex-col h-[100dvh] bg-gray-50 dark:bg-gray-950 overflow-hidden text-gray-900 dark:text-gray-100">
       <MobileTopBar onSearchOpen={() => setSearchOpen(true)} />
       
-      <main className="flex-1 overflow-y-auto pb-[72px] pt-[60px] overscroll-none">
-        <div className="p-4">{children}</div>
+      <main className="flex-1 overflow-y-auto overflow-x-hidden w-full pb-[72px] pt-[60px] overscroll-none">
+        <div className="p-4 w-full box-border">{children}</div>
       </main>
 
       <MobileBottomNav />
