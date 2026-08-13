@@ -401,6 +401,31 @@ export default function PricingEnginePage() {
                     );
                   })}
                 </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* COMPONENT 3: Regional Pricing Engine */}
+        <div className="lg:col-span-3 space-y-6 mt-4">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900 shadow-sm overflow-x-auto">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-teal-500"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              Regional Pricing Engine
+            </h2>
+            
+            <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
+              <thead className="bg-gray-50 text-xs uppercase text-gray-700 dark:bg-gray-800/50 dark:text-gray-300">
+                <tr>
+                  <th className="px-4 py-3 font-semibold rounded-tl-lg">Metric</th>
+                  {profile.caseVariants?.map((variant: any, idx: number) => (
+                    <th key={idx} className="px-4 py-3 font-semibold text-center">
+                      {variant.name}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 <tr className="bg-teal-700 text-white dark:bg-teal-900">
                   <td className="px-4 py-3 font-bold">MRP</td>
                   {profile.caseVariants?.map((variant: any, idx: number) => (
@@ -444,7 +469,7 @@ export default function PricingEnginePage() {
                   })}
                 </tr>
                 <tr>
-                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">Margin %</td>
+                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-white rounded-bl-lg">Margin %</td>
                   {profile.caseVariants?.map((variant: any, idx: number) => {
                     const effectiveProdCostPerKg = variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : totalVariantCostPerKg;
                     const totalProdCost = Number(variant.weightKg) * effectiveProdCostPerKg;
@@ -452,7 +477,7 @@ export default function PricingEnginePage() {
                     const marginAmt = calicutRate > 0 ? calicutRate - totalProdCost : 0;
                     const marginPct = calicutRate > 0 ? (marginAmt / calicutRate) * 100 : 0;
                     return (
-                      <td key={idx} className="px-4 py-3 text-center">
+                      <td key={idx} className="px-4 py-3 text-center font-bold">
                         {marginPct.toFixed(2)}%
                       </td>
                     );
@@ -462,6 +487,7 @@ export default function PricingEnginePage() {
             </table>
           </div>
         </div>
+
       </div>
     </div>
   );
