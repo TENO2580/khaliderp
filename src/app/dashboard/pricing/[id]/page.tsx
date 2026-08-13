@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Save, Package, TrendingUp, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { calculateProductPricing } from '@/lib/pricing-engine';
 
-export default function ProductPricingDetail({ params }: { params: { id: string } }) {
+export default function ProductPricingDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
   const [product, setProduct] = useState<any>(null);
   const [globalProfile, setGlobalProfile] = useState<any>(null);
@@ -17,7 +18,7 @@ export default function ProductPricingDetail({ params }: { params: { id: string 
     const fetchData = async () => {
       try {
         const [prodRes, profRes] = await Promise.all([
-          fetch(`/api/products/${params.id}`),
+          fetch(`/api/products/${id}`),
           fetch('/api/pricing')
         ]);
         
@@ -37,7 +38,7 @@ export default function ProductPricingDetail({ params }: { params: { id: string 
       }
     };
     fetchData();
-  }, [params.id, router]);
+  }, [id, router]);
 
   const handleChange = (field: string, value: string | number) => {
     let newVal: any = value;
@@ -65,7 +66,7 @@ export default function ProductPricingDetail({ params }: { params: { id: string 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const res = await fetch(`/api/products/${params.id}`, {
+      const res = await fetch(`/api/products/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(product),

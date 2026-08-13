@@ -5,13 +5,14 @@ import { calculateProductPricing } from '@/lib/pricing-engine';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { user, error } = await authenticateRequest(req);
   if (error) return error;
 
   try {
+    const { id } = await params;
     const product = await prisma.product.findUnique({
-      where: { id: params.id }
+      where: { id }
     });
 
     if (!product) return errorResponse('Product not found', 404);
@@ -22,11 +23,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { user, error } = await authenticateRequest(req);
   if (error) return error;
 
   try {
+    const { id } = await params;
     const body = await req.json();
     
     // Fetch global profile for recalculation
@@ -36,7 +38,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const calcs = calculateProductPricing(body as any, profile);
 
     const product = await prisma.product.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name: body.name,
         category: body.category || null,
@@ -63,13 +65,14 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { user, error } = await authenticateRequest(req);
   if (error) return error;
 
   try {
+    const { id } = await params;
     await prisma.product.delete({
-      where: { id: params.id }
+      where: { id }
     });
     return jsonResponse(null, 200, 'Product deleted successfully');
   } catch (err: any) {
