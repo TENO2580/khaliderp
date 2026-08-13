@@ -19,13 +19,14 @@ export default function MobileRoutes() {
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
   // Fetch summary of all routes
   const { data: routes, isLoading: loadingRoutes } = useSWR('/routes', fetcher);
 
   // Fetch customers for the selected route
   const { data: routeCustomersData, isLoading: loadingCustomers } = useSWR(
-    selectedRoute ? `/customers?route=${encodeURIComponent(selectedRoute)}&page=${page}&limit=20&search=${encodeURIComponent(search)}` : null,
+    selectedRoute ? `/customers?route=${encodeURIComponent(selectedRoute)}&page=${page}&limit=${limit}&search=${encodeURIComponent(search)}` : null,
     paginationFetcher
   );
 
@@ -132,6 +133,8 @@ export default function MobileRoutes() {
                   page={page}
                   totalPages={totalPages}
                   onPageChange={setPage}
+                  limit={limit}
+                  onLimitChange={setLimit}
                 />
               </div>
             ) : (

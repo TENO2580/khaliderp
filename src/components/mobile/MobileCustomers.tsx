@@ -344,6 +344,8 @@ export default function MobileCustomers() {
             page={page}
             totalPages={totalPages}
             onPageChange={setPage}
+            limit={limit}
+            onLimitChange={setLimit}
           />
         </div>
       ) : (

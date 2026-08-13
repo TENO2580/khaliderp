@@ -187,6 +187,8 @@ export default function MobileEmployees() {
             page={page}
             totalPages={totalPages}
             onPageChange={setPage}
+            limit={limit}
+            onLimitChange={setLimit}
           />
         </div>
       ) : (

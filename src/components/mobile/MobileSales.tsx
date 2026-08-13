@@ -586,6 +586,8 @@ export default function MobileSales() {
             page={page}
             totalPages={totalPages}
             onPageChange={setPage}
+            limit={limit}
+            onLimitChange={setLimit}
           />
         </div>
       ) : (

@@ -132,6 +132,8 @@ export default function MobileProductionPage() {
             page={page}
             totalPages={totalPages}
             onPageChange={setPage}
+            limit={limit}
+            onLimitChange={setLimit}
           />
         </div>
       ) : (

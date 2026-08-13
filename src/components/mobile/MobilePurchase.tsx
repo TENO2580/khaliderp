@@ -137,6 +137,8 @@ export default function MobilePurchase() {
             page={page}
             totalPages={totalPages}
             onPageChange={setPage}
+            limit={limit}
+            onLimitChange={setLimit}
           />
         </div>
       ) : (
