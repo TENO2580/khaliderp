@@ -426,6 +426,78 @@ export default function PricingEnginePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                <tr>
+                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">Weight (KG)</td>
+                  {profile.caseVariants?.map((variant: any, idx: number) => (
+                    <td key={idx} className="px-4 py-3 text-center">
+                      {variant.weightKg}
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">Prod Cost/KG</td>
+                  {profile.caseVariants?.map((variant: any, idx: number) => (
+                    <td key={idx} className="px-4 py-3 text-center">
+                      ₹{variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined ? variant.prodCostPerKg : totalVariantCostPerKg.toFixed(2)}
+                    </td>
+                  ))}
+                </tr>
+                <tr className="bg-gray-50/50 dark:bg-gray-800/20">
+                  <td className="px-4 py-3 font-semibold text-gray-900 dark:text-white">Total Prod Cost</td>
+                  {profile.caseVariants?.map((variant: any, idx: number) => {
+                    const effectiveProdCostPerKg = variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : totalVariantCostPerKg;
+                    return (
+                      <td key={idx} className="px-4 py-3 text-center font-semibold text-gray-900 dark:text-white">
+                        ₹{(Number(variant.weightKg) * effectiveProdCostPerKg).toFixed(2)}
+                      </td>
+                    );
+                  })}
+                </tr>
+                <tr>
+                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">Selling Price</td>
+                  {profile.caseVariants?.map((variant: any, idx: number) => (
+                    <td key={idx} className="px-4 py-3 text-center font-bold text-green-600 dark:text-green-400">
+                      ₹{variant.sellingPrice}
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">Profit Margin (₹)</td>
+                  {profile.caseVariants?.map((variant: any, idx: number) => {
+                    const totalProdCost = Number(variant.weightKg) * totalVariantCostPerKg;
+                    const marginAmt = Number(variant.sellingPrice) - totalProdCost;
+                    return (
+                      <td key={idx} className={`px-4 py-3 text-center font-bold ${marginAmt >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                        ₹{marginAmt.toFixed(2)}
+                      </td>
+                    );
+                  })}
+                </tr>
+                <tr>
+                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">Profit Margin (%)</td>
+                  {profile.caseVariants?.map((variant: any, idx: number) => {
+                    const effectiveProdCostPerKg = variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : totalVariantCostPerKg;
+                    const totalProdCost = Number(variant.weightKg) * effectiveProdCostPerKg;
+                    const marginAmt = Number(variant.sellingPrice) - totalProdCost;
+                    const marginPct = Number(variant.sellingPrice) > 0 ? (marginAmt / Number(variant.sellingPrice)) * 100 : 0;
+                    return (
+                      <td key={idx} className={`px-4 py-3 text-center font-bold ${marginPct >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                        {marginPct.toFixed(2)}%
+                      </td>
+                    );
+                  })}
+                </tr>
+                <tr className="bg-red-50 dark:bg-red-900/20">
+                  <td className="px-4 py-3 font-bold text-red-600 dark:text-red-400">Selling Cost per KG</td>
+                  {profile.caseVariants?.map((variant: any, idx: number) => {
+                    const sellingCostKg = Number(variant.weightKg) > 0 ? Number(variant.sellingPrice) / Number(variant.weightKg) : 0;
+                    return (
+                      <td key={idx} className="px-4 py-3 text-center font-bold text-red-600 dark:text-red-400">
+                        ₹{sellingCostKg.toFixed(2)}
+                      </td>
+                    );
+                  })}
+                </tr>
                 <tr className="bg-teal-700 text-white dark:bg-teal-900">
                   <td className="px-4 py-3 font-bold">MRP</td>
                   {profile.caseVariants?.map((variant: any, idx: number) => (
