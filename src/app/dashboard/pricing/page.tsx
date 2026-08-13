@@ -45,14 +45,14 @@ export default function PricingEnginePage() {
   };
 
   const handleBaseCostChange = (field: string, value: string) => {
-    setProfile({ ...profile, [field]: value === '' ? '' : Number(value) });
+    setProfile({ ...profile, [field]: value });
   };
 
   const handleVariantChange = (index: number, field: string, value: string) => {
     const updatedVariants = [...profile.caseVariants];
     updatedVariants[index] = {
       ...updatedVariants[index],
-      [field]: value === '' ? '' : Number(value)
+      [field]: value
     };
     setProfile({ ...profile, caseVariants: updatedVariants });
   };
