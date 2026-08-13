@@ -3,17 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import { 
-  Lock, 
-  ArrowRight, 
-  Eye, 
-  EyeOff, 
-  User, 
-  BarChart, 
-  Package, 
-  ShieldCheck, 
-  Users
-} from 'lucide-react';
+import { Lock, ArrowRight, Eye, EyeOff, User, Moon } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function LoginPage() {
@@ -40,182 +30,154 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 font-sans">
-      
-      {/* LEFT PANE - Information & Graphics (Hidden on mobile) */}
-      <div className="hidden lg:flex w-1/2 flex-col justify-between bg-gradient-to-br from-[#f8fbff] to-[#eef5ff] dark:from-slate-900 dark:to-slate-950 relative overflow-hidden p-12 xl:p-16">
-        
-        {/* Live Animated Background */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {/* Moving Gradient Mesh */}
-          <div className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] rounded-full bg-blue-400/20 dark:bg-blue-600/10 blur-3xl animate-drift mix-blend-multiply dark:mix-blend-screen" />
-          <div className="absolute top-[40%] -right-[10%] w-[60%] h-[60%] rounded-full bg-indigo-400/20 dark:bg-indigo-600/10 blur-3xl animate-float mix-blend-multiply dark:mix-blend-screen" style={{ animationDelay: '2s' }} />
-          <div className="absolute -bottom-[20%] left-[20%] w-[80%] h-[80%] rounded-full bg-sky-400/20 dark:bg-sky-600/10 blur-3xl animate-drift mix-blend-multiply dark:mix-blend-screen" style={{ animationDelay: '4s' }} />
-          
-          {/* Animated decorative rings */}
-          <div className="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 w-[800px] h-[800px] rounded-full border-[40px] border-blue-50/50 dark:border-blue-900/20 animate-pulse-slow" />
-          <div className="absolute top-10 right-10 w-[600px] h-[600px] rounded-full border-[20px] border-blue-50/30 dark:border-blue-900/10 animate-float" style={{ animationDelay: '1s' }} />
-          
-          {/* Floating Particles (Dots) */}
-          <div className="absolute top-[20%] left-[15%] w-3 h-3 rounded-full bg-blue-500/50 dark:bg-blue-400/50 animate-float" style={{ animationDuration: '8s' }} />
-          <div className="absolute top-[60%] right-[20%] w-4 h-4 rounded-full bg-indigo-500/50 dark:bg-indigo-400/50 animate-drift" style={{ animationDuration: '12s', animationDelay: '3s' }} />
-          <div className="absolute bottom-[30%] left-[30%] w-2 h-2 rounded-full bg-sky-500/50 dark:bg-sky-400/50 animate-float" style={{ animationDuration: '10s', animationDelay: '5s' }} />
-        </div>
-
-        <div className="relative z-10">
-          {/* Logo */}
-          <div className="flex items-center gap-3 mb-16">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 shadow-lg shadow-blue-600/30">
-              <img src="/tripidio-logo.png" alt="Logo" className="h-6 w-6 object-contain invert brightness-0" />
-            </div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-              Tripidio <span className="text-blue-600">ERP</span>
-            </h1>
-          </div>
-
-          {/* Headline */}
-          <h2 className="text-4xl xl:text-5xl font-extrabold text-slate-900 dark:text-white leading-[1.1] mb-4 tracking-tight">
-            Manage. Optimize.<br />Grow Your Business.
-          </h2>
-          <p className="text-slate-600 dark:text-slate-400 text-lg mb-12 max-w-md">
-            A complete ERP solution to streamline operations and drive efficiency.
-          </p>
-
-          {/* Features */}
-          <div className="space-y-6 max-w-md">
-            {[
-              { icon: BarChart, title: 'Unified Dashboard', desc: 'Get real-time insights and KPIs across your business.', bg: 'bg-blue-100 dark:bg-blue-900/30', color: 'text-blue-600 dark:text-blue-400' },
-              { icon: Package, title: 'Smart Operations', desc: 'Automate workflows and manage processes with ease.', bg: 'bg-indigo-100 dark:bg-indigo-900/30', color: 'text-indigo-600 dark:text-indigo-400' },
-              { icon: ShieldCheck, title: 'Secure & Reliable', desc: 'Enterprise-grade security to keep your data safe.', bg: 'bg-sky-100 dark:bg-sky-900/30', color: 'text-sky-600 dark:text-sky-400' },
-              { icon: Users, title: 'Role Based Access', desc: 'Control access and permissions for your team.', bg: 'bg-blue-100 dark:bg-blue-900/30', color: 'text-blue-600 dark:text-blue-400' },
-            ].map((f, i) => (
-              <div key={i} className="flex gap-4 items-start">
-                <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${f.bg} ${f.color}`}>
-                  <f.icon className="h-6 w-6" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">{f.title}</h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 leading-snug mt-0.5">{f.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Floating Graphic & Footer */}
-        <div className="relative z-10 mt-12 flex flex-col justify-end flex-1">
-          <div className="absolute right-0 bottom-10 w-96 opacity-95 mix-blend-multiply dark:mix-blend-screen pointer-events-none transform translate-x-12 translate-y-12 animate-float" style={{ animationDuration: '12s' }}>
-            <img src="/dashboard-3d.png" alt="3D Dashboard" className="w-full h-auto drop-shadow-2xl" />
-          </div>
-          
-          <div className="flex items-center gap-2 mt-auto text-xs font-semibold text-slate-500 dark:text-slate-400">
-            <ShieldCheck className="h-4 w-4" />
-            <p>Your data is <span className="text-blue-600 dark:text-blue-400 font-bold">100%</span> secure with us</p>
-          </div>
-        </div>
+    <div className="min-h-[100dvh] w-full flex flex-col items-center justify-start bg-[#050814] overflow-hidden relative selection:bg-blue-500/30">
+      {/* Background Starry Night & Glows */}
+      <div className="absolute inset-0 z-0">
+         {/* Tiny stars */}
+         <div className="absolute top-[15%] left-[20%] w-1 h-1 bg-white/60 rounded-full shadow-[0_0_5px_white]" />
+         <div className="absolute top-[35%] right-[15%] w-0.5 h-0.5 bg-white/80 rounded-full shadow-[0_0_5px_white]" />
+         <div className="absolute top-[10%] right-[30%] w-1.5 h-1.5 bg-blue-300/60 rounded-full shadow-[0_0_8px_white]" />
+         <div className="absolute bottom-[25%] left-[10%] w-0.5 h-0.5 bg-white/50 rounded-full shadow-[0_0_3px_white]" />
+         <div className="absolute bottom-[40%] right-[20%] w-1 h-1 bg-indigo-300/60 rounded-full shadow-[0_0_6px_white]" />
+         
+         {/* Glowing auras */}
+         <div className="absolute -top-[10%] left-1/2 -translate-x-1/2 w-[90%] max-w-lg aspect-square rounded-full bg-blue-600/15 blur-[100px]" />
+         <div className="absolute top-[15%] -left-[20%] w-[60%] aspect-square rounded-full bg-indigo-600/10 blur-[120px]" />
+         <div className="absolute top-[30%] -right-[20%] w-[50%] aspect-square rounded-full bg-sky-600/10 blur-[120px]" />
+         
+         {/* Faint grid or arc lines */}
+         <div className="absolute top-[25%] left-[-20%] right-[-20%] h-[1px] bg-gradient-to-r from-transparent via-blue-500/10 to-transparent transform rotate-12" />
+         <div className="absolute top-[35%] left-[-20%] right-[-20%] h-[1px] bg-gradient-to-r from-transparent via-indigo-500/10 to-transparent transform -rotate-[8deg]" />
       </div>
 
-      {/* RIGHT PANE - Login Form */}
-      <div className="flex w-full lg:w-1/2 items-center justify-center p-4 sm:p-8 xl:p-16 relative">
-        {/* Mobile Logo (only visible on small screens) */}
-        <div className="absolute top-8 left-8 lg:hidden flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 shadow-md">
-            <img src="/tripidio-logo.png" alt="Logo" className="h-4 w-4 object-contain invert brightness-0" />
-          </div>
-          <h1 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
-            Tripidio <span className="text-blue-600">ERP</span>
-          </h1>
+      <div className="relative z-10 flex flex-col items-center w-full max-w-[480px] px-6 pt-16 pb-8 h-full min-h-[100dvh] justify-center">
+        {/* Dark mode toggle - Top right */}
+        <div className="absolute top-6 right-6">
+          <button className="p-2.5 rounded-full bg-white/5 border border-white/10 text-slate-300 backdrop-blur-md hover:bg-white/10 transition-colors">
+            <Moon className="w-5 h-5" />
+          </button>
         </div>
 
-        <div className="w-full max-w-[440px] rounded-[2rem] bg-white p-8 sm:p-12 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] dark:bg-slate-900 dark:border dark:border-slate-800">
+        {/* Logo Area */}
+        <div className="flex flex-col items-center mb-10 w-full shrink-0">
+          <div className="relative w-40 h-40 flex flex-col items-center justify-center mb-6">
+            {/* The 3D Base Rings */}
+            <div className="absolute bottom-2 w-32 h-6 rounded-[100%] border-[2px] border-blue-400/40 shadow-[0_0_20px_rgba(59,130,246,0.5)_inset]" />
+            <div className="absolute bottom-3 w-40 h-8 rounded-[100%] border-[1px] border-blue-500/20" />
+            <div className="absolute bottom-4 w-48 h-10 rounded-[100%] border-[1px] border-indigo-500/10" />
+            
+            {/* Beam of light */}
+            <div className="absolute top-0 w-20 h-40 bg-gradient-to-b from-blue-400/30 via-blue-500/10 to-transparent blur-xl" />
+
+            {/* The floating Hexagon logo */}
+            <div className="relative z-10 w-[90px] h-[104px] bg-gradient-to-br from-cyan-300 via-blue-600 to-indigo-900 flex items-center justify-center shadow-[0_0_40px_rgba(37,99,235,0.8)] animate-float" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}>
+              <div className="w-[92%] h-[92%] bg-gradient-to-br from-[#1e40af] to-[#0f172a] flex items-center justify-center" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}>
+                <span className="text-[52px] font-black text-white italic drop-shadow-md tracking-tighter pr-2 font-sans leading-none">T</span>
+              </div>
+            </div>
+          </div>
           
-          <div className="flex flex-col items-center text-center mb-10">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/20 mb-6">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 shadow-lg shadow-blue-600/30">
-                <img src="/tripidio-logo.png" alt="Logo" className="h-7 w-7 object-contain invert brightness-0" />
-              </div>
-            </div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white">Welcome back!</h2>
-            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Sign in to your Tripidio ERP account.</p>
-          </div>
+          <h1 className="text-4xl font-bold tracking-tight text-white mb-2 font-sans">
+            Tripidio <span className="text-blue-500">ERP</span>
+          </h1>
+          <p className="text-sm font-medium text-slate-400">Smart. Simple. Powerful.</p>
+        </div>
 
-          <form className="space-y-5" onSubmit={handleSubmit}>
-            <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-                Email or Username
-              </label>
-              <div className="relative">
-                <User className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-12 pr-4 text-sm font-medium text-slate-900 transition-all hover:border-slate-300 focus:border-blue-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:bg-slate-950 dark:focus:border-blue-500 dark:focus:ring-blue-600/20"
-                  placeholder="Enter your email or username"
-                />
-              </div>
-            </div>
+        {/* Login Card */}
+        <div className="w-full bg-[#0a0f25]/60 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-6 sm:p-8 shadow-2xl relative overflow-hidden shrink-0">
+           {/* Inner top glow */}
+           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[70%] h-px bg-gradient-to-r from-transparent via-blue-400/60 to-transparent" />
+           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[40%] h-[2px] bg-gradient-to-r from-transparent via-blue-300/80 to-transparent blur-sm" />
+           
+           <div className="text-center mb-8 mt-2">
+             <h2 className="text-2xl font-bold text-white mb-2">Welcome back!</h2>
+             <p className="text-sm text-slate-400">Sign in to continue to your account</p>
+           </div>
 
-            <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-12 pr-12 text-sm font-medium text-slate-900 transition-all hover:border-slate-300 focus:border-blue-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:bg-slate-950 dark:focus:border-blue-500 dark:focus:ring-blue-600/20"
-                  placeholder="Enter your password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 focus:outline-none"
-                >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
-              </div>
-              <div className="flex justify-end mt-2">
-                <a href="#" className="text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400">
-                  Forgot password?
-                </a>
-              </div>
-            </div>
+           <form className="space-y-5" onSubmit={handleSubmit}>
+             {/* Email Input Group */}
+             <div className="space-y-1.5">
+               <label className="text-[13px] font-medium text-slate-300 ml-1">Email or Username</label>
+               <div className="flex items-center gap-3">
+                 <div className="w-11 h-11 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 shrink-0">
+                   <User className="w-5 h-5 text-blue-400" />
+                 </div>
+                 <div className="relative flex-1">
+                   <input 
+                     type="text"
+                     value={email}
+                     onChange={(e) => setEmail(e.target.value)}
+                     className="w-full bg-[#050814]/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all text-[15px] shadow-inner h-11" 
+                     placeholder="Enter your email or username" 
+                     required
+                   />
+                 </div>
+               </div>
+             </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 py-4 text-sm font-bold text-white shadow-lg shadow-blue-600/25 transition-all hover:bg-blue-700 hover:shadow-blue-600/40 active:scale-[0.98] disabled:opacity-50"
-            >
-              {isLoading ? 'Signing in...' : 'Sign in to Dashboard'}
-              {!isLoading && <ArrowRight className="h-4 w-4" />}
-            </button>
-          </form>
+             {/* Password Input Group */}
+             <div className="space-y-1.5">
+               <label className="text-[13px] font-medium text-slate-300 ml-1">Password</label>
+               <div className="flex items-center gap-3">
+                 <div className="w-11 h-11 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 shrink-0">
+                   <Lock className="w-5 h-5 text-blue-400" />
+                 </div>
+                 <div className="relative flex-1">
+                   <input 
+                     type={showPassword ? 'text' : 'password'}
+                     value={password}
+                     onChange={(e) => setPassword(e.target.value)}
+                     className="w-full bg-[#050814]/80 border border-white/10 rounded-xl px-4 py-3 pr-12 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all text-[15px] shadow-inner h-11" 
+                     placeholder="Enter your password" 
+                     required
+                   />
+                   <button 
+                     type="button"
+                     onClick={() => setShowPassword(!showPassword)}
+                     className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-white/5 rounded-md transition-colors"
+                   >
+                     {showPassword ? <EyeOff className="w-[18px] h-[18px] text-slate-400" /> : <Eye className="w-[18px] h-[18px] text-slate-400" />}
+                   </button>
+                 </div>
+               </div>
+             </div>
 
-          <div className="mt-8 flex items-center justify-center gap-4">
-            <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800"></div>
-            <span className="text-xs font-medium text-slate-400">or</span>
-            <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800"></div>
-          </div>
+             <div className="flex justify-end pt-1">
+               <a href="#" className="text-[13px] font-medium text-blue-500 hover:text-blue-400 transition-colors">Forgot password?</a>
+             </div>
 
-          <button
-            type="button"
-            className="mt-8 flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white py-3.5 text-sm font-bold text-slate-700 transition-all hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700/50"
-          >
-            <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="h-5 w-5" alt="Google" />
-            Sign in with Google
-          </button>
+             <button 
+               type="submit" 
+               disabled={isLoading}
+               className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold text-[15px] shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_25px_rgba(79,70,229,0.5)] transition-all flex items-center justify-center gap-2 mt-4 disabled:opacity-70 disabled:cursor-not-allowed"
+             >
+               {isLoading ? (
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+               ) : (
+                  <>Sign in to Dashboard <ArrowRight className="w-[18px] h-[18px]" /></>
+               )}
+             </button>
 
-          <p className="mt-10 text-center text-xs font-medium text-slate-500 dark:text-slate-400">
-            Don't have an account?{' '}
-            <a href="#" className="font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400">
-              Contact your administrator
-            </a>
-          </p>
+             <div className="flex items-center gap-3 my-6">
+               <div className="flex-1 h-px bg-white/5" />
+               <span className="text-[11px] text-slate-500 font-medium">or</span>
+               <div className="flex-1 h-px bg-white/5" />
+             </div>
+
+             <button type="button" className="w-full h-12 rounded-xl bg-transparent border border-white/10 text-white font-medium text-[14px] flex items-center justify-center gap-3 hover:bg-white/5 transition-all">
+               <svg viewBox="0 0 24 24" className="w-5 h-5">
+                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+               </svg>
+               Sign in with Google
+             </button>
+
+             <div className="text-center mt-6">
+               <p className="text-[13px] text-slate-400">Don't have an account? <a href="#" className="text-blue-500 hover:underline">Contact your administrator</a></p>
+             </div>
+           </form>
         </div>
       </div>
     </div>
