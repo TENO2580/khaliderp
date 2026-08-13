@@ -496,8 +496,14 @@ export default function PricingEnginePage() {
                   <tr>
                     <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">Prod Cost/KG</td>
                     {profile.caseVariants?.map((variant: any, idx: number) => (
-                      <td key={idx} className="px-4 py-3 text-center">
-                        ₹{variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined ? variant.prodCostPerKg : totalVariantCostPerKg.toFixed(2)}
+                      <td key={idx} className="px-4 py-3">
+                        <input 
+                          type="number" 
+                          value={variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined ? variant.prodCostPerKg : ''} 
+                          onChange={(e) => handleVariantChange(idx, 'prodCostPerKg', e.target.value)}
+                          placeholder={totalVariantCostPerKg.toFixed(2)}
+                          className="w-full text-center rounded border border-gray-200 p-1 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                        />
                       </td>
                     ))}
                   </tr>
