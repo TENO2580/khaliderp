@@ -54,6 +54,17 @@ export async function GET(req: NextRequest) {
           rsCaseVariants: { orderBy: { weightKg: 'asc' } }
         }
       });
+    } else if (profile.rsCaseVariants.length === 0) {
+      // Seed rsCaseVariants for existing profile
+      await prisma.rsCaseVariant.createMany({
+        data: DEFAULT_PRICING.rsCaseVariants.create.map(v => ({ ...v, profileId: profile!.id }))
+      });
+      profile = await prisma.costingProfile.findFirst({
+        include: { 
+          caseVariants: { orderBy: { weightKg: 'asc' } },
+          rsCaseVariants: { orderBy: { weightKg: 'asc' } }
+        }
+      });
     }
 
     return jsonResponse(profile, 200, 'Pricing data fetched');
