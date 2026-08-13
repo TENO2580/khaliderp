@@ -179,6 +179,7 @@ export default function BatchesScreen() {
         </TouchableOpacity>
       )
     },
+    { key: 'batchNumber', title: 'Batch #', width: 110, render: (item) => <Text style={[styles.cellText, {fontWeight: 'bold', color: '#4F46E5'}]} numberOfLines={1}>{item.batchNumber}</Text> },
     { key: 'product', title: 'Product', width: 120, render: (item) => <Text style={[styles.cellText, {fontWeight: 'bold'}]} numberOfLines={1}>{item.product?.name || 'General'}</Text> },
     { key: 'producedQty', title: 'Produced', width: 80, render: (item) => <Text style={styles.cellText}>{Number(item.producedQty).toFixed(2)}</Text> },
     { key: 'soldQty', title: 'Sold', width: 80, render: (item) => <Text style={[styles.cellText, { color: '#10B981' }]}>{Number(item.soldQty).toFixed(2)}</Text> },
