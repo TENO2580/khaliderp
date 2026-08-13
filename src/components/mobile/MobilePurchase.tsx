@@ -106,28 +106,26 @@ export default function MobilePurchase() {
         </button>
       </div>
 
-      {viewMode === 'card' && (
-        <MobileFilterBar
-          search={search}
-          onSearchChange={setSearch}
-          searchPlaceholder="Search POs..."
-          startDate={startDate}
-          onStartDateChange={setStartDate}
-          endDate={endDate}
-          onEndDateChange={setEndDate}
-          statusFilter={statusFilter}
-          onStatusChange={setStatusFilter}
-          statusOptions={[
-            { label: 'Pending', value: 'PENDING' },
-            { label: 'Delivered', value: 'DELIVERED' },
-            { label: 'Cancelled', value: 'CANCELLED' }
-          ]}
-        />
-      )}
+      <MobileFilterBar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search POs..."
+        startDate={startDate}
+        onStartDateChange={setStartDate}
+        endDate={endDate}
+        onEndDateChange={setEndDate}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        statusOptions={[
+          { label: 'Pending', value: 'PENDING' },
+          { label: 'Delivered', value: 'DELIVERED' },
+          { label: 'Cancelled', value: 'CANCELLED' }
+        ]}
+      />
 
       {viewMode === 'table' ? (
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
-          <DataTable columns={columns} data={orders} />
+          <DataTable columns={columns} data={orders} hideToolbar={true} />
         </div>
       ) : (
         <div className="space-y-4">

@@ -110,19 +110,17 @@ export default function MobileRoutes() {
           </div>
         </div>
 
-        {viewMode === 'card' && (
-          <MobileFilterBar
-            search={search}
-            onSearchChange={setSearch}
-            searchPlaceholder="Search customers in route..."
-          />
-        )}
+        <MobileFilterBar
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search customers in route..."
+        />
 
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
           <div className="mt-6">
             {viewMode === 'table' ? (
               <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
-                <DataTable columns={columns} data={customers} />
+                <DataTable columns={columns} data={customers} hideToolbar={true} />
               </div>
             ) : (
               <div className="space-y-4">

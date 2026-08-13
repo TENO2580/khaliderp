@@ -256,28 +256,26 @@ export default function MobileBatches() {
         </div>
       </div>
 
-      {viewMode === 'card' && (
-        <MobileFilterBar
-          search={search}
-          onSearchChange={setSearch}
-          searchPlaceholder="Search batches..."
-          startDate={startDate}
-          onStartDateChange={setStartDate}
-          endDate={endDate}
-          onEndDateChange={setEndDate}
-          statusFilter={statusFilter}
-          onStatusChange={setStatusFilter}
-          statusOptions={[
-            { label: 'Active', value: 'ACTIVE' },
-            { label: 'Completed', value: 'COMPLETED' },
-            { label: 'Low Stock', value: 'LOW_STOCK' }
-          ]}
-        />
-      )}
+      <MobileFilterBar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search batches..."
+        startDate={startDate}
+        onStartDateChange={setStartDate}
+        endDate={endDate}
+        onEndDateChange={setEndDate}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        statusOptions={[
+          { label: 'In Progress', value: 'IN_PROGRESS' },
+          { label: 'Completed', value: 'COMPLETED' },
+          { label: 'Failed', value: 'FAILED' }
+        ]}
+      />
 
       {viewMode === 'table' ? (
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
-          <DataTable columns={columns} data={batches} onBatchSave={handleBatchSave} />
+          <DataTable columns={columns} data={batches} enableInlineEdit={true} onBatchSave={handleBatchSave} hideToolbar={true} />
         </div>
       ) : (
         <div className="space-y-4">

@@ -65,6 +65,7 @@ interface DataTableProps<T> {
   statusOptions?: { label: string; value: string }[];
   enableInlineEdit?: boolean;
   onBatchSave?: (edits: { rowId: string; key: string; value: string }[]) => void;
+  hideToolbar?: boolean;
 }
 
 export default function DataTable<T extends { id?: string }>({
@@ -91,6 +92,7 @@ export default function DataTable<T extends { id?: string }>({
   statusOptions,
   enableInlineEdit = false,
   onBatchSave,
+  hideToolbar = false,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState('');
   const [isUnlocked, setIsUnlocked] = useState(false);
@@ -346,8 +348,9 @@ export default function DataTable<T extends { id?: string }>({
 
   return (
     <div className="flex flex-col max-h-[calc(100vh-8rem)] rounded-2xl border border-gray-200/80 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 overflow-hidden relative">
-      <div className="flex-none flex flex-col gap-4 border-b border-gray-200/80 p-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-md flex gap-2">
+      {!hideToolbar && (
+        <div className="flex-none flex flex-col gap-4 border-b border-gray-200/80 p-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative flex-1 max-w-md flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
@@ -468,6 +471,7 @@ export default function DataTable<T extends { id?: string }>({
           )}
         </div>
       </div>
+      )}
 
       <div className="flex-1 overflow-x-auto w-full relative">
         <table className={cn("min-w-max text-left text-sm text-gray-600 dark:text-gray-400", globalLayout === 'auto' ? 'w-auto' : 'w-full')}>

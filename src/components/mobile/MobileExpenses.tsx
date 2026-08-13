@@ -232,24 +232,22 @@ export default function MobileExpenses() {
         </button>
       </div>
 
-      {viewMode === 'card' && (
-        <MobileFilterBar
-          search={search}
-          onSearchChange={setSearch}
-          searchPlaceholder="Search expenses..."
-          startDate={startDate}
-          onStartDateChange={setStartDate}
-          endDate={endDate}
-          onEndDateChange={setEndDate}
-          statusFilter={statusFilter}
-          onStatusChange={setStatusFilter}
-          statusOptions={[
-            { label: 'Pending', value: 'PENDING' },
-            { label: 'Approved', value: 'APPROVED' },
-            { label: 'Rejected', value: 'REJECTED' }
-          ]}
-        />
-      )}
+      <MobileFilterBar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search expenses..."
+        startDate={startDate}
+        onStartDateChange={setStartDate}
+        endDate={endDate}
+        onEndDateChange={setEndDate}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        statusOptions={[
+          { label: 'Pending', value: 'PENDING' },
+          { label: 'Approved', value: 'APPROVED' },
+          { label: 'Rejected', value: 'REJECTED' }
+        ]}
+      />
 
       {/* Mobile Expense Stats */}
       {stats && (
@@ -271,7 +269,7 @@ export default function MobileExpenses() {
 
       {viewMode === 'table' ? (
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
-          <DataTable columns={columns} data={expenses} onBatchSave={handleBatchSave} />
+          <DataTable columns={columns} data={expenses} onBatchSave={handleBatchSave} hideToolbar={true} />
         </div>
       ) : (
         <div className="space-y-4">

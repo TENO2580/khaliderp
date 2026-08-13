@@ -316,28 +316,26 @@ export default function MobileCustomers() {
         </div>
       </div>
 
-      {viewMode === 'card' && (
-        <MobileFilterBar
-          search={search}
-          onSearchChange={setSearch}
-          searchPlaceholder="Search customers..."
-          startDate={startDate}
-          onStartDateChange={setStartDate}
-          endDate={endDate}
-          onEndDateChange={setEndDate}
-          statusFilter={statusFilter}
-          onStatusChange={setStatusFilter}
-          statusOptions={[
-            { label: 'Active', value: 'ACTIVE' },
-            { label: 'Inactive', value: 'INACTIVE' },
-            { label: 'Lead', value: 'LEAD' }
-          ]}
-        />
-      )}
+      <MobileFilterBar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search customers..."
+        startDate={startDate}
+        onStartDateChange={setStartDate}
+        endDate={endDate}
+        onEndDateChange={setEndDate}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        statusOptions={[
+          { label: 'Active', value: 'ACTIVE' },
+          { label: 'Inactive', value: 'INACTIVE' },
+          { label: 'Lead', value: 'LEAD' }
+        ]}
+      />
 
       {viewMode === 'table' ? (
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
-          <DataTable columns={columns} data={customers} />
+          <DataTable columns={columns} data={customers} hideToolbar={true} />
         </div>
       ) : (
         <div className="space-y-4">

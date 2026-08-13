@@ -115,17 +115,15 @@ export default function MobileProductionPage() {
         </button>
       </div>
 
-      {viewMode === 'card' && (
-        <MobileFilterBar
-          search={search}
-          onSearchChange={setSearch}
-          searchPlaceholder="Search production logs..."
-        />
-      )}
+      <MobileFilterBar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search production logs..."
+      />
 
       {viewMode === 'table' ? (
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
-          <DataTable columns={columns} data={productions} />
+          <DataTable columns={columns} data={productions} hideToolbar={true} />
         </div>
       ) : (
         <div className="space-y-4">
