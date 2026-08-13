@@ -852,6 +852,7 @@ model CaseVariant {
   profileId     String
   name          String // e.g., "2 RS CASE"
   weightKg      Float // e.g., 0.72
+  qty           Int?   @default(1) // Number of items in a case
   prodCostPerKg Float? // Optional override for Prod Cost/KG
   sellingPrice  Float // e.g., 228.00
   mrp           Float? @default(0)

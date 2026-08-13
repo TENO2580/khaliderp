@@ -18,10 +18,10 @@ const DEFAULT_PRICING = {
   sellingPrice: 195.00,
   caseVariants: {
     create: [
-      { name: "3 CANDLE PACK", weightKg: 0.14, sellingPrice: 39.00, mrp: 60, calicutRate: 35 },
-      { name: "STAND CANDLE", weightKg: 0.16, sellingPrice: 44.00, mrp: 60, calicutRate: 39 },
-      { name: "TORCH SMALL", weightKg: 0.165, sellingPrice: 44.00, mrp: 70, calicutRate: 42 },
-      { name: "TORCH BIG", weightKg: 0.215, sellingPrice: 56.00, mrp: 100, calicutRate: 54 },
+      { name: "3 CANDLE PACK", weightKg: 0.14, qty: 1, sellingPrice: 39.00, mrp: 60, calicutRate: 35 },
+      { name: "STAND CANDLE", weightKg: 0.16, qty: 1, sellingPrice: 44.00, mrp: 60, calicutRate: 39 },
+      { name: "TORCH SMALL", weightKg: 0.165, qty: 1, sellingPrice: 44.00, mrp: 70, calicutRate: 42 },
+      { name: "TORCH BIG", weightKg: 0.215, qty: 1, sellingPrice: 56.00, mrp: 100, calicutRate: 54 },
     ]
   }
 };
@@ -86,6 +86,7 @@ export async function PUT(req: NextRequest) {
               data: {
                 name: variant.name,
                 weightKg: Number(variant.weightKg),
+                qty: variant.qty ? Number(variant.qty) : 1,
                 prodCostPerKg: variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : null,
                 sellingPrice: Number(variant.sellingPrice),
                 mrp: variant.mrp ? Number(variant.mrp) : 0,
@@ -98,6 +99,7 @@ export async function PUT(req: NextRequest) {
                 profileId: id,
                 name: variant.name,
                 weightKg: Number(variant.weightKg),
+                qty: variant.qty ? Number(variant.qty) : 1,
                 prodCostPerKg: variant.prodCostPerKg !== null && variant.prodCostPerKg !== undefined && variant.prodCostPerKg !== '' ? Number(variant.prodCostPerKg) : null,
                 sellingPrice: Number(variant.sellingPrice),
                 mrp: variant.mrp ? Number(variant.mrp) : 0,
