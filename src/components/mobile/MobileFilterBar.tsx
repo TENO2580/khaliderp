@@ -84,6 +84,7 @@ export default function MobileFilterBar({
                 onFocus={(e) => (e.target.type = 'date')}
                 onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
                 value={startDate || ''}
+                max={endDate || undefined}
                 onChange={(e) => onStartDateChange(e.target.value)}
                 className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:[color-scheme:dark]"
               />
@@ -95,6 +96,7 @@ export default function MobileFilterBar({
                 onFocus={(e) => (e.target.type = 'date')}
                 onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
                 value={endDate || ''}
+                min={startDate || undefined}
                 onChange={(e) => onEndDateChange(e.target.value)}
                 className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:[color-scheme:dark]"
               />
