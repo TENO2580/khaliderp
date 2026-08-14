@@ -14,6 +14,16 @@ const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
 export default function DesktopSales() {
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const searchParam = params.get('search');
+      if (searchParam) {
+        setSearch(searchParam);
+      }
+    }
+  }, []);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [startDate, setStartDate] = useState('');

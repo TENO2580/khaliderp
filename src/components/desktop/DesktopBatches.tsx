@@ -13,6 +13,16 @@ const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
 export default function DesktopBatches() {
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const searchParam = params.get('search');
+      if (searchParam) {
+        setSearch(searchParam);
+      }
+    }
+  }, []);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('');

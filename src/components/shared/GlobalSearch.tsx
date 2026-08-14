@@ -85,7 +85,7 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                       <div
                         key={c.id}
                         onClick={() => {
-                          router.push(`/dashboard/customers`);
+                          router.push(`/dashboard/customers?search=${encodeURIComponent(c.name)}`);
                           onClose();
                         }}
                         className="flex justify-between items-center p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-sm"
@@ -111,7 +111,7 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                       <div
                         key={o.id}
                         onClick={() => {
-                          router.push(`/dashboard/sales`);
+                          router.push(`/dashboard/sales?search=${encodeURIComponent(o.orderNumber)}`);
                           onClose();
                         }}
                         className="flex justify-between items-center p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-sm"
@@ -137,7 +137,7 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                       <div
                         key={b.id}
                         onClick={() => {
-                          router.push(`/dashboard/batches`);
+                          router.push(`/dashboard/batches?search=${encodeURIComponent(b.batchNumber)}`);
                           onClose();
                         }}
                         className="flex justify-between items-center p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-sm"
