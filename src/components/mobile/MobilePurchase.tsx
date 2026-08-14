@@ -206,7 +206,7 @@ export default function MobilePurchase() {
                   required
                   value={formData.supplierName}
                   onChange={(e) => setFormData({ ...formData, supplierName: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow"
                 />
               </div>
 
@@ -217,7 +217,7 @@ export default function MobilePurchase() {
                   required
                   value={formData.material}
                   onChange={(e) => setFormData({ ...formData, material: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow"
                 />
               </div>
 
@@ -228,7 +228,7 @@ export default function MobilePurchase() {
                     type="number"
                     value={formData.quantity}
                     onChange={(e) => setFormData({ ...formData, quantity: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
-                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow"
                   />
                 </div>
                 <div>
@@ -237,7 +237,7 @@ export default function MobilePurchase() {
                     type="number"
                     value={formData.unitPrice}
                     onChange={(e) => setFormData({ ...formData, unitPrice: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
-                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow"
                   />
                 </div>
               </div>
