@@ -8,6 +8,7 @@ import { Edit3, Trash2, Plus, X, LayoutGrid, Table } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import useSWR from 'swr';
+import { useSearchParams } from 'next/navigation';
 import { useViewMode } from '@/hooks/useViewMode';
 import MobileFilterBar from './MobileFilterBar';
 import MobilePagination from './MobilePagination';
@@ -15,18 +16,16 @@ import MobilePagination from './MobilePagination';
 const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
 export default function MobileBatches() {
+  const searchParams = useSearchParams();
+  const urlSearch = searchParams.get('search');
   const { viewMode, toggleViewMode } = useViewMode();
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const searchParam = params.get('search');
-      if (searchParam) {
-        setSearch(searchParam);
-      }
+    if (urlSearch !== null) {
+      setSearch(urlSearch);
     }
-  }, []);
+  }, [urlSearch]);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('');

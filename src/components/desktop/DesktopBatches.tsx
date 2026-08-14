@@ -8,21 +8,20 @@ import { Edit3, Trash2 } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import useSWR from 'swr';
+import { useSearchParams } from 'next/navigation';
 
 const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
 export default function DesktopBatches() {
+  const searchParams = useSearchParams();
+  const urlSearch = searchParams.get('search');
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const searchParam = params.get('search');
-      if (searchParam) {
-        setSearch(searchParam);
-      }
+    if (urlSearch !== null) {
+      setSearch(urlSearch);
     }
-  }, []);
+  }, [urlSearch]);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -255,11 +254,15 @@ export default function DesktopBatches() {
         </div>
       </div>
 
-      <DataTable totalItems={totalItems} limit={limit} onLimitChange={(l) => { setLimit(l); setPage(1); }}
+      <DataTable
+        totalItems={totalItems}
+        limit={limit}
+        onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}
         data={batches}
         searchPlaceholder="Search batch number..."
-        onSearch={(q) => setSearch(q)}
+        searchValue={search}
+        onSearch={(q) => { setSearch(q); setPage(1); }}
         onAddClick={() => setIsCreateOpen(true)}
         addButtonLabel="Generate New Batch"
         page={page}

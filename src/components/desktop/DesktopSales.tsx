@@ -9,21 +9,20 @@ import { Plus, FileText, CheckCircle2, DollarSign, X } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import useSWR from 'swr';
+import { useSearchParams } from 'next/navigation';
 
 const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
 export default function DesktopSales() {
+  const searchParams = useSearchParams();
+  const urlSearch = searchParams.get('search');
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const searchParam = params.get('search');
-      if (searchParam) {
-        setSearch(searchParam);
-      }
+    if (urlSearch !== null) {
+      setSearch(urlSearch);
     }
-  }, []);
+  }, [urlSearch]);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [startDate, setStartDate] = useState('');
@@ -556,10 +555,14 @@ export default function DesktopSales() {
         </div>
       </div>
 
-      <DataTable totalItems={totalItems}
+      <DataTable 
+        totalItems={totalItems}
+        limit={limit}
+        onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}
         data={orders}
-        searchPlaceholder="Search order # or customer..."
+        searchPlaceholder="Search by order, customer..."
+        searchValue={search}
         onSearch={setSearch}
         onAddClick={() => {
           setIsEdit(false);

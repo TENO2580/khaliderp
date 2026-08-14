@@ -11,21 +11,20 @@ import {
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import useSWR from 'swr';
+import { useSearchParams } from 'next/navigation';
 
 const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
 export default function DesktopCustomers() {
+  const searchParams = useSearchParams();
+  const urlSearch = searchParams.get('search');
   const [search, setSearch] = useState('');
   
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const searchParam = params.get('search');
-      if (searchParam) {
-        setSearch(searchParam);
-      }
+    if (urlSearch !== null) {
+      setSearch(urlSearch);
     }
-  }, []);
+  }, [urlSearch]);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [startDate, setStartDate] = useState('');
@@ -321,6 +320,7 @@ export default function DesktopCustomers() {
         columns={columns}
         data={customers}
         searchPlaceholder="Search by name, ID, phone..."
+        searchValue={search}
         onSearch={(q) => {
           setSearch(q);
           setPage(1);

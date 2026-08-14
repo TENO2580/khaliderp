@@ -45,6 +45,7 @@ interface DataTableProps<T> {
   columns: Column<T>[];
   data: T[];
   searchPlaceholder?: string;
+  searchValue?: string;
   onSearch?: (query: string) => void;
   onAddClick?: () => void;
   addButtonLabel?: string;
@@ -72,6 +73,7 @@ export default function DataTable<T extends { id?: string }>({
   columns,
   data,
   searchPlaceholder = 'Search...',
+  searchValue,
   onSearch,
   onAddClick,
   addButtonLabel = 'Add New',
@@ -94,10 +96,17 @@ export default function DataTable<T extends { id?: string }>({
   onBatchSave,
   hideToolbar = false,
 }: DataTableProps<T>) {
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(searchValue || '');
   const [isUnlocked, setIsUnlocked] = useState(false);
   const pendingEditsRef = useRef<Record<string, Record<string, string>>>({});
   const [pendingCount, setPendingCount] = useState(0);
+
+  // Sync external search value
+  useEffect(() => {
+    if (searchValue !== undefined && searchValue !== search) {
+      setSearch(searchValue);
+    }
+  }, [searchValue]);
 
   // Column Management & Preferences
   const pathname = usePathname();
