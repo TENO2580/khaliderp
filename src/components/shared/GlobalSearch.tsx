@@ -85,7 +85,7 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                       <div
                         key={c.id}
                         onClick={() => {
-                          router.push(`/dashboard/customers/${c.id}`);
+                          router.push(`/dashboard/customers`);
                           onClose();
                         }}
                         className="flex justify-between items-center p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer text-sm"
