@@ -595,8 +595,6 @@ export default function DesktopSales() {
         totalPages={totalPages}
         onPageChange={setPage}
         isLoading={isLoading}
-        limit={limit}
-        onLimitChange={setLimit}
         startDate={startDate}
         onStartDateChange={setStartDate}
         endDate={endDate}
