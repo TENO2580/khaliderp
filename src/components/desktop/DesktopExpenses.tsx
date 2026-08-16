@@ -4,12 +4,12 @@ import React, { useEffect, useState } from 'react';
 import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { Receipt, Check, Plus, CreditCard, Edit3, Trash2 } from 'lucide-react';
+import { Receipt, Check, Plus, CreditCard, Edit3, Trash2, X } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import useSWR from 'swr';
 
-const fetcher = (url: string) => api.get(url).then(res => res.data.data);
+const fetcher = (url: string) => api.get(url).then(res => res.data?.data ?? res.data);
 
 export default function DesktopExpenses() {
   const [search, setSearch] = useState('');
@@ -23,7 +23,7 @@ export default function DesktopExpenses() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [formData, setFormData] = useState({
     categoryId: '',
-    amount: 0,
+    amount: '' as any,
     date: new Date().toISOString().split('T')[0],
     description: '',
     paymentMethod: '',
@@ -47,18 +47,22 @@ export default function DesktopExpenses() {
   const { data: categoriesData } = useSWR('/expenses/categories', fetcher);
   const { data: statsData } = useSWR('/expenses/stats', fetcher);
 
-  const expenses = resData?.data || [];
+  const expenses = resData?.data || (Array.isArray(resData) ? resData : []);
   const totalPages = resData?.pagination?.totalPages || 1;
-  const totalItems = resData?.pagination?.total || 0;
+  const totalItems = resData?.pagination?.total || expenses.length;
   
-  const categories = categoriesData || [];
+  const categories: any[] = Array.isArray(categoriesData)
+    ? categoriesData
+    : Array.isArray(categoriesData?.data)
+    ? categoriesData.data
+    : [];
   const stats = statsData || null;
 
   useEffect(() => {
-    if (categoriesData?.length > 0 && !formData.categoryId) {
-      setFormData(prev => ({ ...prev, categoryId: categoriesData[0].id }));
+    if (categories.length > 0 && !formData.categoryId) {
+      setFormData(prev => ({ ...prev, categoryId: categories[0].id }));
     }
-  }, [categoriesData, formData.categoryId]);
+  }, [categories, formData.categoryId]);
 
   const fetchData = () => {
     mutateExpenses();
@@ -66,15 +70,32 @@ export default function DesktopExpenses() {
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.categoryId) {
+    const catId = formData.categoryId || categories[0]?.id;
+    if (!catId) {
       toast.error('Please select an expense category');
+      return;
+    }
+    if (!formData.amount || Number(formData.amount) <= 0) {
+      toast.error('Please enter a valid amount');
       return;
     }
     try {
       const descParts = [formData.description, formData.paymentMethod ? `Payment: ${formData.paymentMethod}` : ''].filter(Boolean).join(' | ');
-      await api.post('/expenses', { ...formData, description: descParts || formData.description });
+      await api.post('/expenses', {
+        categoryId: catId,
+        amount: Number(formData.amount),
+        date: formData.date || new Date().toISOString().split('T')[0],
+        description: descParts || formData.description || 'Expense'
+      });
       toast.success('Expense recorded successfully!');
       setIsCreateOpen(false);
+      setFormData({
+        categoryId: categories[0]?.id || '',
+        amount: '' as any,
+        date: new Date().toISOString().split('T')[0],
+        description: '',
+        paymentMethod: '',
+      });
       fetchData();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Error recording expense');
@@ -94,7 +115,7 @@ export default function DesktopExpenses() {
   const openEdit = (expense: any) => {
     setEditId(expense.id);
     setEditData({
-      categoryId: expense.categoryId || expense.category?.id || '',
+      categoryId: expense.categoryId || expense.category?.id || categories[0]?.id || '',
       amount: expense.amount,
       date: expense.date ? new Date(expense.date).toISOString().split('T')[0] : '',
       description: expense.description || '',
@@ -132,7 +153,7 @@ export default function DesktopExpenses() {
       cell: (e) => (
         <span className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
           <Receipt className="h-4 w-4 text-blue-600" />
-          {e.category?.name}
+          {e.category?.name || 'General'}
         </span>
       ),
     },
@@ -245,7 +266,8 @@ export default function DesktopExpenses() {
         </div>
       )}
 
-      <DataTable totalItems={totalItems}
+      <DataTable
+        totalItems={totalItems}
         limit={limit}
         onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}
@@ -277,13 +299,22 @@ export default function DesktopExpenses() {
       {isCreateOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-3xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Record New Expense</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Record New Expense</h2>
+              <button
+                type="button"
+                onClick={() => setIsCreateOpen(false)}
+                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
             <form onSubmit={handleCreateSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Category *</label>
                 <select
                   required
-                  value={formData.categoryId}
+                  value={formData.categoryId || (categories[0]?.id ?? '')}
                   onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
                   className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                 >
@@ -300,8 +331,11 @@ export default function DesktopExpenses() {
                 <input
                   type="number"
                   required
+                  min="1"
+                  step="any"
+                  placeholder="Enter amount"
                   value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
+                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                   className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white font-bold"
                 />
               </div>
@@ -335,7 +369,7 @@ export default function DesktopExpenses() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Notes</label>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Notes / Description</label>
                 <textarea
                   rows={2}
                   value={formData.description}
@@ -355,7 +389,7 @@ export default function DesktopExpenses() {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                  className="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 shadow-md"
                 >
                   Submit Expense
                 </button>
@@ -369,7 +403,16 @@ export default function DesktopExpenses() {
       {isEditOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-3xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Edit Expense</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Edit Expense</h2>
+              <button
+                type="button"
+                onClick={() => setIsEditOpen(false)}
+                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Category *</label>
@@ -390,6 +433,8 @@ export default function DesktopExpenses() {
                 <input
                   type="number"
                   required
+                  min="1"
+                  step="any"
                   value={editData.amount}
                   onChange={(e) => setEditData({ ...editData, amount: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
                   className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white font-bold"
@@ -421,7 +466,7 @@ export default function DesktopExpenses() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Notes</label>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Notes / Description</label>
                 <textarea
                   rows={2}
                   value={editData.description}
@@ -440,7 +485,7 @@ export default function DesktopExpenses() {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                  className="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 shadow-md"
                 >
                   Save Changes
                 </button>

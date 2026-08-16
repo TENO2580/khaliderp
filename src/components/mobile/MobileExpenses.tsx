@@ -12,7 +12,7 @@ import { useViewMode } from '@/hooks/useViewMode';
 import MobileFilterBar from './MobileFilterBar';
 import MobilePagination from './MobilePagination';
 
-const fetcher = (url: string) => api.get(url).then(res => res.data.data);
+const fetcher = (url: string) => api.get(url).then(res => res.data?.data ?? res.data);
 
 export default function MobileExpenses() {
   const { viewMode, toggleViewMode } = useViewMode();
@@ -27,7 +27,7 @@ export default function MobileExpenses() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [formData, setFormData] = useState({
     categoryId: '',
-    amount: 0,
+    amount: '' as any,
     date: new Date().toISOString().split('T')[0],
     description: '',
     paymentMethod: '',
@@ -51,18 +51,22 @@ export default function MobileExpenses() {
   const { data: categoriesData } = useSWR('/expenses/categories', fetcher);
   const { data: statsData } = useSWR('/expenses/stats', fetcher);
 
-  const expenses = resData?.data || [];
+  const expenses = resData?.data || (Array.isArray(resData) ? resData : []);
   const totalPages = resData?.pagination?.totalPages || 1;
-  const totalItems = resData?.pagination?.total || 0;
+  const totalItems = resData?.pagination?.total || expenses.length;
   
-  const categories = categoriesData || [];
+  const categories: any[] = Array.isArray(categoriesData)
+    ? categoriesData
+    : Array.isArray(categoriesData?.data)
+    ? categoriesData.data
+    : [];
   const stats = statsData || null;
 
   useEffect(() => {
-    if (categoriesData?.length > 0 && !formData.categoryId) {
-      setFormData(prev => ({ ...prev, categoryId: categoriesData[0].id }));
+    if (categories.length > 0 && !formData.categoryId) {
+      setFormData(prev => ({ ...prev, categoryId: categories[0].id }));
     }
-  }, [categoriesData, formData.categoryId]);
+  }, [categories, formData.categoryId]);
 
   const fetchData = () => {
     mutateExpenses();
@@ -70,15 +74,32 @@ export default function MobileExpenses() {
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.categoryId) {
+    const catId = formData.categoryId || categories[0]?.id;
+    if (!catId) {
       toast.error('Please select an expense category');
+      return;
+    }
+    if (!formData.amount || Number(formData.amount) <= 0) {
+      toast.error('Please enter a valid amount');
       return;
     }
     try {
       const descParts = [formData.description, formData.paymentMethod ? `Payment: ${formData.paymentMethod}` : ''].filter(Boolean).join(' | ');
-      await api.post('/expenses', { ...formData, description: descParts || formData.description });
+      await api.post('/expenses', {
+        categoryId: catId,
+        amount: Number(formData.amount),
+        date: formData.date || new Date().toISOString().split('T')[0],
+        description: descParts || formData.description || 'Expense'
+      });
       toast.success('Expense recorded successfully!');
       setIsCreateOpen(false);
+      setFormData({
+        categoryId: categories[0]?.id || '',
+        amount: '' as any,
+        date: new Date().toISOString().split('T')[0],
+        description: '',
+        paymentMethod: '',
+      });
       fetchData();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Error recording expense');
@@ -98,7 +119,7 @@ export default function MobileExpenses() {
   const openEdit = (expense: any) => {
     setEditId(expense.id);
     setEditData({
-      categoryId: expense.categoryId || expense.category?.id || '',
+      categoryId: expense.categoryId || expense.category?.id || categories[0]?.id || '',
       amount: expense.amount,
       date: expense.date ? new Date(expense.date).toISOString().split('T')[0] : '',
       description: expense.description || '',
@@ -136,7 +157,7 @@ export default function MobileExpenses() {
       cell: (e) => (
         <span className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
           <Receipt className="h-4 w-4 text-blue-600" />
-          {e.category?.name}
+          {e.category?.name || 'General'}
         </span>
       ),
     },
@@ -284,38 +305,66 @@ export default function MobileExpenses() {
           />
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
+          {isLoading && (
+            <div className="text-center py-10 text-gray-500">Loading expenses...</div>
+          )}
           {expenses.length === 0 && !isLoading && (
             <div className="text-center py-10 text-gray-500">No expenses found.</div>
           )}
           {expenses.map((e: any) => (
-            <div key={e.id} className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-800" onClick={() => openEdit(e)}>
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex items-center gap-2">
-                  <Receipt className="h-4 w-4 text-blue-600" />
-                  <div className="font-semibold text-gray-900 dark:text-white">{e.category?.name}</div>
+            <div key={e.id} className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-200 dark:border-gray-800 space-y-3 shadow-sm">
+              <div className="flex justify-between items-start">
+                <div>
+                  <span className="font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
+                    <Receipt className="h-4 w-4 text-blue-600" />
+                    {e.category?.name || 'General'}
+                  </span>
+                  <p className="text-xs text-gray-500 mt-0.5">{e.description || 'N/A'}</p>
                 </div>
                 <StatusBadge status={e.status} />
               </div>
-              <div className="text-xs text-gray-500 mb-2">
-                {formatDate(e.date)} • {e.createdBy?.name || 'Admin'}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
-                {e.description || 'No description provided.'}
-              </div>
-              <div className="flex justify-between items-center pt-3 border-t border-gray-100 dark:border-gray-800">
-                <div className="text-lg font-bold text-gray-900 dark:text-white">
-                  {formatCurrency(e.amount)}
+
+              <div className="flex justify-between items-center text-xs text-gray-500 pt-2 border-t border-gray-100 dark:border-gray-800">
+                <div>
+                  <span>Date: {formatDate(e.date)}</span>
+                  <p className="mt-0.5">By: {e.createdBy?.name || 'Admin'}</p>
                 </div>
+                <div className="text-right">
+                  <span className="text-base font-bold text-gray-900 dark:text-white block">{formatCurrency(e.amount)}</span>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2 border-t border-gray-100 dark:border-gray-800 justify-end">
+                <button
+                  onClick={() => openEdit(e)}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 font-semibold text-xs dark:bg-blue-950/40 dark:text-blue-400"
+                >
+                  <Edit3 className="h-3.5 w-3.5" /> Edit
+                </button>
+                {e.status === 'PENDING' && (
+                  <button
+                    onClick={() => handleApprove(e.id)}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-600 font-semibold text-xs dark:bg-emerald-950/40 dark:text-emerald-400"
+                  >
+                    <Check className="h-3.5 w-3.5" /> Approve
+                  </button>
+                )}
+                <button
+                  onClick={() => handleDelete(e.id)}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-50 text-rose-600 font-semibold text-xs dark:bg-rose-950/40 dark:text-rose-400"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
               </div>
             </div>
           ))}
 
-          <MobilePagination
-            page={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
+          <MobilePagination 
+            page={page} 
+            totalPages={totalPages} 
             totalItems={totalItems}
+            onPageChange={setPage} 
           />
         </div>
       )}
@@ -345,7 +394,7 @@ export default function MobileExpenses() {
                 <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Category *</label>
                 <select
                   required
-                  value={formData.categoryId}
+                  value={formData.categoryId || (categories[0]?.id ?? '')}
                   onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
                   className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                 >
@@ -362,8 +411,11 @@ export default function MobileExpenses() {
                 <input
                   type="number"
                   required
+                  min="1"
+                  step="any"
+                  placeholder="Enter amount"
                   value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
+                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                   className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white font-bold"
                 />
               </div>
@@ -459,6 +511,8 @@ export default function MobileExpenses() {
                 <input
                   type="number"
                   required
+                  min="1"
+                  step="any"
                   value={editData.amount}
                   onChange={(e) => setEditData({ ...editData, amount: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
                   className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white font-bold"
