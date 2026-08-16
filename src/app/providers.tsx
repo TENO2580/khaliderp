@@ -2,19 +2,23 @@
 
 import React, { useEffect } from 'react';
 import { ThemeProvider } from 'next-themes';
-import { AuthProvider } from '@/lib/auth';
+import { AuthProvider, applyGlobalPreferences } from '@/lib/auth';
 import { Toaster } from 'sonner';
 
 export function CustomizationLoader() {
   useEffect(() => {
     const font = localStorage.getItem('app-font');
-    if (font) {
-      document.documentElement.style.setProperty('--app-font-family', `var(--font-${font})`);
-    }
     const size = localStorage.getItem('app-font-size');
-    if (size) {
-      const sizeMap: Record<string, string> = { xs: '12px', small: '14px', medium: '16px', large: '18px', xl: '20px' };
-      document.documentElement.style.setProperty('--app-base-font-size', sizeMap[size] || '16px');
+    const tableDensity = localStorage.getItem('app-table-density');
+    const tableWidth = localStorage.getItem('app-table-layout');
+    
+    if (font || size || tableDensity || tableWidth) {
+      applyGlobalPreferences({
+        fontFamily: font,
+        fontSize: size,
+        tableDensity,
+        tableWidth,
+      });
     }
   }, []);
   return null;

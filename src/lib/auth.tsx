@@ -12,16 +12,19 @@ interface User {
   preferences?: any;
 }
 
-const applyGlobalPreferences = (prefs: any) => {
+export const applyGlobalPreferences = (prefs: any) => {
   if (typeof window === 'undefined' || !prefs) return;
   
   if (prefs.fontFamily) {
     localStorage.setItem('app-font', prefs.fontFamily);
     document.documentElement.setAttribute('data-font', prefs.fontFamily);
+    document.documentElement.style.setProperty('--app-font-family', `var(--font-${prefs.fontFamily})`);
   }
   if (prefs.fontSize) {
     localStorage.setItem('app-font-size', prefs.fontSize);
     document.documentElement.setAttribute('data-font-size', prefs.fontSize);
+    const sizeMap: Record<string, string> = { xs: '12px', small: '14px', medium: '16px', large: '18px', xl: '20px' };
+    document.documentElement.style.setProperty('--app-base-font-size', sizeMap[prefs.fontSize] || '16px');
   }
   if (prefs.tableDensity) {
     localStorage.setItem('app-table-density', prefs.tableDensity);
@@ -42,6 +45,7 @@ const applyGlobalPreferences = (prefs: any) => {
   }
 
   window.dispatchEvent(new Event('app-table-prefs-changed'));
+  window.dispatchEvent(new Event('app-customization-changed'));
 };
 
 interface AuthContextType {

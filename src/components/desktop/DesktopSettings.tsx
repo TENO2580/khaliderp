@@ -5,7 +5,7 @@ import { Settings, Shield, Building, Database, Save, RotateCcw, UserCircle, Moni
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import { formatDate } from '@/lib/utils';
-import { useAuth } from '@/lib/auth';
+import { useAuth, applyGlobalPreferences } from '@/lib/auth';
 
 export default function DesktopSettings() {
   const { user, updateUser } = useAuth();
@@ -65,7 +65,19 @@ export default function DesktopSettings() {
           setIsLoadingUsers(false);
         });
     }
-  }, [activeTab]);
+  }, [activeTab, user]);
+
+  const updateCustomizationField = (key: string, value: string) => {
+    const updated = { ...customization, [key]: value };
+    setCustomization(updated);
+    // Instant live preview across the DOM
+    applyGlobalPreferences({
+      fontFamily: updated.font,
+      fontSize: updated.size,
+      tableDensity: updated.tableDensity,
+      tableWidth: updated.tableLayout,
+    });
+  };
 
   const handleCustomizationSave = async () => {
     const preferencesPayload = {
@@ -74,6 +86,9 @@ export default function DesktopSettings() {
       tableDensity: customization.tableDensity,
       tableWidth: customization.tableLayout
     };
+
+    // Apply immediately to the DOM and localStorage
+    applyGlobalPreferences(preferencesPayload);
 
     try {
       // Save globally via API
@@ -351,7 +366,7 @@ export default function DesktopSettings() {
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Font Family</label>
               <select
                 value={customization.font}
-                onChange={(e) => setCustomization({ ...customization, font: e.target.value })}
+                onChange={(e) => updateCustomizationField('font', e.target.value)}
                 className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white font-semibold"
               >
                 <option value="roboto">Roboto (Salesforce Style)</option>
@@ -366,7 +381,7 @@ export default function DesktopSettings() {
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Font Size</label>
               <select
                 value={customization.size}
-                onChange={(e) => setCustomization({ ...customization, size: e.target.value })}
+                onChange={(e) => updateCustomizationField('size', e.target.value)}
                 className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white font-semibold"
               >
                 <option value="xs">Extra Small (12px)</option>
@@ -390,7 +405,7 @@ export default function DesktopSettings() {
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Default Table Density</label>
               <select
                 value={customization.tableDensity}
-                onChange={(e) => setCustomization({ ...customization, tableDensity: e.target.value })}
+                onChange={(e) => updateCustomizationField('tableDensity', e.target.value)}
                 className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white font-semibold"
               >
                 <option value="compact">Compact (High Density)</option>
@@ -403,7 +418,7 @@ export default function DesktopSettings() {
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Default Table Width</label>
               <select
                 value={customization.tableLayout}
-                onChange={(e) => setCustomization({ ...customization, tableLayout: e.target.value })}
+                onChange={(e) => updateCustomizationField('tableLayout', e.target.value)}
                 className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white font-semibold"
               >
                 <option value="full">Fill Screen (100% Width)</option>
