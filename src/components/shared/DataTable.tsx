@@ -342,6 +342,11 @@ export default function DataTable<T extends { id?: string }>({
 
   const saveGlobalPrefs = (key: string, value: string) => {
     localStorage.setItem(key, value);
+    if (key === 'app-table-density') {
+      setGlobalDensity(value as any);
+    } else if (key === 'app-table-layout') {
+      setGlobalLayout(value as any);
+    }
     window.dispatchEvent(new Event('app-table-prefs-changed'));
   };
 
@@ -642,122 +647,146 @@ export default function DataTable<T extends { id?: string }>({
       </div>
 
       {isColumnManagerOpen && (
-        <div className="absolute inset-y-0 right-0 w-80 bg-white dark:bg-gray-950 shadow-2xl border-l border-gray-200 dark:border-gray-800 z-50 flex flex-col animate-in slide-in-from-right">
-          <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
-            <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <Settings className="w-4 h-4" /> Customize Columns
-            </h3>
-            <button onClick={() => setIsColumnManagerOpen(false)} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-xs">
+          {/* Backdrop click to close */}
+          <div 
+            className="fixed inset-0"
+            onClick={() => setIsColumnManagerOpen(false)}
+          />
           
-          <div className="p-4 border-b border-gray-200 dark:border-gray-800 space-y-4">
-            <div>
-              <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">Display Density</label>
-              <div className="flex gap-2">
-                {(['compact', 'comfortable', 'spacious'] as const).map(d => (
+          <div className="relative w-full max-w-sm sm:max-w-md h-full bg-white dark:bg-gray-900 shadow-2xl border-l border-gray-200 dark:border-gray-800 z-10 flex flex-col animate-in slide-in-from-right duration-200">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-950">
+              <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <Settings className="w-4 h-4 text-blue-600 dark:text-blue-400" /> Customize Columns & Layout
+              </h3>
+              <button 
+                onClick={() => setIsColumnManagerOpen(false)} 
+                className="p-1 rounded-lg text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-4 border-b border-gray-200 dark:border-gray-800 space-y-4 bg-gray-50/50 dark:bg-gray-900/50">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">Display Density</label>
+                <div className="flex gap-2">
+                  {(['compact', 'comfortable', 'spacious'] as const).map(d => (
+                    <button
+                      key={d}
+                      onClick={() => saveGlobalPrefs('app-table-density', d)}
+                      className={cn(
+                        "flex-1 py-2 px-2 rounded-xl text-xs font-semibold border capitalize transition-colors",
+                        globalDensity === d 
+                          ? "bg-blue-600 border-blue-600 text-white shadow-sm" 
+                          : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
+                      )}
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">Table Width</label>
+                <div className="flex gap-2">
                   <button
-                    key={d}
-                    onClick={() => saveGlobalPrefs('app-table-density', d)}
+                    onClick={() => saveGlobalPrefs('app-table-layout', 'full')}
                     className={cn(
-                      "flex-1 py-1.5 px-2 rounded-lg text-xs font-medium border capitalize transition-colors",
-                      globalDensity === d 
-                        ? "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300" 
-                        : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-800"
+                      "flex-1 py-2 px-2 rounded-xl text-xs font-semibold border transition-colors",
+                      globalLayout !== 'auto'
+                        ? "bg-blue-600 border-blue-600 text-white shadow-sm" 
+                        : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
                     )}
                   >
-                    {d}
+                    Fill Screen
                   </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">Table Width</label>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => saveGlobalPrefs('app-table-layout', 'full')}
-                  className={cn(
-                    "flex-1 py-1.5 px-2 rounded-lg text-xs font-medium border transition-colors",
-                    globalLayout !== 'auto'
-                      ? "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300" 
-                      : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-800"
-                  )}
-                >
-                  Fill Screen
-                </button>
-                <button
-                  onClick={() => saveGlobalPrefs('app-table-layout', 'auto')}
-                  className={cn(
-                    "flex-1 py-1.5 px-2 rounded-lg text-xs font-medium border transition-colors",
-                    globalLayout === 'auto'
-                      ? "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300" 
-                      : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-800"
-                  )}
-                >
-                  Fit Content
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-2">
-            {[...prefs.columns].sort((a,b) => a.order - b.order).map((c, idx) => (
-              <div 
-                key={c.header}
-                draggable
-                onDragStart={(e) => handleDragStart(e, c.header)}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, c.header)}
-                className={cn(
-                  "flex items-center justify-between p-2 mb-1 rounded-lg border bg-white dark:bg-gray-900 transition-colors group",
-                  draggedCol === c.header ? "opacity-50 border-blue-400 border-dashed" : "border-gray-100 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700"
-                )}
-              >
-                <div className="flex items-center gap-3 flex-1 overflow-hidden">
-                  <div className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                    <GripVertical className="w-4 h-4" />
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={c.visible}
-                    onChange={(e) => {
-                      const newCols = [...prefs.columns];
-                      const col = newCols.find(x => x.header === c.header);
-                      if (col) col.visible = e.target.checked;
-                      savePrefs({...prefs, columns: newCols});
-                    }}
-                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">{c.header}</span>
-                </div>
-                
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
-                    title="Pin Left"
-                    onClick={() => {
-                      const newCols = [...prefs.columns];
-                      const col = newCols.find(x => x.header === c.header);
-                      if (col) col.pinned = col.pinned === 'left' ? null : 'left';
-                      savePrefs({...prefs, columns: newCols});
-                    }}
-                    className={cn("p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800", c.pinned === 'left' ? "text-blue-600 dark:text-blue-400" : "text-gray-400")}
+                    onClick={() => saveGlobalPrefs('app-table-layout', 'auto')}
+                    className={cn(
+                      "flex-1 py-2 px-2 rounded-xl text-xs font-semibold border transition-colors",
+                      globalLayout === 'auto'
+                        ? "bg-blue-600 border-blue-600 text-white shadow-sm" 
+                        : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
+                    )}
                   >
-                    <Pin className="w-3.5 h-3.5" />
+                    Fit Content
                   </button>
                 </div>
               </div>
-            ))}
-          </div>
-          
-          <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
-            <button
-              onClick={() => savePrefs(defaultPrefs)}
-              className="w-full py-2 text-sm font-medium text-gray-600 hover:text-gray-900 bg-white border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"
-            >
-              Reset to Default
-            </button>
+            </div>
+
+            <div className="p-3 bg-gray-100/50 dark:bg-gray-800/40 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center text-xs text-gray-500">
+              <span>Drag to reorder • Check to show/hide</span>
+              <span>{prefs.columns.filter(c => c.visible).length} / {prefs.columns.length} visible</span>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-3 space-y-1.5 min-h-0">
+              {[...prefs.columns].sort((a,b) => a.order - b.order).map((c, idx) => (
+                <div 
+                  key={c.header}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, c.header)}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, c.header)}
+                  className={cn(
+                    "flex items-center justify-between p-2.5 rounded-xl border bg-white dark:bg-gray-800/80 transition-all group",
+                    draggedCol === c.header ? "opacity-50 border-blue-400 border-dashed" : "border-gray-200 dark:border-gray-700/80 hover:border-blue-400 dark:hover:border-blue-500"
+                  )}
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                      <GripVertical className="w-4 h-4" />
+                    </div>
+                    <label className="flex items-center gap-2.5 cursor-pointer flex-1 min-w-0">
+                      <input
+                        type="checkbox"
+                        checked={c.visible}
+                        onChange={(e) => {
+                          const newCols = [...prefs.columns];
+                          const col = newCols.find(x => x.header === c.header);
+                          if (col) col.visible = e.target.checked;
+                          savePrefs({...prefs, columns: newCols});
+                        }}
+                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      />
+                      <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{c.header}</span>
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center gap-1">
+                    <button
+                      title={c.pinned === 'left' ? 'Unpin column' : 'Pin column to left'}
+                      onClick={() => {
+                        const newCols = [...prefs.columns];
+                        const col = newCols.find(x => x.header === c.header);
+                        if (col) col.pinned = col.pinned === 'left' ? null : 'left';
+                        savePrefs({...prefs, columns: newCols});
+                      }}
+                      className={cn("p-1.5 rounded-lg transition-colors", c.pinned === 'left' ? "bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300" : "text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700")}
+                    >
+                      <Pin className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 flex gap-3">
+              <button
+                onClick={() => savePrefs(defaultPrefs)}
+                className="flex-1 py-2.5 text-sm font-semibold text-gray-700 hover:text-gray-900 bg-white border border-gray-200 rounded-xl shadow-sm hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white transition-colors"
+              >
+                Reset to Default
+              </button>
+              <button
+                onClick={() => setIsColumnManagerOpen(false)}
+                className="flex-1 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition-colors"
+              >
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}
