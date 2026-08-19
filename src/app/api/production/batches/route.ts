@@ -42,6 +42,11 @@ export async function POST(req: NextRequest) {
     const count = await prisma.batch.count();
     const batchNumber = providedBatchNumber || `BATCH-${String(count).padStart(3, '0')}`;
 
+    const initialWaxQty = Number(waxInitialQty || 0);
+    const initialWaxStock = (waxStock !== undefined && waxStock !== null && waxStock !== '')
+      ? Number(waxStock)
+      : initialWaxQty;
+
     const batch = await prisma.batch.create({
       data: {
         batchNumber,
@@ -49,10 +54,10 @@ export async function POST(req: NextRequest) {
         producedQty: Number(producedQty || 0),
         remainingQty: Number(producedQty || 0),
         sellingPrice: Number(sellingPrice || 0),
-        waxInitialQty: Number(waxInitialQty || 0),
+        waxInitialQty: initialWaxQty,
         waxRate: Number(waxRate || 0),
-        waxStock: Number(waxStock || 0),
-        productionCost: Number(waxInitialQty || 0) * Number(waxRate || 0),
+        waxStock: initialWaxStock,
+        productionCost: initialWaxQty * Number(waxRate || 0),
         status: 'IN_PRODUCTION',
         purchaseDate: purchaseDate ? new Date(purchaseDate) : new Date(),
       },

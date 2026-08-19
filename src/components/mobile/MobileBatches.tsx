@@ -63,14 +63,15 @@ export default function MobileBatches() {
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const initialWax = Number(waxInitialQty) || 0;
       await api.post('/production/batches', {
         productId: productId || undefined,
         purchaseDate,
-        sellingPrice,
-        waxInitialQty: Number(waxInitialQty) || 0,
+        sellingPrice: Number(sellingPrice) || 0,
+        waxInitialQty: initialWax,
         waxRate: Number(waxRate) || 0,
-        waxStock: Number(waxStock) || 0,
-        producedQty: Number(producedQty) || 0,
+        waxStock: initialWax,
+        producedQty: 0,
       });
       toast.success('New batch code generated!');
       setIsCreateOpen(false);
