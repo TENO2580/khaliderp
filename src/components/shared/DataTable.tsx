@@ -39,6 +39,7 @@ export interface Column<T> {
   editableKey?: string;
   inlineEditable?: boolean;
   inputType?: 'text' | 'number';
+  pinned?: 'left' | 'right';
 }
 
 interface DataTableProps<T> {
@@ -116,12 +117,14 @@ export default function DataTable<T extends { id?: string }>({
     columns: columns.map((c, i) => {
       const h = c.header.toUpperCase();
       const isActions = h === 'ACTIONS' || h === 'ACTION';
+      const isBatch = h === 'BATCH #' || h === 'BATCH' || h === 'BATCH NO';
       const isName = h === 'NAME' || h === 'CUSTOMER' || h === 'CUSTOMER NAME';
+      const isPinnedLeft = c.pinned === 'left' || isActions || isBatch || isName;
       return {
         header: c.header,
         visible: true,
-        order: isActions ? -2 : isName ? -1 : i,
-        pinned: (isActions || isName ? 'left' : null) as 'left' | null
+        order: isActions ? -3 : isBatch ? -2 : isName ? -1 : i,
+        pinned: (isPinnedLeft ? 'left' : c.pinned === 'right' ? 'right' : null) as 'left' | 'right' | null
       };
     })
   }), [columns]);
@@ -161,19 +164,21 @@ export default function DataTable<T extends { id?: string }>({
           const savedCol = parsed.columns.find(sc => sc.header === c.header);
           const h = c.header.toUpperCase();
           const isActions = h === 'ACTIONS' || h === 'ACTION';
+          const isBatch = h === 'BATCH #' || h === 'BATCH' || h === 'BATCH NO';
           const isName = h === 'NAME' || h === 'CUSTOMER' || h === 'CUSTOMER NAME';
+          const shouldPinLeft = c.pinned === 'left' || isActions || isBatch || isName;
 
           if (savedCol) {
             return {
               ...savedCol,
-              pinned: savedCol.pinned !== undefined ? savedCol.pinned : (isActions || isName ? 'left' : null),
+              pinned: savedCol.pinned !== undefined ? savedCol.pinned : (shouldPinLeft ? 'left' : null),
             };
           }
           return {
             header: c.header,
             visible: true,
-            order: isActions ? -2 : isName ? -1 : 999 + i,
-            pinned: (isActions || isName ? 'left' : null) as 'left' | null,
+            order: isActions ? -3 : isBatch ? -2 : isName ? -1 : 999 + i,
+            pinned: (shouldPinLeft ? 'left' : c.pinned === 'right' ? 'right' : null) as 'left' | 'right' | null,
           };
         });
         setPrefs({ columns: mergedColumns });

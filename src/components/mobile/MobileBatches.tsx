@@ -119,7 +119,46 @@ export default function MobileBatches() {
 
   const columns: Column<any>[] = [
     {
+      header: 'Action',
+      pinned: 'left',
+      cell: (b) => (
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => {
+              const initQty = Number(b.waxInitialQty) || 0;
+              const prodQty = Number(b.producedQty) || 0;
+              const currentWaxStock = b.waxStock !== undefined && b.waxStock !== null && !isNaN(Number(b.waxStock))
+                ? Number(b.waxStock)
+                : (initQty - prodQty);
+
+              setEditBatch({
+                ...b,
+                purchaseDate: b.purchaseDate ? new Date(b.purchaseDate).toISOString().split('T')[0] : '',
+                waxInitialQty: initQty,
+                waxRate: Number(b.waxRate) || 0,
+                waxStock: currentWaxStock,
+                sellingPrice: Number(b.sellingPrice) || 0,
+                producedQty: prodQty,
+                soldQty: Number(b.soldQty) || 0,
+                remainingQty: Number(b.remainingQty) || 0,
+              });
+            }}
+            className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-blue-600 dark:hover:bg-gray-800"
+          >
+            <Edit3 className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => handleDelete(b.id)}
+            className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-600 dark:hover:bg-gray-800"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      ),
+    },
+    {
       header: 'Batch #',
+      pinned: 'left',
       accessorKey: 'batchNumber',
       cell: (b) => <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">{b.batchNumber}</span>,
     },
@@ -208,43 +247,6 @@ export default function MobileBatches() {
       editableKey: 'status',
       inlineEditable: true,
       cell: (b) => <StatusBadge status={b.status} />,
-    },
-    {
-      header: 'Action',
-      cell: (b) => (
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => {
-              const initQty = Number(b.waxInitialQty) || 0;
-              const prodQty = Number(b.producedQty) || 0;
-              const currentWaxStock = b.waxStock !== undefined && b.waxStock !== null && !isNaN(Number(b.waxStock))
-                ? Number(b.waxStock)
-                : (initQty - prodQty);
-
-              setEditBatch({
-                ...b,
-                purchaseDate: b.purchaseDate ? new Date(b.purchaseDate).toISOString().split('T')[0] : '',
-                waxInitialQty: initQty,
-                waxRate: Number(b.waxRate) || 0,
-                waxStock: currentWaxStock,
-                sellingPrice: Number(b.sellingPrice) || 0,
-                producedQty: prodQty,
-                soldQty: Number(b.soldQty) || 0,
-                remainingQty: Number(b.remainingQty) || 0,
-              });
-            }}
-            className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-blue-600 dark:hover:bg-gray-800"
-          >
-            <Edit3 className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => handleDelete(b.id)}
-            className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-600 dark:hover:bg-gray-800"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </div>
-      ),
     },
   ];
 
