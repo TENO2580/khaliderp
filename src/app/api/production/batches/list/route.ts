@@ -4,7 +4,6 @@ import { authenticateRequest, jsonResponse } from '@/lib/middleware-server';
 
 export const dynamic = 'force-dynamic';
 
-
 export async function GET(req: NextRequest) {
   const { user, error } = await authenticateRequest(req);
   if (error) return error;
@@ -41,7 +40,11 @@ export async function GET(req: NextRequest) {
   const [data, total] = await Promise.all([
     prisma.batch.findMany({
       where,
-      orderBy: { purchaseDate: 'desc' },
+      orderBy: [
+        { batchNumber: 'asc' },
+        { purchaseDate: 'asc' },
+        { createdAt: 'asc' },
+      ],
       skip,
       take: limit,
       select: {
@@ -50,6 +53,7 @@ export async function GET(req: NextRequest) {
         purchaseDate: true,
         waxInitialQty: true,
         waxRate: true,
+        waxStock: true,
         productionCost: true,
         sellingPrice: true,
         producedQty: true,

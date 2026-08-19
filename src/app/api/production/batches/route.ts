@@ -14,7 +14,11 @@ export async function GET(req: NextRequest) {
   const limit = parseInt(url.searchParams.get('limit') || '50');
 
   const batches = await prisma.batch.findMany({
-    orderBy: { purchaseDate: 'desc' },
+    orderBy: [
+      { batchNumber: 'asc' },
+      { purchaseDate: 'asc' },
+      { createdAt: 'asc' },
+    ],
     take: limit,
     include: { 
       product: true, 
