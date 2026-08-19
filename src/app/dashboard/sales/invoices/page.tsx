@@ -122,13 +122,18 @@ export default function InvoicesPage() {
             mobile: selectedInvoice.customerPhone || selectedInvoice.customer?.phone || 'Nil',
             location: selectedInvoice.customer?.city || 'Nil',
             address: selectedInvoice.customerAddress || selectedInvoice.customer?.address || 'Nil',
-            items: selectedInvoice.items && selectedInvoice.items.length > 0 ? selectedInvoice.items.map((item: any) => ({
-              description: item.name || 'CANDLE PACK',
-              quantity: Number(item.qty) || 0,
-              rate: Number(item.price) || 0,
-              amount: Number(item.total || item.taxable || (Number(item.qty) * Number(item.price))) || 0,
-              remarks: '',
-            })) : undefined,
+            items: selectedInvoice.items && selectedInvoice.items.length > 0 ? selectedInvoice.items.map((item: any) => {
+              const q = Number(item.qty) || 0;
+              const r = Number(item.price) || 0;
+              const a = Number(item.total || item.taxable || (q * r)) || 0;
+              return {
+                description: item.name || 'CANDLE PACK',
+                quantity: q,
+                rate: r,
+                amount: Math.round((a + Number.EPSILON) * 100) / 100,
+                remarks: '',
+              };
+            }) : undefined,
             grandTotal: selectedInvoice.totalAmount,
             companyName: 'LAKSHMI CANDLES',
             companySubtitle: 'Manufacturers & Wholesale Suppliers',

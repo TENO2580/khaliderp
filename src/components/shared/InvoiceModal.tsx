@@ -65,6 +65,15 @@ export default function InvoiceModal({ isOpen, onClose, order, customData }: Inv
     return `${day}/${month}/${year}`;
   };
 
+  // Clean rounding helper to avoid 204.99999999999997 floating point display bugs
+  const formatInvoiceNumber = (val: number | string | undefined | null) => {
+    if (val === undefined || val === null || val === '') return '0';
+    const num = Number(val);
+    if (isNaN(num)) return String(val);
+    const rounded = Math.round((num + Number.EPSILON) * 100) / 100;
+    return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2).replace(/\.?0+$/, '');
+  };
+
   const invoiceNo = customData?.invoiceNo || order?.orderNumber || (order?.id ? order.id.slice(-4).toUpperCase() : '110');
   const invoiceDate = customData?.date || formatDateDDMMYYYY(order?.orderDate || order?.createdAt);
   const customerName = customData?.customerName || order?.customer?.name || notes?.customerName || 'MUSSAFIR STORE';
@@ -77,33 +86,38 @@ export default function InvoiceModal({ isOpen, onClose, order, customData }: Inv
   if (customData?.items && customData.items.length > 0) {
     items = customData.items;
   } else if (order?.items && Array.isArray(order.items) && order.items.length > 0) {
-    items = order.items.map((i: any) => ({
-      description: i.product?.name || i.rawMaterial?.name || notes?.type || 'CANDLE PACK',
-      quantity: Number(i.quantity) || 0,
-      rate: Number(i.unitPrice) || 0,
-      amount: Number(i.amount) || (Number(i.quantity) * Number(i.unitPrice)) || 0,
-      remarks: '',
-    }));
+    items = order.items.map((i: any) => {
+      const q = Number(i.quantity) || 0;
+      const r = Number(i.unitPrice) || 0;
+      const a = Number(i.amount) || Math.round((q * r + Number.EPSILON) * 100) / 100;
+      return {
+        description: i.product?.name || i.rawMaterial?.name || notes?.type || 'CANDLE PACK',
+        quantity: q,
+        rate: r,
+        amount: Math.round((a + Number.EPSILON) * 100) / 100,
+        remarks: '',
+      };
+    });
   } else {
     // Default fallback from order / notes
     const qty = Number(notes?.quantity) || order?.quantity || 20;
     const rate = Number(notes?.sellingCost) || (order?.totalAmount ? Number(order.totalAmount) / qty : 56);
-    const total = Number(order?.totalAmount) || (qty * rate);
+    const total = Number(order?.totalAmount) || Math.round((qty * rate + Number.EPSILON) * 100) / 100;
     const desc = notes?.type || order?.type || 'WHITE CANDLE';
     items = [
       {
         description: desc,
         quantity: qty,
         rate: rate,
-        amount: total,
+        amount: Math.round((total + Number.EPSILON) * 100) / 100,
         remarks: '',
       }
     ];
   }
 
   const grandTotal = customData?.grandTotal !== undefined 
-    ? customData.grandTotal 
-    : (order?.totalAmount || items.reduce((sum, item) => sum + item.amount, 0));
+    ? Math.round((Number(customData.grandTotal) + Number.EPSILON) * 100) / 100
+    : (order?.totalAmount ? Math.round((Number(order.totalAmount) + Number.EPSILON) * 100) / 100 : items.reduce((sum, item) => sum + item.amount, 0));
 
   const companyName = customData?.companyName || 'LAKSHMI CANDLES';
   const companySubtitle = customData?.companySubtitle || 'Manufacturers & Wholesale Suppliers';
@@ -243,9 +257,9 @@ export default function InvoiceModal({ isOpen, onClose, order, customData }: Inv
                         <tr key={idx} className="border-b border-black">
                           <td className="p-1.5 border-r border-black text-center font-medium">{idx + 1}</td>
                           <td className="p-1.5 border-r border-black uppercase font-medium">{item.description}</td>
-                          <td className="p-1.5 border-r border-black text-center">{item.quantity}</td>
-                          <td className="p-1.5 border-r border-black text-center">{item.rate}</td>
-                          <td className="p-1.5 border-r border-black text-center">{item.amount}</td>
+                          <td className="p-1.5 border-r border-black text-center">{formatInvoiceNumber(item.quantity)}</td>
+                          <td className="p-1.5 border-r border-black text-center">{formatInvoiceNumber(item.rate)}</td>
+                          <td className="p-1.5 border-r border-black text-center">{formatInvoiceNumber(item.amount)}</td>
                           <td className="p-1.5 text-center">{item.remarks || ''}</td>
                         </tr>
                       );
@@ -263,7 +277,7 @@ export default function InvoiceModal({ isOpen, onClose, order, customData }: Inv
                         {isLastFiller ? (
                           <>
                             <td className="p-1.5 border-r border-black font-bold text-center">Grand Total: -</td>
-                            <td className="p-1.5 border-r border-black font-bold text-center">₹{grandTotal}/-</td>
+                            <td className="p-1.5 border-r border-black font-bold text-center">₹{formatInvoiceNumber(grandTotal)}/-</td>
                             <td className="p-1.5"></td>
                           </>
                         ) : (
@@ -282,7 +296,7 @@ export default function InvoiceModal({ isOpen, onClose, order, customData }: Inv
                     <tr className="border-b border-black font-bold">
                       <td colSpan={3} className="p-1.5 border-r border-black"></td>
                       <td className="p-1.5 border-r border-black text-center">Grand Total: -</td>
-                      <td className="p-1.5 border-r border-black text-center">₹{grandTotal}/-</td>
+                      <td className="p-1.5 border-r border-black text-center">₹{formatInvoiceNumber(grandTotal)}/-</td>
                       <td className="p-1.5"></td>
                     </tr>
                   )}
