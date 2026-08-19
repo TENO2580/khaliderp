@@ -40,7 +40,8 @@ export default function ImportHistoryModal({ isOpen, onClose }: ImportHistoryMod
     setIsLoading(true);
     try {
       const res = await api.get('/sales/import/history?limit=50');
-      setHistoryList(res.data.data || []);
+      const list = res.data?.data?.items || (Array.isArray(res.data?.data) ? res.data.data : (Array.isArray(res.data) ? res.data : []));
+      setHistoryList(list);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to load import history');
     } finally {
@@ -51,7 +52,7 @@ export default function ImportHistoryModal({ isOpen, onClose }: ImportHistoryMod
   const handleViewDetails = async (id: string) => {
     try {
       const res = await api.get(`/sales/import/history/${id}`);
-      setSelectedImport(res.data.data);
+      setSelectedImport(res.data?.data || res.data || null);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to load import details');
     }

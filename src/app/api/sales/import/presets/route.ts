@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
       options: p.options ? JSON.parse(p.options) : {},
     }));
 
-    return jsonResponse({ data: parsed });
+    return jsonResponse(parsed);
   } catch (err: any) {
     return errorResponse(err.message || 'Failed to fetch mapping presets', 500);
   }
@@ -61,14 +61,15 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return jsonResponse({
-      data: {
+    return jsonResponse(
+      {
         ...preset,
         mappings: JSON.parse(preset.mappings),
         options: preset.options ? JSON.parse(preset.options) : {},
       },
-      message: 'Mapping preset saved successfully',
-    });
+      201,
+      'Mapping preset saved successfully'
+    );
   } catch (err: any) {
     return errorResponse(err.message || 'Failed to save preset', 500);
   }

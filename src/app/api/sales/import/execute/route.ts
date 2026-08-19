@@ -39,10 +39,11 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return jsonResponse({
-      data: result,
-      message: `Import processed: ${result.createdCount} created, ${result.updatedCount} updated, ${result.skippedCount} skipped, ${result.failedCount} failed.`,
-    });
+    return jsonResponse(
+      result,
+      200,
+      `Import processed: ${result.createdCount} created, ${result.updatedCount} updated, ${result.skippedCount} skipped, ${result.failedCount} failed.`
+    );
   } catch (err: any) {
     console.error('Import execution error:', err);
     return errorResponse(err.message || 'Import execution failed', 500);

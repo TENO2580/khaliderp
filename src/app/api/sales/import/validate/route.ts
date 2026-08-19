@@ -74,22 +74,20 @@ export async function POST(req: NextRequest) {
     };
 
     return jsonResponse({
-      data: {
-        systemFields: ColumnMappingService.getSystemFields(),
-        columnMapping: {
-          mappings: activeMappings,
-          confidences: mappingResult.confidences,
-          unmappedHeaders: mappingResult.unmappedHeaders,
-        },
-        validatedRows: duplicateResult.rowsWithDuplicateFlags,
-        summary,
-        batchResolution: {
-          existingBatches: batchResolution.existingBatches,
-          unknownBatches: batchResolution.unknownBatches,
-          resolvedMap: batchResolution.resolvedMap,
-        },
-        duplicateMatches: duplicateResult.duplicateMatches,
+      systemFields: ColumnMappingService.getSystemFields(),
+      columnMapping: {
+        mappings: activeMappings,
+        confidences: mappingResult.confidences,
+        unmappedHeaders: mappingResult.unmappedHeaders,
       },
+      validatedRows: duplicateResult.rowsWithDuplicateFlags,
+      summary,
+      batchResolution: {
+        existingBatches: batchResolution.existingBatches,
+        unknownBatches: batchResolution.unknownBatches,
+        resolvedMap: batchResolution.resolvedMap,
+      },
+      duplicateMatches: duplicateResult.duplicateMatches,
     });
   } catch (err: any) {
     console.error('Import validation error:', err);

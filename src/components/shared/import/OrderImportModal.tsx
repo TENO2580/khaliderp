@@ -99,7 +99,7 @@ export default function OrderImportModal({ isOpen, onClose, onSuccess }: OrderIm
   const loadPresets = async () => {
     try {
       const res = await api.get('/sales/import/presets');
-      const list = res.data.data || [];
+      const list = Array.isArray(res.data?.data) ? res.data.data : (Array.isArray(res.data) ? res.data : []);
       setPresets(list);
       const def = list.find((p: any) => p.isDefault);
       if (def) {
@@ -148,17 +148,21 @@ export default function OrderImportModal({ isOpen, onClose, onSuccess }: OrderIm
         options: { calculationMode },
       });
 
-      const resData = validateRes.data.data;
+      const resData = validateRes.data?.data?.columnMapping
+        ? validateRes.data.data
+        : (validateRes.data?.data || validateRes.data || {});
+      const colMapping = resData.columnMapping || {};
+
       setSystemFields(resData.systemFields || []);
-      setMappings(resData.columnMapping.mappings || {});
-      setConfidences(resData.columnMapping.confidences || {});
-      setUnmappedHeaders(resData.columnMapping.unmappedHeaders || []);
+      setMappings(colMapping.mappings || {});
+      setConfidences(colMapping.confidences || {});
+      setUnmappedHeaders(colMapping.unmappedHeaders || []);
 
       toast.success(`Loaded ${jsonData.length} rows and detected ${headers.length} columns.`);
       setCurrentStep('mapping');
     } catch (err: any) {
       console.error('File parsing error:', err);
-      toast.error(err.message || 'Failed to read file contents.');
+      toast.error(err.response?.data?.message || err.message || 'Failed to read file contents.');
     } finally {
       setIsLoading(false);
     }
@@ -221,20 +225,24 @@ export default function OrderImportModal({ isOpen, onClose, onSuccess }: OrderIm
         options: { calculationMode },
       });
 
-      const resData = validateRes.data.data;
+      const resData = validateRes.data?.data?.validatedRows
+        ? validateRes.data.data
+        : (validateRes.data?.data || validateRes.data || {});
+      const batchRes = resData.batchResolution || {};
+
       setValidatedRows(resData.validatedRows || []);
-      setSummary(resData.summary);
-      setExistingBatches(resData.batchResolution.existingBatches || []);
-      setUnknownBatches(resData.batchResolution.unknownBatches || []);
+      setSummary(resData.summary || { totalRows: 0, validRows: 0, errorRows: 0, warningRows: 0, duplicateCount: 0 });
+      setExistingBatches(batchRes.existingBatches || []);
+      setUnknownBatches(batchRes.unknownBatches || []);
 
       // Prepopulate default batch resolutions
       const defaultBatchRes: Record<string, any> = {};
-      (resData.batchResolution.unknownBatches || []).forEach((ub: any) => {
+      (batchRes.unknownBatches || []).forEach((ub: any) => {
         defaultBatchRes[ub.name] = { action: 'create' };
       });
       setBatchResolutions(defaultBatchRes);
 
-      if ((resData.batchResolution.unknownBatches || []).length > 0 || resData.summary.duplicateCount > 0) {
+      if ((batchRes.unknownBatches || []).length > 0 || (resData.summary?.duplicateCount || 0) > 0) {
         setCurrentStep('batch_duplicate');
       } else {
         setCurrentStep('preview');
@@ -268,7 +276,8 @@ export default function OrderImportModal({ isOpen, onClose, onSuccess }: OrderIm
 
       clearInterval(interval);
       setProgress(100);
-      setExecutionResult(res.data.data);
+      const resultData = res.data?.data?.createdCount !== undefined ? res.data.data : (res.data?.data || res.data || {});
+      setExecutionResult(resultData);
       setCurrentStep('result');
       toast.success('Orders imported successfully!');
       onSuccess();
