@@ -36,6 +36,8 @@ export default function MobilePurchase() {
     material: 'Paraffin Wax',
     quantity: 500,
     unitPrice: 85,
+    orderDate: new Date().toISOString().split('T')[0],
+    expectedDate: '',
     status: 'DRAFT',
     paymentStatus: 'UNPAID',
   });
@@ -61,12 +63,31 @@ export default function MobilePurchase() {
   const handleEditClick = (p: any) => {
     setIsEdit(true);
     setEditId(p.id);
+    let orderDateStr = new Date().toISOString().split('T')[0];
+    if (p.orderDate) {
+      try {
+        orderDateStr = new Date(p.orderDate).toISOString().split('T')[0];
+      } catch {
+        orderDateStr = String(p.orderDate).slice(0, 10);
+      }
+    }
+    let expectedDateStr = '';
+    if (p.expectedDate) {
+      try {
+        expectedDateStr = new Date(p.expectedDate).toISOString().split('T')[0];
+      } catch {
+        expectedDateStr = String(p.expectedDate).slice(0, 10);
+      }
+    }
+
     setFormData({
       supplierName: p.supplierName || '',
       gstNumber: p.gstNumber || '33AABCT1234A1ZA',
       material: p.rawMaterialName || (p.material ? p.material.split(' (')[0] : 'Paraffin Wax'),
       quantity: p.quantity || 500,
       unitPrice: p.unitPrice || 85,
+      orderDate: orderDateStr,
+      expectedDate: expectedDateStr,
       status: p.status || 'DRAFT',
       paymentStatus: p.paymentStatus || 'UNPAID',
     });
@@ -267,6 +288,8 @@ export default function MobilePurchase() {
             material: 'Paraffin Wax',
             quantity: 500,
             unitPrice: 85,
+            orderDate: new Date().toISOString().split('T')[0],
+            expectedDate: '',
             status: 'DRAFT',
             paymentStatus: 'UNPAID',
           });
@@ -310,6 +333,29 @@ export default function MobilePurchase() {
                   onChange={(e) => setFormData({ ...formData, material: e.target.value })}
                   className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Purchase Date *</label>
+                  <input
+                    type="date"
+                    required
+                    value={formData.orderDate}
+                    onChange={(e) => setFormData({ ...formData, orderDate: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Expected Delivery</label>
+                  <input
+                    type="date"
+                    value={formData.expectedDate}
+                    min={formData.orderDate}
+                    onChange={(e) => setFormData({ ...formData, expectedDate: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

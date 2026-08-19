@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { supplierName, material, quantity, unitPrice } = body;
+    const { supplierName, material, quantity, unitPrice, orderDate, expectedDate } = body;
 
     let supplier = await prisma.supplier.findFirst({ where: { name: supplierName } });
     if (!supplier) {
@@ -95,6 +95,8 @@ export async function POST(req: NextRequest) {
       data: {
         poNumber,
         supplierId: supplier.id,
+        orderDate: orderDate ? new Date(orderDate) : new Date(),
+        ...(expectedDate && { expectedDate: new Date(expectedDate) }),
         totalAmount: amount,
         subtotal: amount,
         createdBy: user?.id,
