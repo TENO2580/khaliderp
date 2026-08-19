@@ -99,73 +99,85 @@ export async function POST(req: NextRequest) {
     const waxNum = Number(waxUsed) || 0;
     const outputQty = Number(quantityProduced) || 0;
 
-    // FIFO Deduct Wax Stock from Batches
-    let primaryBatchId = batchId && batchId !== 'FIFO' ? batchId : null;
+    let primaryBatchId = '';
+    const batchUpdates: { batchId: string; deductedWax: number; addedProduced: number }[] = [];
 
-    // Fetch all available batches ordered by FIFO (purchaseDate ASC, createdAt ASC)
-    const availableBatches = await prisma.batch.findMany({
-      where: {
-        waxStock: { gt: 0 },
-      },
-      orderBy: [
-        { purchaseDate: 'asc' },
-        { createdAt: 'asc' },
-      ],
-    });
+    if (batchId && batchId !== 'FIFO') {
+      // 1. User selected a SPECIFIC Batch -> Deduct wax and increase produced candles on THIS exact batch
+      const specificBatch = await prisma.batch.findUnique({
+        where: { id: batchId },
+      });
 
-    let remainingWaxToDeduct = waxNum;
-    const batchDeductions: { batchId: string; deductedWax: number; addedProduced: number }[] = [];
-
-    if (availableBatches.length > 0) {
-      if (!primaryBatchId) {
-        primaryBatchId = availableBatches[0].id;
+      if (specificBatch) {
+        primaryBatchId = specificBatch.id;
+        batchUpdates.push({
+          batchId: specificBatch.id,
+          deductedWax: waxNum,
+          addedProduced: outputQty,
+        });
       }
+    }
 
-      // If user selected a specific batch, deduct from it first
-      const selectedBatch = primaryBatchId ? availableBatches.find(b => b.id === primaryBatchId) : null;
-      if (selectedBatch && selectedBatch.waxStock > 0) {
-        const deduct = Math.min(remainingWaxToDeduct, selectedBatch.waxStock);
+    if (!primaryBatchId) {
+      // 2. User selected 'FIFO' (or no batch selected) -> Deduct from oldest available batches with waxStock > 0
+      const availableBatches = await prisma.batch.findMany({
+        where: {
+          waxStock: { gt: 0 },
+        },
+        orderBy: [
+          { purchaseDate: 'asc' },
+          { createdAt: 'asc' },
+        ],
+      });
+
+      let remainingWaxToDeduct = waxNum;
+
+      for (const batch of availableBatches) {
+        if (remainingWaxToDeduct <= 0) break;
+
+        const deduct = Math.min(remainingWaxToDeduct, batch.waxStock);
         const producedShare = waxNum > 0 ? (deduct / waxNum) * outputQty : deduct;
-        batchDeductions.push({ batchId: selectedBatch.id, deductedWax: deduct, addedProduced: producedShare });
+
+        batchUpdates.push({
+          batchId: batch.id,
+          deductedWax: deduct,
+          addedProduced: producedShare,
+        });
+
+        if (!primaryBatchId) {
+          primaryBatchId = batch.id;
+        }
+
         remainingWaxToDeduct -= deduct;
       }
 
-      // Deduct remainder using FIFO across other batches
+      // If wax required exceeds available wax stock across all batches, deduct overflow from newest/latest batch
       if (remainingWaxToDeduct > 0) {
-        for (const batch of availableBatches) {
-          if (selectedBatch && batch.id === selectedBatch.id) continue;
-          if (remainingWaxToDeduct <= 0) break;
+        const latestBatch = await prisma.batch.findFirst({
+          orderBy: { createdAt: 'desc' },
+        });
 
-          const deduct = Math.min(remainingWaxToDeduct, batch.waxStock);
-          const producedShare = waxNum > 0 ? (deduct / waxNum) * outputQty : deduct;
-          batchDeductions.push({ batchId: batch.id, deductedWax: deduct, addedProduced: producedShare });
-          remainingWaxToDeduct -= deduct;
+        if (latestBatch) {
+          if (!primaryBatchId) primaryBatchId = latestBatch.id;
+
+          const existingUpdate = batchUpdates.find(u => u.batchId === latestBatch.id);
+          const producedShare = waxNum > 0 ? (remainingWaxToDeduct / waxNum) * outputQty : remainingWaxToDeduct;
+
+          if (existingUpdate) {
+            existingUpdate.deductedWax += remainingWaxToDeduct;
+            existingUpdate.addedProduced += producedShare;
+          } else {
+            batchUpdates.push({
+              batchId: latestBatch.id,
+              deductedWax: remainingWaxToDeduct,
+              addedProduced: producedShare,
+            });
+          }
         }
       }
     }
 
-    // If still remaining (or no batches had waxStock > 0), deduct from primaryBatchId or latest batch
-    if (remainingWaxToDeduct > 0) {
-      if (!primaryBatchId) {
-        const latestBatch = await prisma.batch.findFirst({ orderBy: { createdAt: 'desc' } });
-        primaryBatchId = latestBatch ? latestBatch.id : '';
-      }
-      if (primaryBatchId) {
-        const existingDeduction = batchDeductions.find(d => d.batchId === primaryBatchId);
-        if (existingDeduction) {
-          existingDeduction.deductedWax += remainingWaxToDeduct;
-          existingDeduction.addedProduced += (waxNum > 0 ? (remainingWaxToDeduct / waxNum) * outputQty : remainingWaxToDeduct);
-        } else {
-          batchDeductions.push({
-            batchId: primaryBatchId,
-            deductedWax: remainingWaxToDeduct,
-            addedProduced: (waxNum > 0 ? (remainingWaxToDeduct / waxNum) * outputQty : remainingWaxToDeduct),
-          });
-        }
-        remainingWaxToDeduct = 0;
-      }
-    }
-
+    // If still no batch exists, create a default batch
     if (!primaryBatchId) {
       const newBatch = await prisma.batch.create({
         data: {
@@ -181,14 +193,14 @@ export async function POST(req: NextRequest) {
       primaryBatchId = newBatch.id;
     }
 
-    // Apply batch updates in DB
-    for (const d of batchDeductions) {
+    // Apply batch updates: Deduct Wax Stock AND Increase Produced/Remaining Qty on the affected batches
+    for (const u of batchUpdates) {
       await prisma.batch.update({
-        where: { id: d.batchId },
+        where: { id: u.batchId },
         data: {
-          waxStock: { decrement: d.deductedWax },
-          producedQty: { increment: d.addedProduced },
-          remainingQty: { increment: d.addedProduced },
+          waxStock: { decrement: u.deductedWax },
+          producedQty: { increment: u.addedProduced },
+          remainingQty: { increment: u.addedProduced },
         },
       });
     }
@@ -218,7 +230,7 @@ export async function POST(req: NextRequest) {
             type: 'PRODUCTION_OUT',
             quantity: waxNum,
             reference: productionNumber,
-            notes: `Wax consumed for production run ${productionNumber} (FIFO)`,
+            notes: `Wax consumed for production run ${productionNumber}`,
           },
         });
       }
@@ -297,14 +309,14 @@ export async function POST(req: NextRequest) {
         sellingPrice: Number(sellingPrice),
         profit,
         margin,
-        notes: notes || (batchDeductions.length > 1
-          ? `FIFO deducted across ${batchDeductions.length} batches`
+        notes: notes || (batchUpdates.length > 1
+          ? `Wax deducted & candles added across ${batchUpdates.length} FIFO batches`
           : undefined),
       },
       include: { batch: true, operator: true },
     });
 
-    return jsonResponse(production, 201, 'Production run logged & Wax Stock deducted via FIFO');
+    return jsonResponse(production, 201, 'Production run logged successfully');
   } catch (err: any) {
     return errorResponse(err.message || 'Failed to log production', 400);
   }
