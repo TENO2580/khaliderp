@@ -3,78 +3,154 @@ import prisma from '@/lib/db';
 import { authenticateRequest, jsonResponse, errorResponse } from '@/lib/middleware-server';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 300;
 
 export async function GET(req: NextRequest) {
   const { user, error } = await authenticateRequest(req);
   if (error) return error;
 
   try {
+    const url = new URL(req.url);
+    const period = url.searchParams.get('period') || 'this_month';
+    const customStart = url.searchParams.get('startDate');
+    const customEnd = url.searchParams.get('endDate');
+
     const now = new Date();
+    let rangeStart: Date;
+    let rangeEnd: Date;
+    let prevRangeStart: Date;
+    let prevRangeEnd: Date;
+    let periodLabel = 'This Month';
 
-    // ── Date boundaries ──
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const todayEnd = new Date(todayStart);
-    todayEnd.setDate(todayEnd.getDate() + 1);
+    // ── Calculate Date Range based on Period ──
+    if (period === 'today') {
+      periodLabel = 'Today';
+      rangeStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+      rangeEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
-    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const firstDayOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    
-    const firstDayPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const sevenDaysAgo = new Date(todayStart);
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+      prevRangeStart = new Date(rangeStart);
+      prevRangeStart.setDate(prevRangeStart.getDate() - 1);
+      prevRangeEnd = new Date(rangeEnd);
+      prevRangeEnd.setDate(prevRangeEnd.getDate() - 1);
+    } else if (period === 'yesterday') {
+      periodLabel = 'Yesterday';
+      rangeStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0, 0);
+      rangeEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999);
+
+      prevRangeStart = new Date(rangeStart);
+      prevRangeStart.setDate(prevRangeStart.getDate() - 1);
+      prevRangeEnd = new Date(rangeEnd);
+      prevRangeEnd.setDate(prevRangeEnd.getDate() - 1);
+    } else if (period === 'this_week') {
+      periodLabel = 'This Week';
+      const dayOfWeek = now.getDay(); // 0 is Sunday
+      const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Monday
+      rangeStart = new Date(now.getFullYear(), now.getMonth(), diff, 0, 0, 0, 0);
+      rangeEnd = new Date(now.getFullYear(), now.getMonth(), diff + 6, 23, 59, 59, 999);
+
+      prevRangeStart = new Date(rangeStart);
+      prevRangeStart.setDate(prevRangeStart.getDate() - 7);
+      prevRangeEnd = new Date(rangeEnd);
+      prevRangeEnd.setDate(prevRangeEnd.getDate() - 7);
+    } else if (period === 'last_month') {
+      periodLabel = 'Last Month';
+      rangeStart = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
+      rangeEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
+      prevRangeStart = new Date(now.getFullYear(), now.getMonth() - 2, 1, 0, 0, 0, 0);
+      prevRangeEnd = new Date(now.getFullYear(), now.getMonth() - 1, 0, 23, 59, 59, 999);
+    } else if (period === 'this_quarter') {
+      periodLabel = 'This Quarter';
+      const currentQuarter = Math.floor(now.getMonth() / 3);
+      rangeStart = new Date(now.getFullYear(), currentQuarter * 3, 1, 0, 0, 0, 0);
+      rangeEnd = new Date(now.getFullYear(), (currentQuarter + 1) * 3, 0, 23, 59, 59, 999);
+
+      prevRangeStart = new Date(now.getFullYear(), (currentQuarter - 1) * 3, 1, 0, 0, 0, 0);
+      prevRangeEnd = new Date(now.getFullYear(), currentQuarter * 3, 0, 23, 59, 59, 999);
+    } else if (period === 'this_year') {
+      periodLabel = 'This Year';
+      rangeStart = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+      rangeEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+
+      prevRangeStart = new Date(now.getFullYear() - 1, 0, 1, 0, 0, 0, 0);
+      prevRangeEnd = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
+    } else if (period === 'all_time') {
+      periodLabel = 'All Time';
+      rangeStart = new Date(2020, 0, 1, 0, 0, 0, 0);
+      rangeEnd = new Date(now.getFullYear() + 1, 11, 31, 23, 59, 59, 999);
+
+      prevRangeStart = new Date(2019, 0, 1, 0, 0, 0, 0);
+      prevRangeEnd = new Date(2019, 11, 31, 23, 59, 59, 999);
+    } else if (customStart || customEnd) {
+      periodLabel = 'Custom Range';
+      rangeStart = customStart ? new Date(new Date(customStart).setHours(0, 0, 0, 0)) : new Date(now.getFullYear(), now.getMonth(), 1);
+      rangeEnd = customEnd ? new Date(new Date(customEnd).setHours(23, 59, 59, 999)) : new Date(now);
+
+      const duration = rangeEnd.getTime() - rangeStart.getTime();
+      prevRangeEnd = new Date(rangeStart.getTime() - 1);
+      prevRangeStart = new Date(prevRangeEnd.getTime() - duration);
+    } else {
+      // Default: this_month
+      periodLabel = 'This Month';
+      rangeStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      rangeEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+      prevRangeStart = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
+      prevRangeEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    }
+
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
-    // Using Raw SQL to execute all 15 KPI queries in a single database roundtrip
-    // This resolves the massive Supabase connection pool latency (from 48s to 1s)
+    // Using Raw SQL for instant single-roundtrip performance
     const rawData: any = await prisma.$queryRaw`
       SELECT 
-        (SELECT COALESCE(SUM("totalAmount"), 0) FROM "sales_orders" WHERE "orderDate" >= ${todayStart} AND "orderDate" < ${todayEnd}) as "todaysSales",
-        (SELECT COALESCE(SUM("totalAmount"), 0) FROM "sales_orders" WHERE "orderDate" >= ${firstDayOfMonth} AND "orderDate" < ${firstDayOfNextMonth}) as "monthlySales",
-        (SELECT COALESCE(SUM("amount"), 0) FROM "expenses" WHERE "date" >= ${firstDayOfMonth} AND "date" < ${firstDayOfNextMonth}) as "monthlyExpenses",
-        (SELECT COALESCE(SUM("totalCost"), 0) FROM "productions" WHERE "date" >= ${firstDayOfMonth} AND "date" < ${firstDayOfNextMonth}) as "monthlyProductionCost",
+        (SELECT COALESCE(SUM("totalAmount"), 0) FROM "sales_orders" WHERE "orderDate" >= ${todayStart} AND "orderDate" <= ${todayEnd}) as "todaysSales",
+        (SELECT COALESCE(SUM("totalAmount"), 0) FROM "sales_orders" WHERE "orderDate" >= ${rangeStart} AND "orderDate" <= ${rangeEnd}) as "periodSales",
+        (SELECT COALESCE(SUM("amount"), 0) FROM "expenses" WHERE "date" >= ${rangeStart} AND "date" <= ${rangeEnd}) as "periodExpenses",
+        (SELECT COALESCE(SUM("totalCost"), 0) FROM "productions" WHERE "date" >= ${rangeStart} AND "date" <= ${rangeEnd}) as "periodProductionCost",
         (SELECT COUNT(*) FROM "sales_orders" WHERE "status" IN ('PENDING', 'CONFIRMED', 'IN_PRODUCTION', 'READY')) as "ordersPending",
-        (SELECT COUNT(*) FROM "sales_orders" WHERE "status" = 'DELIVERED' AND "orderDate" >= ${firstDayOfMonth} AND "orderDate" < ${firstDayOfNextMonth}) as "ordersDelivered",
+        (SELECT COUNT(*) FROM "sales_orders" WHERE "status" = 'DELIVERED' AND "orderDate" >= ${rangeStart} AND "orderDate" <= ${rangeEnd}) as "ordersDelivered",
         (SELECT COUNT(*) FROM "customers") as "totalCustomers",
         (SELECT COUNT(*) FROM "customers" WHERE "status" = 'ACTIVE') as "activeCustomers",
         (SELECT COALESCE(SUM("outstanding"), 0) FROM "sales_orders" WHERE "outstanding" > 0) as "outstandingCredit",
         (SELECT COALESCE(SUM("waxInitialQty" - "producedQty"), 0) FROM "batches") as "waxStock",
         (SELECT COALESCE(SUM("currentStock"), 0) FROM "inventory") as "finishedGoodsStock",
         (SELECT COALESCE(SUM("value"), 0) FROM "inventory") as "inventoryValue",
-        (SELECT COALESCE(SUM("quantityProduced"), 0) FROM "productions" WHERE "date" >= ${todayStart} AND "date" < ${todayEnd}) as "productionToday",
-        (SELECT COALESCE(SUM("quantityProduced"), 0) FROM "productions" WHERE "date" >= ${firstDayOfMonth} AND "date" < ${firstDayOfNextMonth}) as "productionThisMonth",
-        (SELECT COUNT(*) FROM "attendance" WHERE "date" >= ${todayStart} AND "date" < ${todayEnd} AND "status" IN ('PRESENT', 'LATE')) as "employeeAttendanceToday",
-        (SELECT COALESCE(SUM("totalAmount"), 0) FROM "sales_orders" WHERE "orderDate" >= ${firstDayPrevMonth} AND "orderDate" < ${firstDayOfMonth}) as "prevMonthlySales",
-        (SELECT COALESCE(SUM("amount"), 0) FROM "expenses" WHERE "date" >= ${firstDayPrevMonth} AND "date" < ${firstDayOfMonth}) as "prevMonthlyExpenses"
+        (SELECT COALESCE(SUM("quantityProduced"), 0) FROM "productions" WHERE "date" >= ${todayStart} AND "date" <= ${todayEnd}) as "productionToday",
+        (SELECT COALESCE(SUM("quantityProduced"), 0) FROM "productions" WHERE "date" >= ${rangeStart} AND "date" <= ${rangeEnd}) as "productionPeriod",
+        (SELECT COUNT(*) FROM "attendance" WHERE "date" >= ${todayStart} AND "date" <= ${todayEnd} AND "status" IN ('PRESENT', 'LATE')) as "employeeAttendanceToday",
+        (SELECT COALESCE(SUM("totalAmount"), 0) FROM "sales_orders" WHERE "orderDate" >= ${prevRangeStart} AND "orderDate" <= ${prevRangeEnd}) as "prevPeriodSales",
+        (SELECT COALESCE(SUM("amount"), 0) FROM "expenses" WHERE "date" >= ${prevRangeStart} AND "date" <= ${prevRangeEnd}) as "prevPeriodExpenses"
     `;
 
     const row = rawData[0];
     const todaysSales = Number(row.todaysSales || 0);
-    const monthlySales = Number(row.monthlySales || 0);
-    const monthlyExpenses = Number(row.monthlyExpenses || 0);
-    const monthlyProductionCost = Number(row.monthlyProductionCost || 0);
+    const periodSales = Number(row.periodSales || 0);
+    const periodExpenses = Number(row.periodExpenses || 0);
+    const periodProductionCost = Number(row.periodProductionCost || 0);
     const waxStock = Number(row.waxStock || 0);
     const finishedGoodsStock = Number(row.finishedGoodsStock || 0);
     const inventoryValue = Number(row.inventoryValue || 0);
     const outstandingCredit = Number(row.outstandingCredit || 0);
     const productionToday = Number(row.productionToday || 0);
-    const productionThisMonth = Number(row.productionThisMonth || 0);
-    const prevMonthlySales = Number(row.prevMonthlySales || 0);
-    const prevMonthlyExpenses = Number(row.prevMonthlyExpenses || 0);
+    const productionPeriod = Number(row.productionPeriod || 0);
+    const prevPeriodSales = Number(row.prevPeriodSales || 0);
+    const prevPeriodExpenses = Number(row.prevPeriodExpenses || 0);
     const ordersPending = Number(row.ordersPending || 0);
     const ordersDelivered = Number(row.ordersDelivered || 0);
     const totalCustomers = Number(row.totalCustomers || 0);
     const activeCustomers = Number(row.activeCustomers || 0);
     const employeeAttendanceToday = Number(row.employeeAttendanceToday || 0);
 
-    const monthlyProfit = monthlySales - (monthlyProductionCost + monthlyExpenses);
-    const grossMargin = monthlySales > 0 ? Math.round((monthlyProfit / monthlySales) * 100 * 10) / 10 : 0;
-    const todaysProfit = monthlySales > 0 ? Math.round(todaysSales * (monthlyProfit / monthlySales)) : 0;
+    const periodProfit = periodSales - (periodProductionCost + periodExpenses);
+    const grossMargin = periodSales > 0 ? Math.round((periodProfit / periodSales) * 100 * 10) / 10 : 0;
+    const todaysProfit = periodSales > 0 ? Math.round(todaysSales * (periodProfit / periodSales)) : 0;
 
-    const salesChange = prevMonthlySales > 0 ? Math.round(((monthlySales - prevMonthlySales) / prevMonthlySales) * 100 * 10) / 10 : 0;
-    const expenseChange = prevMonthlyExpenses > 0 ? Math.round(((monthlyExpenses - prevMonthlyExpenses) / prevMonthlyExpenses) * 100 * 10) / 10 : 0;
+    const salesChange = prevPeriodSales > 0 ? Math.round(((periodSales - prevPeriodSales) / prevPeriodSales) * 100 * 10) / 10 : 0;
+    const expenseChange = prevPeriodExpenses > 0 ? Math.round(((periodExpenses - prevPeriodExpenses) / prevPeriodExpenses) * 100 * 10) / 10 : 0;
 
-    // Charts queries in parallel (only 4 queries total)
+    // Charts queries filtered by selected period
     const [salesTrendRows, topSales, expenseByCat, recentBatches, recentSales] = await Promise.all([
       prisma.$queryRaw`
         SELECT date_trunc('month', "orderDate") as "monthDate", SUM("totalAmount") as "totalAmount"
@@ -86,13 +162,14 @@ export async function GET(req: NextRequest) {
       prisma.salesOrder.groupBy({
         by: ['customerId'],
         _sum: { totalAmount: true },
+        where: { orderDate: { gte: rangeStart, lte: rangeEnd } },
         orderBy: { _sum: { totalAmount: 'desc' } },
         take: 10,
       }),
       prisma.expense.groupBy({
         by: ['categoryId'],
         _sum: { amount: true },
-        where: { date: { gte: firstDayOfMonth, lt: firstDayOfNextMonth } },
+        where: { date: { gte: rangeStart, lte: rangeEnd } },
         orderBy: { _sum: { amount: 'desc' } },
       }),
       prisma.batch.findMany({
@@ -103,15 +180,15 @@ export async function GET(req: NextRequest) {
       prisma.salesOrder.groupBy({
         by: ['orderDate'],
         _sum: { totalAmount: true },
-        where: { orderDate: { gte: sevenDaysAgo } },
+        where: { orderDate: { gte: rangeStart, lte: rangeEnd } },
         orderBy: { orderDate: 'asc' },
       })
     ]);
 
-    // 1) 6-month sales trend formatting
-    const salesTrendMap = new Map((salesTrendRows as any[]).map(row => [
-      new Date(row.monthDate).toLocaleString('en-IN', { month: 'short' }),
-      Number(row.totalAmount || 0)
+    // 1) 6-month sales trend
+    const salesTrendMap = new Map((salesTrendRows as any[]).map(r => [
+      new Date(r.monthDate).toLocaleString('en-IN', { month: 'short' }),
+      Number(r.totalAmount || 0)
     ]));
     
     const salesTrend = [];
@@ -149,15 +226,17 @@ export async function GET(req: NextRequest) {
       amount: e._sum.amount || 0,
     }));
 
-    // 4) 7-day sales trend formatting
+    // 4) Period Daily Sales Trend
     const salesDayMap = new Map<string, number>();
     recentSales.forEach(s => {
       salesDayMap.set(s.orderDate.toISOString().split('T')[0], s._sum.totalAmount || 0);
     });
+
+    const daysDiff = Math.min(31, Math.max(1, Math.ceil((rangeEnd.getTime() - rangeStart.getTime()) / (1000 * 60 * 60 * 24))));
     const dailySalesTrend = [];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(sevenDaysAgo);
-      d.setDate(sevenDaysAgo.getDate() + i);
+    for (let i = 0; i < daysDiff; i++) {
+      const d = new Date(rangeStart);
+      d.setDate(rangeStart.getDate() + i);
       const dateStr = d.toISOString().split('T')[0];
       dailySalesTrend.push({ date: dateStr, TotalSales: salesDayMap.get(dateStr) || 0 });
     }
@@ -171,26 +250,32 @@ export async function GET(req: NextRequest) {
       }))
       .reverse();
 
-    // 6) Inventory health (raw materials + finished goods)
+    // 6) Inventory health
     const inventoryHealth = [
       { name: 'Wax Stock', amount: Math.round(waxStock) },
       { name: 'Finished Goods', amount: Math.round(finishedGoodsStock) },
     ];
 
-    // 7) Monthly financials
+    // 7) Period financials
     const monthlyFinancials = [
-      { name: 'Sales', amount: Math.round(monthlySales) },
-      { name: 'Profit', amount: Math.round(monthlyProfit > 0 ? monthlyProfit : 0) },
-      { name: 'Expenses', amount: Math.round(monthlyExpenses) },
+      { name: 'Sales', amount: Math.round(periodSales) },
+      { name: 'Profit', amount: Math.round(periodProfit > 0 ? periodProfit : 0) },
+      { name: 'Expenses', amount: Math.round(periodExpenses) },
     ];
 
     return jsonResponse({
+      periodInfo: {
+        period,
+        label: periodLabel,
+        startDate: rangeStart.toISOString().split('T')[0],
+        endDate: rangeEnd.toISOString().split('T')[0],
+      },
       kpis: {
         todaysSales: Math.round(todaysSales),
         todaysProfit: Math.round(todaysProfit),
-        monthlySales: Math.round(monthlySales),
-        monthlyProfit: Math.round(monthlyProfit),
-        monthlyExpenses: Math.round(monthlyExpenses),
+        monthlySales: Math.round(periodSales), // Matches period
+        monthlyProfit: Math.round(periodProfit),
+        monthlyExpenses: Math.round(periodExpenses),
         grossMargin,
         currentWaxStock: Math.round(waxStock),
         finishedGoodsStock: Math.round(finishedGoodsStock),
@@ -201,7 +286,7 @@ export async function GET(req: NextRequest) {
         outstandingCredit: Math.round(outstandingCredit),
         inventoryValue: Math.round(inventoryValue),
         productionToday: Math.round(productionToday),
-        productionThisMonth: Math.round(productionThisMonth),
+        productionThisMonth: Math.round(productionPeriod),
         employeeAttendance: employeeAttendanceToday,
         salesChange,
         expenseChange,
