@@ -280,6 +280,15 @@ export class DataValidationService {
       const rawTotal = totalHeader ? rawRow[totalHeader] : '';
       let totalSellingCost = this.parseNumber(rawTotal, 0);
 
+      // Total Selling Cost is quantity (KG) * selling cost (per KG)
+      if (options.calculationMode === 'calculate_auto' || !totalSellingCost || (quantity > 1 && totalSellingCost === sellingCost)) {
+        if (quantity > 0 && sellingCost > 0) {
+          totalSellingCost = quantity * sellingCost;
+        } else {
+          totalSellingCost = totalSellingCost || sellingCost;
+        }
+      }
+
       const marginAmtHeader = mappings.marginAmount;
       const rawMarginAmt = marginAmtHeader ? rawRow[marginAmtHeader] : '';
       let marginAmount = this.parseNumber(rawMarginAmt, 0);
@@ -288,18 +297,12 @@ export class DataValidationService {
       const rawMarginPct = marginPctHeader ? rawRow[marginPctHeader] : '';
       let marginPct = this.parseNumber(rawMarginPct, 0);
 
-      // Perform calculations if auto-calculate is selected or if values are 0
-      if (options.calculationMode === 'calculate_auto' || (!totalSellingCost && sellingCost > 0)) {
-        totalSellingCost = totalSellingCost || sellingCost;
-        marginAmount = Math.max(0, (totalSellingCost || sellingCost) - productionCost);
-        marginPct = (totalSellingCost || sellingCost) > 0 ? (marginAmount / (totalSellingCost || sellingCost)) * 100 : 0;
-      } else {
-        if (!marginAmount && (totalSellingCost || sellingCost) > 0 && productionCost > 0) {
-          marginAmount = (totalSellingCost || sellingCost) - productionCost;
-        }
-        if (!marginPct && (totalSellingCost || sellingCost) > 0 && marginAmount > 0) {
-          marginPct = (marginAmount / (totalSellingCost || sellingCost)) * 100;
-        }
+      // Margin calculations (per KG or total)
+      if (!marginAmount && sellingCost > 0 && productionCost > 0) {
+        marginAmount = Math.max(0, sellingCost - productionCost);
+      }
+      if (!marginPct && sellingCost > 0 && marginAmount > 0) {
+        marginPct = (marginAmount / sellingCost) * 100;
       }
 
       // Round margins

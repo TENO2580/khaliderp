@@ -125,24 +125,25 @@ export default function DesktopSales() {
   }, [items, batches, isEdit, products]);
 
   // Auto-calculate Totals and Margins based on Unit inputs
+  // Auto-calculate Totals and Margins based on Unit inputs
   useEffect(() => {
     if (!items || items.length === 0) return;
     const qty = Number(items[0]?.quantity) || 0;
     const unitSellingPrice = Number(items[0]?.unitPrice) || 0;
     const prodCostPerKg = Number(editFormData.productionCostPerKg) || 0;
-    const weightPerUnit = Number(editFormData.weightPerUnit) || 0;
+    const weightPerUnit = Number(editFormData.weightPerUnit) || 1;
     
     const totalWeightKg = qty * weightPerUnit;
-    const totalSellingCost = qty * unitSellingPrice;
+    const totalSellingCost = totalWeightKg > 0 && unitSellingPrice > 0 ? (totalWeightKg * unitSellingPrice) : (qty * unitSellingPrice);
     const totalProdCost = totalWeightKg * prodCostPerKg;
     
     setEditFormData(prev => {
       let marginStr = '';
       let profitAmt = 0;
       
-      if (totalSellingCost > 0 || totalProdCost > 0) {
-        profitAmt = totalSellingCost - totalProdCost;
-        const marginPct = totalSellingCost > 0 ? ((profitAmt / totalSellingCost) * 100).toFixed(2) : '0';
+      if (unitSellingPrice > 0 || prodCostPerKg > 0) {
+        profitAmt = unitSellingPrice - prodCostPerKg;
+        const marginPct = unitSellingPrice > 0 ? ((profitAmt / unitSellingPrice) * 100).toFixed(2) : '0';
         marginStr = `${marginPct}% (₹${profitAmt.toFixed(2)})`;
       }
 
@@ -153,14 +154,14 @@ export default function DesktopSales() {
         prevTotalAmt !== totalSellingCost || 
         prev.margin !== marginStr ||
         prevTotalWeight !== totalWeightKg ||
-        prev.productionCost !== totalProdCost.toFixed(2) ||
-        prev.sellingCost !== totalSellingCost.toFixed(2)
+        prev.productionCost !== prodCostPerKg.toFixed(2) ||
+        prev.sellingCost !== unitSellingPrice.toFixed(2)
       ) {
         return {
           ...prev, 
           totalAmount: totalSellingCost,
-          sellingCost: totalSellingCost.toFixed(2),
-          productionCost: totalProdCost.toFixed(2),
+          sellingCost: unitSellingPrice.toFixed(2),
+          productionCost: prodCostPerKg.toFixed(2),
           profitAmt: profitAmt,
           totalWeightKg: totalWeightKg,
           margin: marginStr
@@ -404,31 +405,38 @@ export default function DesktopSales() {
             const newQty = Number(value) || 0;
             updateBody.quantity = newQty;
             
-            const weightPerUnit = existingNotes.weightPerUnit || 0;
-            const prodCostPerKg = existingNotes.productionCostPerKg || 0;
-            const unitSelling = existingNotes.unitSellingPrice || (order.items?.[0]?.unitPrice || 0);
+            const weightPerUnit = Number(existingNotes.weightPerUnit) || 1;
+            const prodCost = Number(existingNotes.productionCost) || 0;
+            const unitSelling = Number(existingNotes.sellingCost) || (order.items?.[0]?.unitPrice || 0);
 
-            if (weightPerUnit > 0) {
-              const totalWeightKg = newQty * weightPerUnit;
-              const totalProdCost = totalWeightKg * prodCostPerKg;
-              const totalSellingCost = newQty * unitSelling;
-              
-              newNotes.totalWeightKg = totalWeightKg;
-              newNotes.productionCost = totalProdCost.toFixed(2);
-              newNotes.sellingCost = totalSellingCost.toFixed(2);
-              updateBody.totalAmount = totalSellingCost;
-              hasNotesChange = true;
-            }
+            const totalWeightKg = newQty * weightPerUnit;
+            const totalProdCost = totalWeightKg * prodCost;
+            const totalSellingCost = totalWeightKg * unitSelling;
+            
+            newNotes.totalWeightKg = totalWeightKg;
+            newNotes.productionCost = prodCost.toFixed(2);
+            newNotes.sellingCost = unitSelling.toFixed(2);
+            updateBody.totalAmount = totalSellingCost;
+            hasNotesChange = true;
           }
+        }
+
+        if (fields.sellingCost !== undefined) {
+          const newSellingCost = Number(fields.sellingCost) || 0;
+          const qtyKg = Number(newNotes.totalWeightKg || existingNotes.totalWeightKg || order.items?.[0]?.quantity || 0);
+          const totalSellingCost = qtyKg > 0 ? (qtyKg * newSellingCost) : newSellingCost;
+          newNotes.sellingCost = newSellingCost.toFixed(2);
+          updateBody.totalAmount = totalSellingCost;
+          hasNotesChange = true;
         }
 
         // Auto-calc margin from the final values
         const prodCost = Number(newNotes.productionCost || existingNotes.productionCost) || 0;
-        const totalSelling = updateBody.totalAmount !== undefined ? updateBody.totalAmount : (order.totalAmount || 0);
-        if (prodCost > 0 || totalSelling > 0) {
-          const marginAmt = totalSelling - prodCost;
-          const marginPct = totalSelling > 0 ? ((marginAmt / totalSelling) * 100).toFixed(2) : '0';
-          newNotes.margin = `${marginPct}% (\u20b9${marginAmt.toFixed(2)})`;
+        const sellCost = Number(newNotes.sellingCost || existingNotes.sellingCost) || 0;
+        if (prodCost > 0 || sellCost > 0) {
+          const marginAmt = sellCost - prodCost;
+          const marginPct = sellCost > 0 ? ((marginAmt / sellCost) * 100).toFixed(2) : '0';
+          newNotes.margin = `${marginPct}% (₹${marginAmt.toFixed(2)})`;
           hasNotesChange = true;
         }
 
@@ -568,7 +576,13 @@ export default function DesktopSales() {
       editableKey: 'totalAmount',
       inlineEditable: true,
       inputType: 'number',
-      cell: (o) => <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(o.totalAmount)}</span>,
+      cell: (o) => {
+        const data = parseNotes(o.notes);
+        const qtyKg = Number(data.totalWeightKg !== undefined ? data.totalWeightKg : (o.items?.reduce((sum: number, i: any) => sum + i.quantity, 0) || 0));
+        const sellingCost = Number(data.sellingCost !== undefined ? data.sellingCost : (o.items?.[0]?.unitPrice || 0));
+        const total = (qtyKg > 0 && sellingCost > 0) ? (qtyKg * sellingCost) : Number(o.totalAmount || 0);
+        return <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(total)}</span>;
+      },
     },
     {
       header: 'Status',

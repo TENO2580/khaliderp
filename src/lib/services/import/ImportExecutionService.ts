@@ -174,6 +174,10 @@ export class ImportExecutionService {
 
             const batchDisplayStr = finalBatchDisplayNames.length > 0 ? finalBatchDisplayNames.join(', ') : batchUsed;
 
+            const calculatedTotalSellingCost = (quantity > 0 && sellingCost > 0)
+              ? Math.round(quantity * sellingCost * 100) / 100
+              : (totalSellingCost || sellingCost);
+
             // Notes metadata
             const notesObj = {
               type,
@@ -181,10 +185,11 @@ export class ImportExecutionService {
               weightPerUnit: 1,
               quantityUnits: quantity,
               totalWeightKg: quantity,
-              productionCostPerKg: quantity > 0 ? (productionCost / quantity).toFixed(2) : '0',
+              productionCostPerKg: productionCost > 0 ? productionCost.toFixed(2) : '0',
               productionCost: productionCost.toFixed(2),
-              unitSellingPrice: quantity > 0 ? (sellingCost / quantity).toFixed(2) : sellingCost.toFixed(2),
-              sellingCost: (totalSellingCost || sellingCost).toFixed(2),
+              unitSellingPrice: sellingCost.toFixed(2),
+              sellingCost: sellingCost.toFixed(2),
+              totalSellingCost: calculatedTotalSellingCost.toFixed(2),
               profitAmt: marginAmount,
               margin: `${marginPct}% (\u20b9${marginAmount.toFixed(2)})`,
               batchUsed: batchDisplayStr,
@@ -222,7 +227,8 @@ export class ImportExecutionService {
                     where: { id: existingOrder.id },
                     data: {
                       deliveryDate: deliveryDateObj,
-                      totalAmount: totalSellingCost || sellingCost,
+                      subtotal: calculatedTotalSellingCost,
+                      totalAmount: calculatedTotalSellingCost,
                       status: status as any,
                       notes: JSON.stringify(notesObj),
                     },
@@ -240,8 +246,8 @@ export class ImportExecutionService {
                         productId,
                         batchId: batchIds[0] || null,
                         quantity,
-                        unitPrice: quantity > 0 ? totalSellingCost / quantity : totalSellingCost,
-                        amount: totalSellingCost || sellingCost,
+                        unitPrice: sellingCost,
+                        amount: calculatedTotalSellingCost,
                       },
                     });
                   }
@@ -280,8 +286,8 @@ export class ImportExecutionService {
                 customerId,
                 orderDate: orderDateObj,
                 deliveryDate: deliveryDateObj,
-                subtotal: totalSellingCost || sellingCost,
-                totalAmount: totalSellingCost || sellingCost,
+                subtotal: calculatedTotalSellingCost,
+                totalAmount: calculatedTotalSellingCost,
                 status: status as any,
                 notes: JSON.stringify(notesObj),
                 createdBy: user?.name || user?.email || 'System Import',
@@ -296,8 +302,8 @@ export class ImportExecutionService {
                   productId,
                   batchId: batchIds[0] || null,
                   quantity,
-                  unitPrice: quantity > 0 ? totalSellingCost / quantity : totalSellingCost,
-                  amount: totalSellingCost || sellingCost,
+                  unitPrice: sellingCost,
+                  amount: calculatedTotalSellingCost,
                 },
               });
             }
