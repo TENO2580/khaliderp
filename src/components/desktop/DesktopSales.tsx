@@ -5,11 +5,13 @@ import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { SearchableSelect } from '@/components/shared/SearchableSelect';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { Plus, FileText, CheckCircle2, DollarSign, X } from 'lucide-react';
+import { Plus, FileText, CheckCircle2, DollarSign, X, Upload, History, FileSpreadsheet } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import useSWR from 'swr';
 import { useSearchParams } from 'next/navigation';
+import OrderImportModal from '@/components/shared/import/OrderImportModal';
+import ImportHistoryModal from '@/components/shared/import/ImportHistoryModal';
 
 const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
@@ -31,6 +33,8 @@ export default function DesktopSales() {
 
   // Create/Edit Order Modal
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [editId, setEditId] = useState('');
   const [customerId, setCustomerId] = useState('');
@@ -548,10 +552,28 @@ export default function DesktopSales() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Sales & Orders</h1>
           <p className="text-sm text-gray-500">Create orders, generate GST invoices, track receivables</p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsHistoryModalOpen(true)}
+            className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition-colors dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+          >
+            <History className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            <span>Import History</span>
+          </button>
+
+          <button
+            onClick={() => setIsImportModalOpen(true)}
+            className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 transition-colors"
+          >
+            <FileSpreadsheet className="h-4 w-4" />
+            <span>Import Data</span>
+          </button>
         </div>
       </div>
 
@@ -856,6 +878,21 @@ export default function DesktopSales() {
           </div>
         </div>
       )}
+
+      {/* Order Import Modal */}
+      <OrderImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={() => {
+          fetchData();
+        }}
+      />
+
+      {/* Import History Modal */}
+      <ImportHistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+      />
     </div>
   );
 }

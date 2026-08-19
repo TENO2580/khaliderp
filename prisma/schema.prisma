@@ -1283,3 +1283,51 @@ model ActivityLog {
   @@index([createdAt])
   @@map("activity_logs")
 }
+
+// ============================================
+// DATA IMPORT & MAPPING PRESETS
+// ============================================
+
+model ImportHistory {
+  id           String   @id @default(cuid())
+  importId     String   @unique // e.g. IMP-2026-0001
+  module       String   @default("ORDERS") // ORDERS, CUSTOMERS, PRODUCTS, etc.
+  fileName     String
+  fileSize     Int?
+  status       String   @default("COMPLETED") // COMPLETED, PARTIAL, FAILED
+  totalRows    Int      @default(0)
+  createdCount Int      @default(0)
+  updatedCount Int      @default(0)
+  skippedCount Int      @default(0)
+  failedCount  Int      @default(0)
+  mode         String   @default("ADD_NEW") // ADD_NEW, UPDATE_EXISTING, ADD_AND_UPDATE
+  mappingUsed  String   // JSON string of field mappings
+  summary      String?  // JSON string summary
+  errors       String?  // JSON array of row errors/warnings
+  importedData String?  // JSON preview of imported records
+  userId       String?
+  userName     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([module])
+  @@index([createdAt])
+  @@map("import_histories")
+}
+
+model MappingPreset {
+  id          String   @id @default(cuid())
+  name        String   // e.g. "Odell Order Excel Format"
+  module      String   @default("ORDERS")
+  description String?
+  mappings    String   // JSON string { systemField: uploadedHeader }
+  options     String?  // JSON string (calculation toggles, default options)
+  isDefault   Boolean  @default(false)
+  userId      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([module])
+  @@map("mapping_presets")
+}
+
