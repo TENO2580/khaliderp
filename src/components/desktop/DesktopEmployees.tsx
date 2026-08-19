@@ -5,7 +5,7 @@ import Link from 'next/link';
 import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { UserCog, CalendarCheck, Plus, CheckCircle, XCircle } from 'lucide-react';
+import { UserCog, CalendarCheck, Plus, CheckCircle, XCircle, Edit, Trash2, X } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -19,7 +19,9 @@ export default function DesktopEmployees() {
   const totalItems = employees.length;
 
   // Modals
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEdit, setIsEdit] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
   const [isAttendanceOpen, setIsAttendanceOpen] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState<any>(null);
 
@@ -30,6 +32,8 @@ export default function DesktopEmployees() {
     department: 'Production',
     salary: 18000,
     joinDate: new Date().toISOString().slice(0, 10),
+    status: 'ACTIVE',
+    address: '',
   });
 
   const [attStatus, setAttStatus] = useState('PRESENT');
@@ -41,7 +45,7 @@ export default function DesktopEmployees() {
         api.get(`/employees?search=${encodeURIComponent(search)}`),
         api.get('/employees/attendance/stats'),
       ]);
-      setEmployees(eRes.data.data.data);
+      setEmployees(eRes.data.data.data || []);
       setAttendanceStats(aRes.data.data);
     } catch {
       toast.error('Failed to load employee list');
@@ -54,15 +58,73 @@ export default function DesktopEmployees() {
     fetchData();
   }, [search, limit]);
 
-  const handleCreateSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleOpenAdd = () => {
+    setIsEdit(false);
+    setEditId(null);
+    setFormData({
+      name: '',
+      phone: '',
+      designation: 'Machine Operator',
+      department: 'Production',
+      salary: 18000,
+      joinDate: new Date().toISOString().slice(0, 10),
+      status: 'ACTIVE',
+      address: '',
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (emp: any) => {
+    setIsEdit(true);
+    setEditId(emp.id);
+    let joinDateStr = new Date().toISOString().slice(0, 10);
+    if (emp.joinDate) {
+      try {
+        joinDateStr = new Date(emp.joinDate).toISOString().slice(0, 10);
+      } catch {
+        joinDateStr = String(emp.joinDate).slice(0, 10);
+      }
+    }
+    setFormData({
+      name: emp.name || '',
+      phone: emp.phone || '',
+      designation: emp.designation || 'Machine Operator',
+      department: emp.department || 'Production',
+      salary: Number(emp.salary) || 0,
+      joinDate: joinDateStr,
+      status: emp.status || 'ACTIVE',
+      address: emp.address || '',
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (emp: any) => {
+    if (!window.confirm(`Are you sure you want to delete employee "${emp.name}" (${emp.employeeId})? This will also remove associated attendance records.`)) {
+      return;
+    }
     try {
-      await api.post('/employees', formData);
-      toast.success('Employee created!');
-      setIsCreateOpen(false);
+      await api.delete(`/employees/${emp.id}`);
+      toast.success('Employee deleted successfully!');
       fetchData();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error creating employee');
+      toast.error(err.response?.data?.message || 'Failed to delete employee');
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (isEdit && editId) {
+        await api.put(`/employees/${editId}`, formData);
+        toast.success('Employee updated successfully!');
+      } else {
+        await api.post('/employees', formData);
+        toast.success('Employee created successfully!');
+      }
+      setIsModalOpen(false);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || (isEdit ? 'Error updating employee' : 'Error creating employee'));
     }
   };
 
@@ -84,6 +146,27 @@ export default function DesktopEmployees() {
   };
 
   const columns: Column<any>[] = [
+    {
+      header: 'Actions',
+      cell: (emp) => (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handleOpenEdit(emp)}
+            title="Edit Employee"
+            className="p-1 rounded-lg text-blue-500 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/30 transition-colors"
+          >
+            <Edit className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => handleDelete(emp)}
+            title="Delete Employee"
+            className="p-1 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/30 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      ),
+    },
     {
       header: 'EMP ID',
       accessorKey: 'employeeId',
@@ -123,7 +206,7 @@ export default function DesktopEmployees() {
             setSelectedEmp(e);
             setIsAttendanceOpen(true);
           }}
-          className="flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-400"
+          className="flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-400 transition-colors"
         >
           <CalendarCheck className="h-3.5 w-3.5" /> Mark Today
         </button>
@@ -174,17 +257,28 @@ export default function DesktopEmployees() {
         data={employees}
         searchPlaceholder="Search employee name or ID..."
         onSearch={(q) => setSearch(q)}
-        onAddClick={() => setIsCreateOpen(true)}
+        onAddClick={handleOpenAdd}
         addButtonLabel="Add Employee"
         isLoading={isLoading}
       />
 
-      {/* Add Employee Modal */}
-      {isCreateOpen && (
+      {/* Add / Edit Employee Modal */}
+      {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-3xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Add New Employee</h2>
-            <form onSubmit={handleCreateSubmit} className="space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                {isEdit ? 'Edit Employee' : 'Add New Employee'}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Full Name *</label>
                 <input
@@ -242,11 +336,38 @@ export default function DesktopEmployees() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4">
+              {isEdit && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Status</label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                      className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white font-semibold"
+                    >
+                      <option value="ACTIVE">ACTIVE</option>
+                      <option value="INACTIVE">INACTIVE</option>
+                      <option value="ON_LEAVE">ON LEAVE</option>
+                      <option value="TERMINATED">TERMINATED</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Join Date</label>
+                    <input
+                      type="date"
+                      value={formData.joinDate}
+                      onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })}
+                      className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
                 <button
                   type="button"
-                  onClick={() => setIsCreateOpen(false)}
-                  className="rounded-xl px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-400"
+                  onClick={() => setIsModalOpen(false)}
+                  className="rounded-xl px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
                 >
                   Cancel
                 </button>
@@ -254,7 +375,7 @@ export default function DesktopEmployees() {
                   type="submit"
                   className="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700"
                 >
-                  Save Employee
+                  {isEdit ? 'Update Employee' : 'Save Employee'}
                 </button>
               </div>
             </form>

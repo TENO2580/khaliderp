@@ -24,7 +24,9 @@ export default function MobileEmployees() {
   const [totalItems, setTotalItems] = useState(0);
 
   // Modals
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEdit, setIsEdit] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
   const [isAttendanceOpen, setIsAttendanceOpen] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState<any>(null);
 
@@ -35,6 +37,8 @@ export default function MobileEmployees() {
     department: 'Production',
     salary: 18000,
     joinDate: new Date().toISOString().slice(0, 10),
+    status: 'ACTIVE',
+    address: '',
   });
 
   const [attStatus, setAttStatus] = useState('PRESENT');
@@ -46,9 +50,9 @@ export default function MobileEmployees() {
         api.get(`/employees?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`),
         api.get('/employees/attendance/stats'),
       ]);
-      setEmployees(eRes.data.data.data);
+      setEmployees(eRes.data.data.data || []);
       setTotalPages(eRes.data.data.pagination?.totalPages || 1);
-      setTotalItems(eRes.data.data.pagination?.total || 0);
+      setTotalItems(eRes.data.data.pagination?.total || (eRes.data.data.data || []).length);
       setAttendanceStats(aRes.data.data);
     } catch {
       toast.error('Failed to load employee list');
@@ -61,15 +65,73 @@ export default function MobileEmployees() {
     fetchData();
   }, [search, page, limit]);
 
-  const handleCreateSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleOpenAdd = () => {
+    setIsEdit(false);
+    setEditId(null);
+    setFormData({
+      name: '',
+      phone: '',
+      designation: 'Machine Operator',
+      department: 'Production',
+      salary: 18000,
+      joinDate: new Date().toISOString().slice(0, 10),
+      status: 'ACTIVE',
+      address: '',
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (emp: any) => {
+    setIsEdit(true);
+    setEditId(emp.id);
+    let joinDateStr = new Date().toISOString().slice(0, 10);
+    if (emp.joinDate) {
+      try {
+        joinDateStr = new Date(emp.joinDate).toISOString().slice(0, 10);
+      } catch {
+        joinDateStr = String(emp.joinDate).slice(0, 10);
+      }
+    }
+    setFormData({
+      name: emp.name || '',
+      phone: emp.phone || '',
+      designation: emp.designation || 'Machine Operator',
+      department: emp.department || 'Production',
+      salary: Number(emp.salary) || 0,
+      joinDate: joinDateStr,
+      status: emp.status || 'ACTIVE',
+      address: emp.address || '',
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (emp: any) => {
+    if (!window.confirm(`Delete employee "${emp.name}" (${emp.employeeId})?`)) {
+      return;
+    }
     try {
-      await api.post('/employees', formData);
-      toast.success('Employee created!');
-      setIsCreateOpen(false);
+      await api.delete(`/employees/${emp.id}`);
+      toast.success('Employee deleted successfully!');
       fetchData();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error creating employee');
+      toast.error(err.response?.data?.message || 'Failed to delete employee');
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (isEdit && editId) {
+        await api.put(`/employees/${editId}`, formData);
+        toast.success('Employee updated successfully!');
+      } else {
+        await api.post('/employees', formData);
+        toast.success('Employee created successfully!');
+      }
+      setIsModalOpen(false);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || (isEdit ? 'Error updating employee' : 'Error creating employee'));
     }
   };
 
@@ -91,6 +153,27 @@ export default function MobileEmployees() {
   };
 
   const columns: Column<any>[] = [
+    {
+      header: 'Actions',
+      cell: (emp) => (
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => handleOpenEdit(emp)}
+            title="Edit Employee"
+            className="p-1 rounded-lg text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+          >
+            <Edit className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => handleDelete(emp)}
+            title="Delete Employee"
+            className="p-1 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      ),
+    },
     {
       header: 'EMP ID',
       accessorKey: 'employeeId',
@@ -130,9 +213,9 @@ export default function MobileEmployees() {
             setSelectedEmp(e);
             setIsAttendanceOpen(true);
           }}
-          className="flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-400"
+          className="flex items-center gap-1 rounded-lg bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-400"
         >
-          <CalendarCheck className="h-3.5 w-3.5" /> Mark Today
+          <CalendarCheck className="h-3.5 w-3.5" /> Mark
         </button>
       ),
     },
@@ -200,9 +283,12 @@ export default function MobileEmployees() {
             <div key={e.id} className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-800">
               <div className="flex justify-between items-start mb-2">
                 <div>
-                  <div className="font-semibold text-gray-900 dark:text-white">{e.name}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-gray-900 dark:text-white">{e.name}</span>
+                    <span className="text-[10px] font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded font-semibold">{e.employeeId}</span>
+                  </div>
                   <div className="text-xs font-semibold text-gray-800 dark:text-gray-200 mt-1">{e.designation}</div>
-                  <div className="text-xs text-gray-500">{e.department}</div>
+                  <div className="text-xs text-gray-500">{e.department} {e.phone ? `• ${e.phone}` : ''}</div>
                 </div>
                 <StatusBadge status={e.status} />
               </div>
@@ -210,15 +296,31 @@ export default function MobileEmployees() {
                 <span className="font-semibold text-gray-900 dark:text-white">
                   {formatCurrency(e.salary)}<span className="text-[10px] text-gray-500 font-normal">/mo</span>
                 </span>
-                <button
-                  onClick={() => {
-                    setSelectedEmp(e);
-                    setIsAttendanceOpen(true);
-                  }}
-                  className="flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-400"
-                >
-                  <CalendarCheck className="h-3.5 w-3.5" /> Mark Today
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleOpenEdit(e)}
+                    title="Edit"
+                    className="p-1.5 rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-400"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(e)}
+                    title="Delete"
+                    className="p-1.5 rounded-lg text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:text-red-400"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedEmp(e);
+                      setIsAttendanceOpen(true);
+                    }}
+                    className="flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-blue-700"
+                  >
+                    <CalendarCheck className="h-3.5 w-3.5" /> Mark
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -232,7 +334,7 @@ export default function MobileEmployees() {
         </div>
       )}
       
-      {/* Link to advanced Attendance View & Add New Employee */}
+      {/* Floating Action Buttons */}
       <div className="fixed bottom-[88px] right-4 flex flex-col gap-3 z-40">
         <Link 
           href="/dashboard/employees/attendance"
@@ -241,26 +343,26 @@ export default function MobileEmployees() {
           <CalendarCheck className="w-6 h-6" />
         </Link>
         <button 
-          onClick={() => setIsCreateOpen(true)}
+          onClick={handleOpenAdd}
           className="w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center active:bg-blue-700 transition-colors"
         >
           <Plus className="w-6 h-6" />
         </button>
       </div>
 
-      {/* Mobile Add Employee Modal */}
-      {isCreateOpen && (
+      {/* Mobile Add / Edit Employee Modal */}
+      {isModalOpen && (
         <div className="fixed inset-0 z-50 flex flex-col bg-gray-50 dark:bg-gray-950 overflow-y-auto pt-4 pb-20 px-4">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              Add New Employee
+              {isEdit ? 'Edit Employee' : 'Add New Employee'}
             </h2>
-            <button onClick={() => setIsCreateOpen(false)} className="p-2 rounded-full bg-gray-200 dark:bg-gray-800">
+            <button onClick={() => setIsModalOpen(false)} className="p-2 rounded-full bg-gray-200 dark:bg-gray-800">
               <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
           </div>
           <div className="space-y-6 flex-1">
-            <form onSubmit={handleCreateSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Full Name *</label>
                 <input
@@ -318,10 +420,37 @@ export default function MobileEmployees() {
                 </div>
               </div>
 
+              {isEdit && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Status</label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                      className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white font-semibold"
+                    >
+                      <option value="ACTIVE">ACTIVE</option>
+                      <option value="INACTIVE">INACTIVE</option>
+                      <option value="ON_LEAVE">ON LEAVE</option>
+                      <option value="TERMINATED">TERMINATED</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Join Date</label>
+                    <input
+                      type="date"
+                      value={formData.joinDate}
+                      onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })}
+                      className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="flex justify-end gap-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => setIsCreateOpen(false)}
+                  onClick={() => setIsModalOpen(false)}
                   className="rounded-xl px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-400"
                 >
                   Cancel
@@ -330,7 +459,7 @@ export default function MobileEmployees() {
                   type="submit"
                   className="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700"
                 >
-                  Save Employee
+                  {isEdit ? 'Update Employee' : 'Save Employee'}
                 </button>
               </div>
             </form>
