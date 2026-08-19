@@ -281,50 +281,70 @@ export default function DesktopSales() {
     }
   };
 
-  const parseNotes = (notes: string) => {
+  const parseNotes = (notes: any) => {
+    if (!notes) return {};
+    if (typeof notes === 'object') return notes;
     try {
-      return JSON.parse(notes);
+      const parsed = JSON.parse(notes);
+      return parsed && typeof parsed === 'object' ? parsed : {};
     } catch {
       return {};
     }
   };
 
+  const safeDateStr = (dateVal: any) => {
+    if (!dateVal) return '';
+    try {
+      const d = new Date(dateVal);
+      if (isNaN(d.getTime())) return '';
+      return d.toISOString().split('T')[0];
+    } catch {
+      return '';
+    }
+  };
+
   const handleEditClick = (order: any) => {
-    const data = parseNotes(order.notes);
-    
-    setEditFormData({
-      batchUsed: data.batchUsed || '',
-      orderDate: order.orderDate ? new Date(order.orderDate).toISOString().split('T')[0] : '',
-      deliveryDate: order.deliveryDate ? new Date(order.deliveryDate).toISOString().split('T')[0] : '',
-      type: data.type || '',
-      productId: data.productId || order.items?.[0]?.productId || '',
-      weightPerUnit: data.weightPerUnit || 0,
-      totalWeightKg: data.totalWeightKg || 0,
-      productionCostPerKg: data.productionCostPerKg || 0,
-      profitAmt: data.profitAmt || 0,
-      mrp: data.mrp || 0,
-      regionalPrice: data.regionalPrice || 0,
-      productionCost: data.productionCost || '',
-      sellingCost: data.sellingCost || (order.items?.[0]?.unitPrice || ''),
-      margin: data.margin || '',
-      totalAmount: order.totalAmount || 0,
-      status: order.status || 'PENDING',
-      outstanding: order.outstanding || 0,
-      creditNotes: data.creditNotes || '',
-    });
-    
-    setCustomerId(order.customerId);
-    setItems([
-      {
-        productId: order.items?.[0]?.productId || '',
-        quantity: order.items?.reduce((sum: number, i: any) => sum + i.quantity, 0) || 0,
-        unitPrice: order.items?.[0]?.unitPrice || 0,
-        gstRate: order.items?.[0]?.gstRate || 18,
-      }
-    ]);
-    setEditId(order.id);
-    setIsEdit(true);
-    setIsCreateOpen(true);
+    if (!order) return;
+    try {
+      const data = parseNotes(order.notes);
+      
+      setEditFormData({
+        batchUsed: data.batchUsed || '',
+        orderDate: safeDateStr(order.orderDate),
+        deliveryDate: safeDateStr(order.deliveryDate),
+        type: data.type || '',
+        productId: data.productId || order.items?.[0]?.productId || '',
+        weightPerUnit: data.weightPerUnit || 0,
+        totalWeightKg: data.totalWeightKg || 0,
+        productionCostPerKg: data.productionCostPerKg || 0,
+        profitAmt: data.profitAmt || 0,
+        mrp: data.mrp || 0,
+        regionalPrice: data.regionalPrice || 0,
+        productionCost: data.productionCost || '',
+        sellingCost: data.sellingCost || (order.items?.[0]?.unitPrice !== undefined ? String(order.items[0].unitPrice) : ''),
+        margin: data.margin || '',
+        totalAmount: order.totalAmount || 0,
+        status: order.status || 'PENDING',
+        outstanding: order.outstanding || 0,
+        creditNotes: data.creditNotes || '',
+      });
+      
+      setCustomerId(order.customerId || '');
+      setItems([
+        {
+          productId: order.items?.[0]?.productId || '',
+          quantity: order.items?.reduce((sum: number, i: any) => sum + (Number(i.quantity) || 0), 0) || 0,
+          unitPrice: order.items?.[0]?.unitPrice || 0,
+          gstRate: order.items?.[0]?.gstRate || 18,
+        }
+      ]);
+      setEditId(order.id);
+      setIsEdit(true);
+      setIsCreateOpen(true);
+    } catch (err: any) {
+      console.error('Error opening edit order modal:', err);
+      toast.error('Failed to open order details for edit');
+    }
   };
 
   const handleDelete = async (id: string) => {
