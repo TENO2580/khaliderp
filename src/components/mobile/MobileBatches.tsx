@@ -83,9 +83,18 @@ export default function MobileBatches() {
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const waxStockValue = editBatch.waxStock !== undefined && editBatch.waxStock !== null && !isNaN(Number(editBatch.waxStock))
+        ? Number(editBatch.waxStock)
+        : ((Number(editBatch.waxInitialQty) || 0) - (Number(editBatch.producedQty) || 0));
+
       await api.put(`/production/batches/${editBatch.id}`, {
         ...editBatch,
-        waxStock: (Number(editBatch.waxInitialQty) || 0) - (Number(editBatch.producedQty) || 0),
+        waxStock: waxStockValue,
+        waxInitialQty: Number(editBatch.waxInitialQty) || 0,
+        waxRate: Number(editBatch.waxRate) || 0,
+        sellingPrice: Number(editBatch.sellingPrice) || 0,
+        producedQty: Number(editBatch.producedQty) || 0,
+        soldQty: Number(editBatch.soldQty) || 0,
         productionCost: (Number(editBatch.waxInitialQty) || 0) * (Number(editBatch.waxRate) || 0),
         remainingQty: (Number(editBatch.producedQty) || 0) - (Number(editBatch.soldQty) || 0),
       });
@@ -160,8 +169,13 @@ export default function MobileBatches() {
     },
     {
       header: 'Wax Stock',
+      editableKey: 'waxStock',
+      inlineEditable: true,
+      inputType: 'number',
       cell: (b) => {
-        const stock = (Number(b.waxInitialQty) || 0) - (Number(b.producedQty) || 0);
+        const stock = b.waxStock !== undefined && b.waxStock !== null && !isNaN(Number(b.waxStock))
+          ? Number(b.waxStock)
+          : ((Number(b.waxInitialQty) || 0) - (Number(b.producedQty) || 0));
         return <span className="text-xs text-blue-600 font-medium">{stock.toFixed(2)} KG</span>;
       },
     },
@@ -325,7 +339,29 @@ export default function MobileBatches() {
           {batches.map((b: any) => {
             const pct = b.producedQty > 0 ? ((b.soldQty / b.producedQty) * 100).toFixed(0) : 0;
             return (
-              <div key={b.id} className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-800" onClick={() => setEditBatch({ ...b, purchaseDate: new Date(b.purchaseDate).toISOString().split('T')[0] })}>
+              <div
+                key={b.id}
+                className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-800 cursor-pointer"
+                onClick={() => {
+                  const initQty = Number(b.waxInitialQty) || 0;
+                  const prodQty = Number(b.producedQty) || 0;
+                  const currentWaxStock = b.waxStock !== undefined && b.waxStock !== null && !isNaN(Number(b.waxStock))
+                    ? Number(b.waxStock)
+                    : (initQty - prodQty);
+
+                  setEditBatch({
+                    ...b,
+                    purchaseDate: b.purchaseDate ? new Date(b.purchaseDate).toISOString().split('T')[0] : '',
+                    waxInitialQty: initQty,
+                    waxRate: Number(b.waxRate) || 0,
+                    waxStock: currentWaxStock,
+                    sellingPrice: Number(b.sellingPrice) || 0,
+                    producedQty: prodQty,
+                    soldQty: Number(b.soldQty) || 0,
+                    remainingQty: Number(b.remainingQty) || 0,
+                  });
+                }}
+              >
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <div className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">{b.batchNumber}</div>
@@ -333,10 +369,16 @@ export default function MobileBatches() {
                   </div>
                   <StatusBadge status={b.status} />
                 </div>
-                <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 text-sm">
+                <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 text-sm">
                   <div>
                     <div className="text-xs text-gray-500">Produced</div>
                     <div className="font-semibold text-gray-900 dark:text-white">{b.producedQty} KG</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500">Wax Stock</div>
+                    <div className="font-semibold text-blue-600">
+                      {b.waxStock !== undefined && b.waxStock !== null ? Number(b.waxStock).toFixed(2) : ((Number(b.waxInitialQty) || 0) - (Number(b.producedQty) || 0)).toFixed(2)} KG
+                    </div>
                   </div>
                   <div className="text-right">
                     <div className="text-xs text-gray-500">Remaining</div>

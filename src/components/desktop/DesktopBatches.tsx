@@ -79,9 +79,18 @@ export default function DesktopBatches() {
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const waxStockValue = editBatch.waxStock !== undefined && editBatch.waxStock !== null && !isNaN(Number(editBatch.waxStock))
+        ? Number(editBatch.waxStock)
+        : ((Number(editBatch.waxInitialQty) || 0) - (Number(editBatch.producedQty) || 0));
+
       await api.put(`/production/batches/${editBatch.id}`, {
         ...editBatch,
-        waxStock: (Number(editBatch.waxInitialQty) || 0) - (Number(editBatch.producedQty) || 0),
+        waxStock: waxStockValue,
+        waxInitialQty: Number(editBatch.waxInitialQty) || 0,
+        waxRate: Number(editBatch.waxRate) || 0,
+        sellingPrice: Number(editBatch.sellingPrice) || 0,
+        producedQty: Number(editBatch.producedQty) || 0,
+        soldQty: Number(editBatch.soldQty) || 0,
         productionCost: (Number(editBatch.waxInitialQty) || 0) * (Number(editBatch.waxRate) || 0),
         remainingQty: (Number(editBatch.producedQty) || 0) - (Number(editBatch.soldQty) || 0),
       });
@@ -156,8 +165,13 @@ export default function DesktopBatches() {
     },
     {
       header: 'Wax Stock',
+      editableKey: 'waxStock',
+      inlineEditable: true,
+      inputType: 'number',
       cell: (b) => {
-        const stock = (Number(b.waxInitialQty) || 0) - (Number(b.producedQty) || 0);
+        const stock = b.waxStock !== undefined && b.waxStock !== null && !isNaN(Number(b.waxStock))
+          ? Number(b.waxStock)
+          : ((Number(b.waxInitialQty) || 0) - (Number(b.producedQty) || 0));
         return <span className="text-xs text-blue-600 font-medium">{stock.toFixed(2)} KG</span>;
       },
     },
