@@ -4,7 +4,6 @@ import { authenticateRequest, jsonResponse, errorResponse } from '@/lib/middlewa
 
 export const dynamic = 'force-dynamic';
 
-
 export async function GET(req: NextRequest) {
   const { user, error } = await authenticateRequest(req);
   if (error) return error;
@@ -84,7 +83,17 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { categoryId, amount, date, description } = body;
+    let { categoryId, categoryName, amount, date, description } = body;
+
+    if (!categoryId && categoryName) {
+      const cleanName = categoryName.trim().toUpperCase();
+      const cat = await prisma.expenseCategory.upsert({
+        where: { name: cleanName },
+        update: { isActive: true },
+        create: { name: cleanName, icon: 'Receipt', color: '#3b82f6', isActive: true },
+      });
+      categoryId = cat.id;
+    }
 
     const expense = await prisma.expense.create({
       data: {

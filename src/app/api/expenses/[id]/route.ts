@@ -28,9 +28,18 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params;
     const body = await req.json();
-    const { categoryId, amount, date, description, status } = body;
+    let { categoryId, categoryName, amount, date, description, status } = body;
 
     const updateData: any = {};
+    if (!categoryId && categoryName) {
+      const cleanName = categoryName.trim().toUpperCase();
+      const cat = await prisma.expenseCategory.upsert({
+        where: { name: cleanName },
+        update: { isActive: true },
+        create: { name: cleanName, icon: 'Receipt', color: '#3b82f6', isActive: true },
+      });
+      categoryId = cat.id;
+    }
     if (categoryId) updateData.categoryId = categoryId;
     if (amount !== undefined) updateData.amount = Number(amount);
     if (date) updateData.date = new Date(date);

@@ -29,9 +29,14 @@ export default function DesktopExpenses() {
     paymentMethod: '',
   });
 
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
+  const [customCategoryName, setCustomCategoryName] = useState('');
+
   // Edit Expense Modal
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editId, setEditId] = useState('');
+  const [isEditCustomCategory, setIsEditCustomCategory] = useState(false);
+  const [editCustomCategoryName, setEditCustomCategoryName] = useState('');
   const [editData, setEditData] = useState({
     categoryId: '',
     amount: 0,
@@ -44,7 +49,7 @@ export default function DesktopExpenses() {
     `/expenses?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`,
     fetcher
   );
-  const { data: categoriesData } = useSWR('/expenses/categories', fetcher);
+  const { data: categoriesData, mutate: mutateCategories } = useSWR('/expenses/categories', fetcher);
   const { data: statsData } = useSWR('/expenses/stats', fetcher);
 
   const expenses = resData?.data || (Array.isArray(resData) ? resData : []);
@@ -70,9 +75,25 @@ export default function DesktopExpenses() {
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const catId = formData.categoryId || categories[0]?.id;
+    let catId = formData.categoryId || categories[0]?.id;
+
+    if (isCustomCategory) {
+      if (!customCategoryName.trim()) {
+        toast.error('Please enter a category name');
+        return;
+      }
+      try {
+        const catRes = await api.post('/expenses/categories', { name: customCategoryName.trim() });
+        catId = catRes.data.data.id;
+        mutateCategories();
+      } catch (err: any) {
+        toast.error(err.response?.data?.message || 'Failed to create category');
+        return;
+      }
+    }
+
     if (!catId) {
-      toast.error('Please select an expense category');
+      toast.error('Please select or add an expense category');
       return;
     }
     if (!formData.amount || Number(formData.amount) <= 0) {
@@ -89,8 +110,10 @@ export default function DesktopExpenses() {
       });
       toast.success('Expense recorded successfully!');
       setIsCreateOpen(false);
+      setIsCustomCategory(false);
+      setCustomCategoryName('');
       setFormData({
-        categoryId: categories[0]?.id || '',
+        categoryId: catId || categories[0]?.id || '',
         amount: '' as any,
         date: new Date().toISOString().split('T')[0],
         description: '',
@@ -114,6 +137,8 @@ export default function DesktopExpenses() {
 
   const openEdit = (expense: any) => {
     setEditId(expense.id);
+    setIsEditCustomCategory(false);
+    setEditCustomCategoryName('');
     setEditData({
       categoryId: expense.categoryId || expense.category?.id || categories[0]?.id || '',
       amount: expense.amount,
@@ -126,8 +151,23 @@ export default function DesktopExpenses() {
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    let catId = editData.categoryId;
+    if (isEditCustomCategory) {
+      if (!editCustomCategoryName.trim()) {
+        toast.error('Please enter a category name');
+        return;
+      }
+      try {
+        const catRes = await api.post('/expenses/categories', { name: editCustomCategoryName.trim() });
+        catId = catRes.data.data.id;
+        mutateCategories();
+      } catch (err: any) {
+        toast.error(err.response?.data?.message || 'Failed to create category');
+        return;
+      }
+    }
     try {
-      await api.put(`/expenses/${editId}`, editData);
+      await api.put(`/expenses/${editId}`, { ...editData, categoryId: catId });
       toast.success('Expense updated successfully!');
       setIsEditOpen(false);
       fetchData();
@@ -311,19 +351,58 @@ export default function DesktopExpenses() {
             </div>
             <form onSubmit={handleCreateSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Category *</label>
-                <select
-                  required
-                  value={formData.categoryId || (categories[0]?.id ?? '')}
-                  onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                >
-                  {categories.map((c: any) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Category *</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextState = !isCustomCategory;
+                      setIsCustomCategory(nextState);
+                      if (nextState) {
+                        setFormData({ ...formData, categoryId: '__NEW__' });
+                      } else {
+                        setFormData({ ...formData, categoryId: categories[0]?.id || '' });
+                      }
+                    }}
+                    className="text-[11px] font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                  >
+                    {isCustomCategory ? '← Choose Existing' : '+ Add New Category'}
+                  </button>
+                </div>
+                {isCustomCategory ? (
+                  <input
+                    type="text"
+                    required
+                    placeholder="Enter new category name (e.g. PACKAGING)..."
+                    value={customCategoryName}
+                    onChange={(e) => setCustomCategoryName(e.target.value)}
+                    className="w-full rounded-xl border border-blue-500 bg-blue-50/20 p-2.5 text-sm uppercase font-semibold text-gray-900 dark:border-blue-500 dark:bg-blue-950/20 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    autoFocus
+                  />
+                ) : (
+                  <select
+                    required
+                    value={formData.categoryId || (categories[0]?.id ?? '')}
+                    onChange={(e) => {
+                      if (e.target.value === '__NEW__') {
+                        setIsCustomCategory(true);
+                        setFormData({ ...formData, categoryId: '__NEW__' });
+                      } else {
+                        setFormData({ ...formData, categoryId: e.target.value });
+                      }
+                    }}
+                    className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  >
+                    {categories.map((c: any) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                    <option value="__NEW__" className="font-bold text-blue-600">
+                      + Add New Category...
                     </option>
-                  ))}
-                </select>
+                  </select>
+                )}
               </div>
 
               <div>
@@ -415,17 +494,56 @@ export default function DesktopExpenses() {
             </div>
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Category *</label>
-                <select
-                  required
-                  value={editData.categoryId}
-                  onChange={(e) => setEditData({ ...editData, categoryId: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                >
-                  {categories.map((c: any) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Category *</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextState = !isEditCustomCategory;
+                      setIsEditCustomCategory(nextState);
+                      if (nextState) {
+                        setEditData({ ...editData, categoryId: '__NEW__' });
+                      } else {
+                        setEditData({ ...editData, categoryId: categories[0]?.id || '' });
+                      }
+                    }}
+                    className="text-[11px] font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                  >
+                    {isEditCustomCategory ? '← Choose Existing' : '+ Add New Category'}
+                  </button>
+                </div>
+                {isEditCustomCategory ? (
+                  <input
+                    type="text"
+                    required
+                    placeholder="Enter new category name..."
+                    value={editCustomCategoryName}
+                    onChange={(e) => setEditCustomCategoryName(e.target.value)}
+                    className="w-full rounded-xl border border-blue-500 bg-blue-50/20 p-2.5 text-sm uppercase font-semibold text-gray-900 dark:border-blue-500 dark:bg-blue-950/20 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    autoFocus
+                  />
+                ) : (
+                  <select
+                    required
+                    value={editData.categoryId}
+                    onChange={(e) => {
+                      if (e.target.value === '__NEW__') {
+                        setIsEditCustomCategory(true);
+                        setEditData({ ...editData, categoryId: '__NEW__' });
+                      } else {
+                        setEditData({ ...editData, categoryId: e.target.value });
+                      }
+                    }}
+                    className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  >
+                    {categories.map((c: any) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                    <option value="__NEW__" className="font-bold text-blue-600">
+                      + Add New Category...
+                    </option>
+                  </select>
+                )}
               </div>
 
               <div>

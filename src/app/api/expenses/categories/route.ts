@@ -45,3 +45,33 @@ export async function GET(req: NextRequest) {
     return errorResponse(err.message || 'Failed to fetch categories', 500);
   }
 }
+
+export async function POST(req: NextRequest) {
+  const { user, error } = await authenticateRequest(req);
+  if (error) return error;
+
+  try {
+    const body = await req.json();
+    const { name, icon, color } = body;
+    if (!name || !name.trim()) {
+      return errorResponse('Category name is required', 400);
+    }
+
+    const cleanName = name.trim().toUpperCase();
+
+    const category = await prisma.expenseCategory.upsert({
+      where: { name: cleanName },
+      update: { isActive: true },
+      create: {
+        name: cleanName,
+        icon: icon || 'Receipt',
+        color: color || '#3b82f6',
+        isActive: true,
+      },
+    });
+
+    return jsonResponse(category, 201, 'Category created successfully');
+  } catch (err: any) {
+    return errorResponse(err.message || 'Failed to create category', 400);
+  }
+}
