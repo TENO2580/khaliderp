@@ -200,7 +200,25 @@ export default function MobileBatches() {
       cell: (b) => (
         <div className="flex items-center gap-1">
           <button
-            onClick={() => setEditBatch({ ...b, purchaseDate: new Date(b.purchaseDate).toISOString().split('T')[0] })}
+            onClick={() => {
+              const initQty = Number(b.waxInitialQty) || 0;
+              const prodQty = Number(b.producedQty) || 0;
+              const currentWaxStock = b.waxStock !== undefined && b.waxStock !== null && !isNaN(Number(b.waxStock))
+                ? Number(b.waxStock)
+                : (initQty - prodQty);
+
+              setEditBatch({
+                ...b,
+                purchaseDate: b.purchaseDate ? new Date(b.purchaseDate).toISOString().split('T')[0] : '',
+                waxInitialQty: initQty,
+                waxRate: Number(b.waxRate) || 0,
+                waxStock: currentWaxStock,
+                sellingPrice: Number(b.sellingPrice) || 0,
+                producedQty: prodQty,
+                soldQty: Number(b.soldQty) || 0,
+                remainingQty: Number(b.remainingQty) || 0,
+              });
+            }}
             className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-blue-600 dark:hover:bg-gray-800"
           >
             <Edit3 className="h-4 w-4" />
@@ -491,10 +509,18 @@ export default function MobileBatches() {
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Wax Initial Qty (KG)</label>
                   <input
                     type="number"
-                    step="0.01"
+                    step="any"
                     required
                     value={editBatch.waxInitialQty}
-                    onChange={(e) => setEditBatch({ ...editBatch, waxInitialQty: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) => {
+                      const newInit = parseFloat(e.target.value) || 0;
+                      const prod = Number(editBatch.producedQty) || 0;
+                      setEditBatch({
+                        ...editBatch,
+                        waxInitialQty: (e.target.value === '' ? '' : newInit) as any,
+                        waxStock: newInit - prod,
+                      });
+                    }}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                   />
                 </div>
@@ -502,10 +528,10 @@ export default function MobileBatches() {
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Wax Rate (₹)</label>
                   <input
                     type="number"
-                    step="0.01"
+                    step="any"
                     required
                     value={editBatch.waxRate}
-                    onChange={(e) => setEditBatch({ ...editBatch, waxRate: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) => setEditBatch({ ...editBatch, waxRate: (e.target.value === '' ? '' : parseFloat(e.target.value)) as any })}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                   />
                 </div>
@@ -513,21 +539,21 @@ export default function MobileBatches() {
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Wax Stock (KG)</label>
                   <input
                     type="number"
-                    step="0.01"
+                    step="any"
                     required
-                    value={editBatch.waxStock}
-                    onChange={(e) => setEditBatch({ ...editBatch, waxStock: parseFloat(e.target.value) || 0 })}
-                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                    value={editBatch.waxStock !== undefined && editBatch.waxStock !== null ? editBatch.waxStock : 0}
+                    onChange={(e) => setEditBatch({ ...editBatch, waxStock: (e.target.value === '' ? '' : parseFloat(e.target.value)) as any })}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white font-medium"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Candle Selling Price (₹)</label>
                   <input
                     type="number"
-                    step="0.01"
+                    step="any"
                     required
                     value={editBatch.sellingPrice}
-                    onChange={(e) => setEditBatch({ ...editBatch, sellingPrice: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) => setEditBatch({ ...editBatch, sellingPrice: (e.target.value === '' ? '' : parseFloat(e.target.value)) as any })}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                   />
                 </div>
@@ -535,10 +561,18 @@ export default function MobileBatches() {
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Candles Produced (KG)</label>
                   <input
                     type="number"
-                    step="0.01"
+                    step="any"
                     required
                     value={editBatch.producedQty}
-                    onChange={(e) => setEditBatch({ ...editBatch, producedQty: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) => {
+                      const newProd = parseFloat(e.target.value) || 0;
+                      const init = Number(editBatch.waxInitialQty) || 0;
+                      setEditBatch({
+                        ...editBatch,
+                        producedQty: (e.target.value === '' ? '' : newProd) as any,
+                        waxStock: init - newProd,
+                      });
+                    }}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                   />
                 </div>
