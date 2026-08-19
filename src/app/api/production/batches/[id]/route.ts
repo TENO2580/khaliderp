@@ -60,10 +60,24 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
   try {
     const { id } = await params;
+
+    // 1. Unlink any sales order items referencing this batch
+    await prisma.salesOrderItem.updateMany({
+      where: { batchId: id },
+      data: { batchId: null },
+    });
+
+    // 2. Delete linked production runs
+    await prisma.production.deleteMany({
+      where: { batchId: id },
+    });
+
+    // 3. Delete the batch
     await prisma.batch.delete({
       where: { id },
     });
-    return jsonResponse({ success: true });
+
+    return jsonResponse({ success: true, message: 'Batch and linked records deleted successfully' });
   } catch (err: any) {
     return errorResponse(err.message || 'Failed to delete batch', 500);
   }
