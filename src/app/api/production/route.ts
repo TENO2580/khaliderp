@@ -102,35 +102,48 @@ export async function POST(req: NextRequest) {
     let primaryBatchId = '';
     const batchUpdates: { batchId: string; deductedWax: number; addedProduced: number }[] = [];
 
+    // Always use FIFO logic. If user selected a specific batch, start from that batch first.
+    // If the selected batch doesn't have enough wax, spill over to the next oldest batches.
+
+    let remainingWaxToDeduct = waxNum;
+
     if (batchId && batchId !== 'FIFO') {
-      // 1. User selected a SPECIFIC Batch -> Deduct wax and increase produced candles on THIS exact batch
+      // 1. User selected a SPECIFIC Batch -> Try to deduct from this batch first
       const specificBatch = await prisma.batch.findUnique({
         where: { id: batchId },
       });
 
       if (specificBatch) {
         primaryBatchId = specificBatch.id;
-        batchUpdates.push({
-          batchId: specificBatch.id,
-          deductedWax: waxNum,
-          addedProduced: outputQty,
-        });
+        const availableInBatch = Math.max(0, specificBatch.waxStock);
+        const deduct = Math.min(remainingWaxToDeduct, availableInBatch);
+
+        if (deduct > 0) {
+          const producedShare = waxNum > 0 ? (deduct / waxNum) * outputQty : deduct;
+          batchUpdates.push({
+            batchId: specificBatch.id,
+            deductedWax: deduct,
+            addedProduced: producedShare,
+          });
+          remainingWaxToDeduct -= deduct;
+        }
       }
     }
 
-    if (!primaryBatchId) {
-      // 2. User selected 'FIFO' (or no batch selected) -> Deduct from oldest available batches with waxStock > 0
+    // 2. If there's still wax to deduct (either FIFO mode or spillover from specific batch),
+    //    deduct from oldest available batches with waxStock > 0
+    if (remainingWaxToDeduct > 0) {
       const availableBatches = await prisma.batch.findMany({
         where: {
           waxStock: { gt: 0 },
+          // Exclude the batch we already deducted from
+          ...(primaryBatchId ? { id: { not: primaryBatchId } } : {}),
         },
         orderBy: [
           { purchaseDate: 'asc' },
           { createdAt: 'asc' },
         ],
       });
-
-      let remainingWaxToDeduct = waxNum;
 
       for (const batch of availableBatches) {
         if (remainingWaxToDeduct <= 0) break;
@@ -151,7 +164,7 @@ export async function POST(req: NextRequest) {
         remainingWaxToDeduct -= deduct;
       }
 
-      // If wax required exceeds available wax stock across all batches, deduct overflow from newest/latest batch
+      // If wax required exceeds ALL available wax stock, deduct overflow from newest batch
       if (remainingWaxToDeduct > 0) {
         const latestBatch = await prisma.batch.findFirst({
           orderBy: { createdAt: 'desc' },
