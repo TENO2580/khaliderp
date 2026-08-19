@@ -55,9 +55,13 @@ export async function GET(req: NextRequest) {
     supplierName: p.supplier.name,
     orderDate: p.orderDate,
     material: p.items.length > 0 ? `${p.items[0].rawMaterial.name} (${p.items[0].quantity} Units)` : 'N/A',
+    rawMaterialName: p.items[0]?.rawMaterial?.name || '',
+    quantity: p.items[0]?.quantity || 0,
+    unitPrice: p.items[0]?.unitPrice || 0,
     totalAmount: p.totalAmount,
     status: p.status,
     paymentStatus: p.paymentStatus,
+    notes: p.notes,
   }));
 
   return jsonResponse({ data: formatted });

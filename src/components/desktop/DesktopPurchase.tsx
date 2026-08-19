@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { Truck, Plus, CheckCircle2 } from 'lucide-react';
+import { Truck, Plus, CheckCircle2, Pencil, Trash2, X } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -23,12 +23,16 @@ export default function DesktopPurchase() {
 
   // Modal State
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEdit, setIsEdit] = useState(false);
+  const [editId, setEditId] = useState('');
   const [formData, setFormData] = useState({
     supplierName: 'Wax Industries Pvt Ltd',
     gstNumber: '33AABCT1234A1ZA',
     material: 'Paraffin Wax',
     quantity: 500,
     unitPrice: 85,
+    status: 'DRAFT',
+    paymentStatus: 'UNPAID',
   });
 
   const fetchData = async () => {
@@ -47,15 +51,50 @@ export default function DesktopPurchase() {
     fetchData();
   }, [search, limit, startDate, endDate, statusFilter]);
 
-  const handleCreateSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleEditClick = (p: any) => {
+    setIsEdit(true);
+    setEditId(p.id);
+    setFormData({
+      supplierName: p.supplierName || '',
+      gstNumber: p.gstNumber || '33AABCT1234A1ZA',
+      material: p.rawMaterialName || (p.material ? p.material.split(' (')[0] : 'Paraffin Wax'),
+      quantity: p.quantity || 500,
+      unitPrice: p.unitPrice || 85,
+      status: p.status || 'DRAFT',
+      paymentStatus: p.paymentStatus || 'UNPAID',
+    });
+    setIsCreateOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this purchase order? This action cannot be undone.')) {
+      return;
+    }
     try {
-      await api.post('/purchase', formData);
-      toast.success('Purchase Order created!');
-      setIsCreateOpen(false);
+      await api.delete(`/purchase/${id}`);
+      toast.success('Purchase order deleted successfully');
       fetchData();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error creating PO');
+      toast.error(err.response?.data?.message || 'Failed to delete purchase order');
+    }
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (isEdit) {
+        await api.put(`/purchase/${editId}`, formData);
+        toast.success('Purchase Order updated successfully!');
+      } else {
+        await api.post('/purchase', formData);
+        toast.success('Purchase Order created successfully!');
+      }
+      setIsCreateOpen(false);
+      setIsEdit(false);
+      setEditId('');
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Error saving purchase order');
     }
   };
 
@@ -90,6 +129,27 @@ export default function DesktopPurchase() {
       header: 'Payment',
       cell: (p) => <StatusBadge status={p.paymentStatus} />,
     },
+    {
+      header: 'Actions',
+      cell: (p) => (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handleEditClick(p)}
+            className="rounded-lg p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/50 transition-colors"
+            title="Edit Purchase Order"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => handleDelete(p.id)}
+            className="rounded-lg p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/50 transition-colors"
+            title="Delete Purchase Order"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -101,14 +161,28 @@ export default function DesktopPurchase() {
         </div>
       </div>
 
-      <DataTable totalItems={totalItems}
+      <DataTable
+        totalItems={totalItems}
         limit={limit}
         onLimitChange={(l) => { setLimit(l); setPage(1); }}
         columns={columns}
         data={orders}
         searchPlaceholder="Search PO # or supplier..."
         onSearch={setSearch}
-        onAddClick={() => setIsCreateOpen(true)}
+        onAddClick={() => {
+          setIsEdit(false);
+          setEditId('');
+          setFormData({
+            supplierName: 'Wax Industries Pvt Ltd',
+            gstNumber: '33AABCT1234A1ZA',
+            material: 'Paraffin Wax',
+            quantity: 500,
+            unitPrice: 85,
+            status: 'DRAFT',
+            paymentStatus: 'UNPAID',
+          });
+          setIsCreateOpen(true);
+        }}
         addButtonLabel="Create Purchase Order"
         isLoading={isLoading}
         page={page}
@@ -128,12 +202,23 @@ export default function DesktopPurchase() {
         ]}
       />
 
-      {/* Create PO Modal */}
+      {/* Create / Edit PO Modal */}
       {isCreateOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-3xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Create Purchase Order</h2>
-            <form onSubmit={handleCreateSubmit} className="space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                {isEdit ? 'Edit Purchase Order' : 'Create Purchase Order'}
+              </h2>
+              <button
+                onClick={() => setIsCreateOpen(false)}
+                className="rounded-lg p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleFormSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Supplier Name *</label>
                 <input
@@ -177,6 +262,39 @@ export default function DesktopPurchase() {
                 </div>
               </div>
 
+              {isEdit && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">PO Status</label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                      className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white font-semibold"
+                    >
+                      <option value="DRAFT">Draft</option>
+                      <option value="ORDERED">Ordered</option>
+                      <option value="PARTIALLY_RECEIVED">Partially Received</option>
+                      <option value="RECEIVED">Received</option>
+                      <option value="CANCELLED">Cancelled</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Payment Status</label>
+                    <select
+                      value={formData.paymentStatus}
+                      onChange={(e) => setFormData({ ...formData, paymentStatus: e.target.value })}
+                      className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white font-semibold"
+                    >
+                      <option value="UNPAID">Unpaid</option>
+                      <option value="PARTIAL">Partial</option>
+                      <option value="PAID">Paid</option>
+                      <option value="OVERDUE">Overdue</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
               <div className="flex justify-end gap-3 pt-4">
                 <button
                   type="button"
@@ -187,9 +305,9 @@ export default function DesktopPurchase() {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                  className="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm"
                 >
-                  Submit Order
+                  {isEdit ? 'Save Changes' : 'Submit Order'}
                 </button>
               </div>
             </form>
