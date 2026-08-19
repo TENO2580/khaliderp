@@ -5,7 +5,7 @@ import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { SearchableSelect } from '@/components/shared/SearchableSelect';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { Plus, X, Pencil, Trash2, TrendingUp, CheckCircle, Package, Search, Table, LayoutGrid } from 'lucide-react';
+import { Plus, X, Pencil, Trash2, TrendingUp, CheckCircle, Package, Search, Table, LayoutGrid, Printer } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import useSWR from 'swr';
@@ -13,6 +13,7 @@ import { useSearchParams } from 'next/navigation';
 import { useViewMode } from '@/hooks/useViewMode';
 import MobileFilterBar from './MobileFilterBar';
 import MobilePagination from './MobilePagination';
+import InvoiceModal from '@/components/shared/InvoiceModal';
 
 const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
@@ -35,6 +36,8 @@ export default function MobileSales() {
 
   // Create/Edit Order Modal
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState<any>(null);
   const [isEdit, setIsEdit] = useState(false);
   const [editId, setEditId] = useState('');
   const [customerId, setCustomerId] = useState('');
@@ -532,6 +535,16 @@ export default function MobileSales() {
       cell: (o) => (
         <div className="flex items-center gap-2">
           <button
+            onClick={() => {
+              setSelectedInvoiceOrder(o);
+              setIsInvoiceModalOpen(true);
+            }}
+            className="rounded-lg p-1.5 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/50"
+            title="View / Print Proforma Invoice"
+          >
+            <Printer className="h-4 w-4" />
+          </button>
+          <button
             onClick={() => handleEditClick(o)}
             className="rounded-lg p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/50"
             title="Edit Order"
@@ -617,13 +630,26 @@ export default function MobileSales() {
                 </div>
               </div>
               <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  order.status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-800' :
-                  order.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
-                  'bg-blue-100 text-blue-800'
-                }`}>
-                  {order.status}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    order.status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-800' :
+                    order.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+                    'bg-blue-100 text-blue-800'
+                  }`}>
+                    {order.status}
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedInvoiceOrder(order);
+                      setIsInvoiceModalOpen(true);
+                    }}
+                    className="flex items-center gap-1 rounded-lg bg-purple-50 px-2 py-1 text-xs font-semibold text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
+                  >
+                    <Printer className="h-3 w-3" />
+                    <span>Bill</span>
+                  </button>
+                </div>
                 <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
                   {order.items?.reduce((sum: number, i: any) => sum + i.quantity, 0)} Units
                 </div>
@@ -902,6 +928,15 @@ export default function MobileSales() {
           </div>
         </div>
       )}
+      {/* Official Proforma / Tax Invoice Modal */}
+      <InvoiceModal
+        isOpen={isInvoiceModalOpen}
+        onClose={() => {
+          setIsInvoiceModalOpen(false);
+          setSelectedInvoiceOrder(null);
+        }}
+        order={selectedInvoiceOrder}
+      />
     </div>
   );
 }

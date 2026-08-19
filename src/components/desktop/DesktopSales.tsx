@@ -5,13 +5,14 @@ import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { SearchableSelect } from '@/components/shared/SearchableSelect';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { Plus, FileText, CheckCircle2, DollarSign, X, Upload, History, FileSpreadsheet } from 'lucide-react';
+import { Plus, FileText, CheckCircle2, DollarSign, X, Upload, History, FileSpreadsheet, Printer } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import useSWR from 'swr';
 import { useSearchParams } from 'next/navigation';
 import OrderImportModal from '@/components/shared/import/OrderImportModal';
 import ImportHistoryModal from '@/components/shared/import/ImportHistoryModal';
+import InvoiceModal from '@/components/shared/InvoiceModal';
 
 const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
@@ -35,6 +36,8 @@ export default function DesktopSales() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState<any>(null);
   const [isEdit, setIsEdit] = useState(false);
   const [editId, setEditId] = useState('');
   const [customerId, setCustomerId] = useState('');
@@ -532,6 +535,16 @@ export default function DesktopSales() {
       cell: (o) => (
         <div className="flex items-center gap-2">
           <button
+            onClick={() => {
+              setSelectedInvoiceOrder(o);
+              setIsInvoiceModalOpen(true);
+            }}
+            className="rounded-lg p-1.5 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/50"
+            title="View / Print Proforma Invoice"
+          >
+            <Printer className="h-4 w-4" />
+          </button>
+          <button
             onClick={() => handleEditClick(o)}
             className="rounded-lg p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/50"
             title="Edit Order"
@@ -892,6 +905,16 @@ export default function DesktopSales() {
       <ImportHistoryModal
         isOpen={isHistoryModalOpen}
         onClose={() => setIsHistoryModalOpen(false)}
+      />
+
+      {/* Official Proforma / Tax Invoice Modal */}
+      <InvoiceModal
+        isOpen={isInvoiceModalOpen}
+        onClose={() => {
+          setIsInvoiceModalOpen(false);
+          setSelectedInvoiceOrder(null);
+        }}
+        order={selectedInvoiceOrder}
       />
     </div>
   );
