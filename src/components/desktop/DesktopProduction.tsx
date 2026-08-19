@@ -21,7 +21,7 @@ export default function DesktopProduction() {
   const [editId, setEditId] = useState('');
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
-    batchId: '',
+    batchId: 'FIFO',
     operatorId: '',
     shift: 'DAY',
     waxUsed: 100,
@@ -67,7 +67,7 @@ export default function DesktopProduction() {
     setEditId(p.id);
     setFormData({
       date: p.date ? new Date(p.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-      batchId: p.batchId || '',
+      batchId: p.batchId || 'FIFO',
       operatorId: p.operatorId || (userRes?.id || ''),
       shift: p.shift || 'DAY',
       waxUsed: p.waxUsed !== undefined ? p.waxUsed : 100,
@@ -187,7 +187,7 @@ export default function DesktopProduction() {
           setEditId('');
           setFormData({
             date: new Date().toISOString().split('T')[0],
-            batchId: '',
+            batchId: 'FIFO',
             operatorId: userRes?.id || '',
             shift: 'DAY',
             waxUsed: 100,
@@ -242,20 +242,23 @@ export default function DesktopProduction() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Select Batch *</label>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Select Batch / Deduction *</label>
                   <select
                     required
                     value={formData.batchId}
                     onChange={(e) => setFormData({ ...formData, batchId: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                    className="mt-1 w-full rounded-xl border border-blue-300 bg-blue-50/10 p-2.5 text-sm dark:border-blue-900 dark:bg-gray-950 dark:text-white font-medium"
                   >
-                    <option value="">-- Select Batch --</option>
+                    <option value="FIFO" className="font-bold text-blue-600">⚡ Auto FIFO (Deduct from Oldest Available Wax Stock)</option>
                     {batches.map((b: any) => (
                       <option key={b.id} value={b.id}>
-                        {b.batchNumber} ({b.product?.name || 'General Batch'})
+                        {b.batchNumber} ({b.product?.name || 'General'}) — Wax Stock: {b.waxStock} KG
                       </option>
                     ))}
                   </select>
+                  <p className="mt-1 text-[11px] text-blue-600 dark:text-blue-400 font-medium">
+                    ⚡ FIFO Method: Deducts wax from the earliest purchased batch with remaining stock.
+                  </p>
                 </div>
 
                 <div>

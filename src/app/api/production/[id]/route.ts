@@ -62,7 +62,25 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       notes = existing.notes,
     } = body;
 
-    const waxCost = Number(waxUsed) * 85;
+    const newWaxUsed = Number(waxUsed);
+    const newQtyProduced = Number(quantityProduced);
+
+    const deltaWax = newWaxUsed - existing.waxUsed;
+    const deltaProduced = newQtyProduced - existing.quantityProduced;
+
+    // Adjust batch stock for the difference
+    if (batchId && (deltaWax !== 0 || deltaProduced !== 0)) {
+      await prisma.batch.update({
+        where: { id: batchId },
+        data: {
+          waxStock: { decrement: deltaWax },
+          producedQty: { increment: deltaProduced },
+          remainingQty: { increment: deltaProduced },
+        },
+      });
+    }
+
+    const waxCost = newWaxUsed * 85;
     const fragranceCost = Number(fragranceUsed) * 400;
     const colorCost = Number(colorUsed) * 250;
     const containerCost = Number(containerUsed) * 25;
@@ -72,8 +90,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const totalOverheadCost = Number(labourCost) + Number(gasCost) + Number(electricityCost) + Number(otherCosts);
     const totalCost = totalRawMaterialCost + totalOverheadCost;
 
-    const costPerKg = Number(waxUsed) > 0 ? totalCost / Number(waxUsed) : 0;
-    const totalRevenue = Number(quantityProduced) * Number(sellingPrice);
+    const costPerKg = newWaxUsed > 0 ? totalCost / newWaxUsed : 0;
+    const totalRevenue = newQtyProduced * Number(sellingPrice);
     const profit = totalRevenue - totalCost;
     const margin = totalRevenue > 0 ? (profit / totalRevenue) * 100 : 0;
 
@@ -83,7 +101,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         date: date ? new Date(date) : existing.date,
         batchId,
         shift: shift === 'NIGHT' ? 'NIGHT' : 'DAY',
-        waxUsed: Number(waxUsed),
+        waxUsed: newWaxUsed,
         fragranceUsed: Number(fragranceUsed),
         colorUsed: Number(colorUsed),
         containerUsed: Number(containerUsed),
@@ -93,7 +111,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         electricityCost: Number(electricityCost),
         otherCosts: Number(otherCosts),
         totalCost,
-        quantityProduced: Number(quantityProduced),
+        quantityProduced: newQtyProduced,
         costPerKg,
         sellingPrice: Number(sellingPrice),
         profit,
@@ -116,11 +134,57 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   try {
     const { id } = await params;
 
+    const existing = await prisma.production.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      return errorResponse('Production run not found', 404);
+    }
+
+    // Restore wax stock to batch
+    if (existing.batchId) {
+      try {
+        await prisma.batch.update({
+          where: { id: existing.batchId },
+          data: {
+            waxStock: { increment: existing.waxUsed },
+            producedQty: { decrement: existing.quantityProduced },
+            remainingQty: { decrement: existing.quantityProduced },
+          },
+        });
+      } catch (batchErr) {
+        console.error('Failed to restore batch wax stock:', batchErr);
+      }
+    }
+
+    // Restore raw material stock
+    try {
+      const waxMaterial = await prisma.rawMaterial.findFirst({
+        where: {
+          OR: [
+            { category: 'WAX' },
+            { name: { contains: 'Wax', mode: 'insensitive' } },
+          ],
+        },
+      });
+      if (waxMaterial) {
+        await prisma.rawMaterial.update({
+          where: { id: waxMaterial.id },
+          data: {
+            currentStock: { increment: existing.waxUsed },
+          },
+        });
+      }
+    } catch (rawErr) {
+      console.error('Failed to restore raw material stock:', rawErr);
+    }
+
     await prisma.production.delete({
       where: { id },
     });
 
-    return jsonResponse({ message: 'Production run deleted successfully' });
+    return jsonResponse({ message: 'Production run deleted & wax stock restored' });
   } catch (err: any) {
     return errorResponse(err.message || 'Failed to delete production run', 400);
   }
