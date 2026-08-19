@@ -263,8 +263,12 @@ export default function DesktopBatches() {
           }
         }
         
-        // Auto-calculate dependencies
-        updateBody.waxStock = (Number(updateBody.waxInitialQty) || 0) - (Number(updateBody.producedQty) || 0);
+        // Auto-calculate dependencies only when waxStock is not explicitly provided in edits
+        if (fields.waxStock === undefined) {
+          if (fields.waxInitialQty !== undefined || fields.producedQty !== undefined) {
+            updateBody.waxStock = (Number(updateBody.waxInitialQty) || 0) - (Number(updateBody.producedQty) || 0);
+          }
+        }
         updateBody.productionCost = (Number(updateBody.waxInitialQty) || 0) * (Number(updateBody.waxRate) || 0);
         updateBody.remainingQty = (Number(updateBody.producedQty) || 0) - (Number(updateBody.soldQty) || 0);
 
