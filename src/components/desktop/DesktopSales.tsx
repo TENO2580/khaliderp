@@ -126,8 +126,9 @@ export default function DesktopSales() {
 
   // Auto-calculate Totals and Margins based on Unit inputs
   useEffect(() => {
-    const qty = Number(items[0].quantity) || 0;
-    const unitSellingPrice = Number(items[0].unitPrice) || 0;
+    if (!items || items.length === 0) return;
+    const qty = Number(items[0]?.quantity) || 0;
+    const unitSellingPrice = Number(items[0]?.unitPrice) || 0;
     const prodCostPerKg = Number(editFormData.productionCostPerKg) || 0;
     const weightPerUnit = Number(editFormData.weightPerUnit) || 0;
     
@@ -145,10 +146,13 @@ export default function DesktopSales() {
         marginStr = `${marginPct}% (₹${profitAmt.toFixed(2)})`;
       }
 
+      const prevTotalWeight = Number(prev.totalWeightKg) || 0;
+      const prevTotalAmt = Number(prev.totalAmount) || 0;
+
       if (
-        prev.totalAmount !== totalSellingCost || 
+        prevTotalAmt !== totalSellingCost || 
         prev.margin !== marginStr ||
-        prev.totalWeightKg !== totalWeightKg ||
+        prevTotalWeight !== totalWeightKg ||
         prev.productionCost !== totalProdCost.toFixed(2) ||
         prev.sellingCost !== totalSellingCost.toFixed(2)
       ) {
@@ -308,33 +312,41 @@ export default function DesktopSales() {
     try {
       const data = parseNotes(order.notes);
       
+      const parsedQty = order.items && order.items.length > 0
+        ? order.items.reduce((sum: number, i: any) => sum + (Number(i.quantity) || 0), 0)
+        : Number(data.quantity || data.quantityUnits || order.quantity || 0);
+
+      const parsedPrice = order.items?.[0]?.unitPrice !== undefined
+        ? Number(order.items[0].unitPrice)
+        : Number(data.sellingCost || data.unitSellingPrice || 0);
+
       setEditFormData({
-        batchUsed: data.batchUsed || '',
+        batchUsed: String(data.batchUsed || order.fifoBatches || ''),
         orderDate: safeDateStr(order.orderDate),
         deliveryDate: safeDateStr(order.deliveryDate),
-        type: data.type || '',
-        productId: data.productId || order.items?.[0]?.productId || '',
-        weightPerUnit: data.weightPerUnit || 0,
-        totalWeightKg: data.totalWeightKg || 0,
-        productionCostPerKg: data.productionCostPerKg || 0,
-        profitAmt: data.profitAmt || 0,
-        mrp: data.mrp || 0,
-        regionalPrice: data.regionalPrice || 0,
-        productionCost: data.productionCost || '',
-        sellingCost: data.sellingCost || (order.items?.[0]?.unitPrice !== undefined ? String(order.items[0].unitPrice) : ''),
-        margin: data.margin || '',
-        totalAmount: order.totalAmount || 0,
-        status: order.status || 'PENDING',
-        outstanding: order.outstanding || 0,
-        creditNotes: data.creditNotes || '',
+        type: String(data.type || ''),
+        productId: String(data.productId || order.items?.[0]?.productId || ''),
+        weightPerUnit: Number(data.weightPerUnit) || 0,
+        totalWeightKg: Number(data.totalWeightKg) || 0,
+        productionCostPerKg: Number(data.productionCostPerKg) || 0,
+        profitAmt: Number(data.profitAmt) || 0,
+        mrp: Number(data.mrp) || 0,
+        regionalPrice: Number(data.regionalPrice) || 0,
+        productionCost: String(data.productionCost || ''),
+        sellingCost: String(data.sellingCost || (parsedPrice ? String(parsedPrice) : '')),
+        margin: String(data.margin || ''),
+        totalAmount: Number(order.totalAmount) || 0,
+        status: String(order.status || 'PENDING'),
+        outstanding: Number(order.outstanding) || 0,
+        creditNotes: String(data.creditNotes || ''),
       });
       
       setCustomerId(order.customerId || '');
       setItems([
         {
-          productId: order.items?.[0]?.productId || '',
-          quantity: order.items?.reduce((sum: number, i: any) => sum + (Number(i.quantity) || 0), 0) || 0,
-          unitPrice: order.items?.[0]?.unitPrice || 0,
+          productId: String(data.productId || order.items?.[0]?.productId || ''),
+          quantity: parsedQty || '',
+          unitPrice: parsedPrice || 0,
           gstRate: order.items?.[0]?.gstRate || 18,
         }
       ]);
@@ -747,11 +759,11 @@ export default function DesktopSales() {
                     type="text"
                     inputMode="numeric"
                     required
-                    value={items[0].quantity}
+                    value={items?.[0]?.quantity ?? ''}
                     onChange={(e) => {
                       if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) return;
-                      const newItems = [...items];
-                      newItems[0].quantity = e.target.value === '' ? '' : (e.target.value === '' ? '' : Number(e.target.value)) as any;
+                      const newItems = [...(items || [{}])];
+                      newItems[0] = { ...newItems[0], quantity: e.target.value === '' ? '' : Number(e.target.value) };
                       setItems(newItems);
                     }}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
@@ -763,17 +775,17 @@ export default function DesktopSales() {
                   <input
                     type="text"
                     readOnly
-                    value={editFormData.totalWeightKg ? editFormData.totalWeightKg.toFixed(2) : '0.00'}
+                    value={Number(editFormData.totalWeightKg || 0).toFixed(2)}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-gray-50 text-gray-900 font-semibold dark:border-gray-800 dark:bg-gray-900 dark:text-white cursor-not-allowed"
                   />
-                  <p className="text-[10px] text-gray-500 mt-1">Auto-calculated: Qty × {editFormData.weightPerUnit} KG/Unit</p>
+                  <p className="text-[10px] text-gray-500 mt-1">Auto-calculated: Qty × {Number(editFormData.weightPerUnit || 0)} KG/Unit</p>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Unit Production Cost (₹)</label>
                   <input
                     type="text"
                     readOnly
-                    value={editFormData.productionCostPerKg ? editFormData.productionCostPerKg.toFixed(2) : '0.00'}
+                    value={Number(editFormData.productionCostPerKg || 0).toFixed(2)}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-gray-50 text-gray-900 font-semibold dark:border-gray-800 dark:bg-gray-900 dark:text-white cursor-not-allowed"
                   />
                   <p className="text-[10px] text-gray-500 mt-1">From Product Pricing Engine</p>
@@ -784,10 +796,10 @@ export default function DesktopSales() {
                   <input
                     type="text"
                     readOnly
-                    value={editFormData.productionCost}
+                    value={editFormData.productionCost || '0.00'}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-gray-50 text-gray-900 font-semibold dark:border-gray-800 dark:bg-gray-900 dark:text-white cursor-not-allowed"
                   />
-                  <p className="text-[10px] text-gray-500 mt-1">Auto-calculated: {editFormData.totalWeightKg.toFixed(2)} KG × ₹{editFormData.productionCostPerKg.toFixed(2)}/KG</p>
+                  <p className="text-[10px] text-gray-500 mt-1">Auto-calculated: {Number(editFormData.totalWeightKg || 0).toFixed(2)} KG × ₹{Number(editFormData.productionCostPerKg || 0).toFixed(2)}/KG</p>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Unit Selling Price (₹)</label>
@@ -795,11 +807,11 @@ export default function DesktopSales() {
                     type="text"
                     inputMode="numeric"
                     required
-                    value={items[0].unitPrice}
+                    value={items?.[0]?.unitPrice ?? ''}
                     onChange={(e) => {
                       if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) return;
-                      const newItems = [...items];
-                      newItems[0].unitPrice = e.target.value === '' ? '' : (e.target.value === '' ? '' : Number(e.target.value)) as any;
+                      const newItems = [...(items || [{}])];
+                      newItems[0] = { ...newItems[0], unitPrice: e.target.value === '' ? '' : Number(e.target.value) };
                       setItems(newItems);
                     }}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
@@ -811,7 +823,7 @@ export default function DesktopSales() {
                   <input
                     type="text"
                     readOnly
-                    value={editFormData.totalAmount}
+                    value={editFormData.totalAmount || 0}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-gray-50 text-gray-900 font-semibold dark:border-gray-800 dark:bg-gray-900 dark:text-white cursor-not-allowed"
                   />
                   <p className="text-[10px] text-gray-500 mt-1">Auto-calculated: Qty × Unit Price</p>
@@ -821,7 +833,7 @@ export default function DesktopSales() {
                   <input
                     type="text"
                     readOnly
-                    value={editFormData.margin}
+                    value={editFormData.margin || '-'}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-gray-50 text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 cursor-not-allowed"
                   />
                 </div>
