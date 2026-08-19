@@ -113,12 +113,17 @@ export default function DataTable<T extends { id?: string }>({
   const tablePrefKey = `tripidio_table_prefs_${pathname.replace(/\//g, '_')}`;
 
   const defaultPrefs: TablePreferences = useMemo(() => ({
-    columns: columns.map((c, i) => ({
-      header: c.header,
-      visible: true,
-      order: i,
-      pinned: c.header.toUpperCase() === 'ACTIONS' ? 'left' : null
-    }))
+    columns: columns.map((c, i) => {
+      const h = c.header.toUpperCase();
+      const isActions = h === 'ACTIONS' || h === 'ACTION';
+      const isName = h === 'NAME' || h === 'CUSTOMER' || h === 'CUSTOMER NAME';
+      return {
+        header: c.header,
+        visible: true,
+        order: isActions ? -2 : isName ? -1 : i,
+        pinned: (isActions || isName ? 'left' : null) as 'left' | null
+      };
+    })
   }), [columns]);
 
   const [prefs, setPrefs] = useState<TablePreferences>(defaultPrefs);
@@ -154,8 +159,22 @@ export default function DataTable<T extends { id?: string }>({
         const parsed = JSON.parse(saved) as TablePreferences;
         const mergedColumns = columns.map((c, i) => {
           const savedCol = parsed.columns.find(sc => sc.header === c.header);
-          if (savedCol) return savedCol;
-          return { header: c.header, visible: true, order: 999 + i, pinned: (c.header.toUpperCase() === 'ACTIONS' ? 'left' : null) as 'left' | null };
+          const h = c.header.toUpperCase();
+          const isActions = h === 'ACTIONS' || h === 'ACTION';
+          const isName = h === 'NAME' || h === 'CUSTOMER' || h === 'CUSTOMER NAME';
+
+          if (savedCol) {
+            return {
+              ...savedCol,
+              pinned: savedCol.pinned !== undefined ? savedCol.pinned : (isActions || isName ? 'left' : null),
+            };
+          }
+          return {
+            header: c.header,
+            visible: true,
+            order: isActions ? -2 : isName ? -1 : 999 + i,
+            pinned: (isActions || isName ? 'left' : null) as 'left' | null,
+          };
         });
         setPrefs({ columns: mergedColumns });
       } else {
@@ -187,6 +206,54 @@ export default function DataTable<T extends { id?: string }>({
       })
       .filter(Boolean) as (Column<T> & { _pref: ColumnPreference })[];
   }, [columns, prefs]);
+
+  // Width helper for sticky positioning
+  const getColWidth = (header: string, customWidth?: number) => {
+    if (customWidth && customWidth > 0) return customWidth;
+    const h = header.toUpperCase();
+    if (h === 'ACTIONS' || h === 'ACTION') return 110;
+    if (h === 'NAME' || h === 'CUSTOMER' || h === 'CUSTOMER NAME') return 180;
+    if (h === 'PROD #' || h === 'BATCH #' || h === 'PO #' || h === 'INVOICE #') return 130;
+    if (h === 'STATUS') return 120;
+    return 140;
+  };
+
+  // Calculate cumulative left & right sticky offsets for pinned columns
+  const { leftOffsets, rightOffsets, lastLeftPinnedHeader, firstRightPinnedHeader } = useMemo(() => {
+    let currentLeft = 0;
+    const leftOffsets = new Map<string, number>();
+    let lastLeft = '';
+
+    for (let i = 0; i < reorderedColumns.length; i++) {
+      const col = reorderedColumns[i];
+      if (col._pref.pinned === 'left') {
+        leftOffsets.set(col.header, currentLeft);
+        const w = getColWidth(col.header, col._pref.width);
+        currentLeft += w;
+        lastLeft = col.header;
+      }
+    }
+
+    let currentRight = 0;
+    const rightOffsets = new Map<string, number>();
+    let firstRight = '';
+    for (let i = reorderedColumns.length - 1; i >= 0; i--) {
+      const col = reorderedColumns[i];
+      if (col._pref.pinned === 'right') {
+        rightOffsets.set(col.header, currentRight);
+        const w = getColWidth(col.header, col._pref.width);
+        currentRight += w;
+        firstRight = col.header;
+      }
+    }
+
+    return {
+      leftOffsets,
+      rightOffsets,
+      lastLeftPinnedHeader: lastLeft,
+      firstRightPinnedHeader: firstRight,
+    };
+  }, [reorderedColumns]);
 
   // Client-side pagination state fallback
   const [internalPage, setInternalPage] = useState(1);
@@ -493,39 +560,68 @@ export default function DataTable<T extends { id?: string }>({
         <table className={cn("min-w-max text-left text-sm text-gray-600 dark:text-gray-400", globalLayout === 'auto' ? 'w-auto' : 'w-full')}>
           <thead className="sticky top-0 z-30 bg-gray-50 text-xs uppercase font-semibold tracking-wider text-gray-500 dark:bg-gray-950 dark:text-gray-400 shadow-sm border-b border-gray-200 dark:border-gray-800">
             <tr>
-              {reorderedColumns.map((col, idx) => (
-                <th
-                  key={idx}
-                  style={{
-                    width: col._pref.width ? `${col._pref.width}px` : 'auto',
-                    minWidth: '80px'
-                  }}
-                  className={cn(
-                    padClass,
-                    "whitespace-nowrap bg-gray-50 dark:bg-gray-950 relative group",
-                    col._pref.pinned === 'left' && "sticky left-0 z-40 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]",
-                    col._pref.pinned === 'right' && "sticky right-0 z-40 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]"
-                  )}
-                >
-                  {col.header}
-                  <div
-                    onMouseDown={(e) => onResizeStart(e, col.header, (e.target as HTMLElement).parentElement?.offsetWidth || 150)}
-                    onDoubleClick={() => onResizeDoubleClick(col.header)}
-                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-400/50 z-50 opacity-0 group-hover:opacity-100 transition-opacity"
-                  />
-                </th>
-              ))}
+              {reorderedColumns.map((col, idx) => {
+                const isLeftPinned = col._pref.pinned === 'left';
+                const isRightPinned = col._pref.pinned === 'right';
+                const leftPos = isLeftPinned ? (leftOffsets.get(col.header) ?? 0) : undefined;
+                const rightPos = isRightPinned ? (rightOffsets.get(col.header) ?? 0) : undefined;
+                const colWidth = col._pref.width || getColWidth(col.header, col._pref.width);
+                const isLastLeft = isLeftPinned && col.header === lastLeftPinnedHeader;
+
+                return (
+                  <th
+                    key={idx}
+                    style={{
+                      width: `${colWidth}px`,
+                      minWidth: `${colWidth}px`,
+                      maxWidth: `${colWidth}px`,
+                      left: leftPos !== undefined ? `${leftPos}px` : undefined,
+                      right: rightPos !== undefined ? `${rightPos}px` : undefined,
+                    }}
+                    className={cn(
+                      padClass,
+                      "whitespace-nowrap bg-gray-50 dark:bg-gray-950 relative group select-none",
+                      (isLeftPinned || isRightPinned) && "sticky z-40 bg-gray-50 dark:bg-gray-950",
+                      isLastLeft && "shadow-[3px_0_6px_-2px_rgba(0,0,0,0.15)] border-r-2 border-gray-300 dark:border-gray-700",
+                      isRightPinned && col.header === firstRightPinnedHeader && "shadow-[-3px_0_6px_-2px_rgba(0,0,0,0.15)] border-l-2 border-gray-300 dark:border-gray-700"
+                    )}
+                  >
+                    {col.header}
+                    <div
+                      onMouseDown={(e) => onResizeStart(e, col.header, (e.target as HTMLElement).parentElement?.offsetWidth || colWidth)}
+                      onDoubleClick={() => onResizeDoubleClick(col.header)}
+                      className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-400/50 z-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                    />
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
             {isLoading ? (
               Array.from({ length: Math.min(5, actualLimit) }).map((_, rIdx) => (
                 <tr key={rIdx} className="animate-pulse">
-                  {reorderedColumns.map((col, cIdx) => (
-                    <td key={cIdx} className={cn(padClass, col._pref.pinned === 'left' && "sticky left-0 z-10 bg-white dark:bg-gray-900")}>
-                      <div className="h-4 rounded bg-gray-200 dark:bg-gray-800 w-3/4" />
-                    </td>
-                  ))}
+                  {reorderedColumns.map((col, cIdx) => {
+                    const isLeftPinned = col._pref.pinned === 'left';
+                    const isRightPinned = col._pref.pinned === 'right';
+                    const leftPos = isLeftPinned ? (leftOffsets.get(col.header) ?? 0) : undefined;
+                    const rightPos = isRightPinned ? (rightOffsets.get(col.header) ?? 0) : undefined;
+                    const colWidth = col._pref.width || getColWidth(col.header, col._pref.width);
+                    return (
+                      <td
+                        key={cIdx}
+                        style={{
+                          width: `${colWidth}px`,
+                          minWidth: `${colWidth}px`,
+                          left: leftPos !== undefined ? `${leftPos}px` : undefined,
+                          right: rightPos !== undefined ? `${rightPos}px` : undefined,
+                        }}
+                        className={cn(padClass, (isLeftPinned || isRightPinned) && "sticky z-10 bg-white dark:bg-gray-900")}
+                      >
+                        <div className="h-4 rounded bg-gray-200 dark:bg-gray-800 w-3/4" />
+                      </td>
+                    );
+                  })}
                 </tr>
               ))
             ) : displayData.length === 0 ? (
@@ -540,19 +636,32 @@ export default function DataTable<T extends { id?: string }>({
                   key={row.id || rIdx}
                   className="group transition-colors hover:bg-gray-50/80 dark:hover:bg-gray-800/50"
                 >
-                  {reorderedColumns.map((col, cIdx) => (
-                    <td
-                      key={cIdx}
-                      style={{
-                        width: col._pref.width ? `${col._pref.width}px` : 'auto',
-                      }}
-                      className={cn(
-                        padClass,
-                        "font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap overflow-hidden text-ellipsis border-r border-gray-100 dark:border-gray-800/50 last:border-r-0",
-                        col._pref.pinned === 'left' && "sticky left-0 z-10 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]",
-                        col._pref.pinned === 'right' && "sticky right-0 z-10 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.05)]"
-                      )}
-                    >
+                  {reorderedColumns.map((col, cIdx) => {
+                    const isLeftPinned = col._pref.pinned === 'left';
+                    const isRightPinned = col._pref.pinned === 'right';
+                    const leftPos = isLeftPinned ? (leftOffsets.get(col.header) ?? 0) : undefined;
+                    const rightPos = isRightPinned ? (rightOffsets.get(col.header) ?? 0) : undefined;
+                    const colWidth = col._pref.width || getColWidth(col.header, col._pref.width);
+                    const isLastLeft = isLeftPinned && col.header === lastLeftPinnedHeader;
+
+                    return (
+                      <td
+                        key={cIdx}
+                        style={{
+                          width: `${colWidth}px`,
+                          minWidth: `${colWidth}px`,
+                          maxWidth: `${colWidth}px`,
+                          left: leftPos !== undefined ? `${leftPos}px` : undefined,
+                          right: rightPos !== undefined ? `${rightPos}px` : undefined,
+                        }}
+                        className={cn(
+                          padClass,
+                          "font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap overflow-hidden text-ellipsis border-r border-gray-100 dark:border-gray-800/50 last:border-r-0",
+                          (isLeftPinned || isRightPinned) && "sticky z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800",
+                          isLastLeft && "shadow-[3px_0_6px_-2px_rgba(0,0,0,0.1)] border-r-2 border-gray-200 dark:border-gray-800",
+                          isRightPinned && col.header === firstRightPinnedHeader && "shadow-[-3px_0_6px_-2px_rgba(0,0,0,0.1)] border-l-2 border-gray-200 dark:border-gray-800"
+                        )}
+                      >
                       {isUnlocked && col.inlineEditable && col.editableKey ? (
                         <input
                           type="text"
@@ -596,9 +705,10 @@ export default function DataTable<T extends { id?: string }>({
                           : null
                       )}
                     </td>
-                  ))}
-                </tr>
-              ))
+                  );
+                })}
+              </tr>
+            ))
             )}
           </tbody>
         </table>

@@ -436,8 +436,39 @@ export default function DesktopSales() {
 
   const columns: Column<any>[] = [
     {
+      header: 'Actions',
+      cell: (o) => (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              setSelectedInvoiceOrder(o);
+              setIsInvoiceModalOpen(true);
+            }}
+            className="rounded-lg p-1.5 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/50"
+            title="View / Print Proforma Invoice"
+          >
+            <Printer className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => handleEditClick(o)}
+            className="rounded-lg p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/50"
+            title="Edit Order"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+          </button>
+          <button
+            onClick={() => handleDelete(o.id)}
+            className="rounded-lg p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/50"
+            title="Delete Order"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+          </button>
+        </div>
+      ),
+    },
+    {
       header: 'Name',
-      cell: (o) => <span className="font-semibold text-gray-900 dark:text-white">{o.customer?.name || 'Unknown'}</span>,
+      cell: (o) => <span className="font-semibold text-gray-900 dark:text-white uppercase">{o.customer?.name || 'Unknown'}</span>,
     },
     {
       header: 'Batch Used',
@@ -549,37 +580,6 @@ export default function DesktopSales() {
           </span>
         );
       },
-    },
-    {
-      header: 'Actions',
-      cell: (o) => (
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
-              setSelectedInvoiceOrder(o);
-              setIsInvoiceModalOpen(true);
-            }}
-            className="rounded-lg p-1.5 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/50"
-            title="View / Print Proforma Invoice"
-          >
-            <Printer className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => handleEditClick(o)}
-            className="rounded-lg p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/50"
-            title="Edit Order"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-          </button>
-          <button
-            onClick={() => handleDelete(o.id)}
-            className="rounded-lg p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/50"
-            title="Delete Order"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-          </button>
-        </div>
-      ),
     },
   ];
 
