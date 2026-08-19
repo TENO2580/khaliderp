@@ -481,28 +481,6 @@ export default function MobileBatches() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Wax Stock (KG)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={waxStock}
-                    onChange={(e) => setWaxStock(e.target.value === '' ? '' : (e.target.value === '' ? '' : Number(e.target.value)) as any)}
-                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Candles Produced (KG)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={producedQty}
-                    onChange={(e) => setProducedQty(e.target.value === '' ? '' : (e.target.value === '' ? '' : Number(e.target.value)) as any)}
-                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                  />
-                </div>
-                <div className="col-span-2">
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Target Selling Price / Unit (₹)</label>
                   <input
                     type="number"
