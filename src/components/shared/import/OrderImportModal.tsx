@@ -280,10 +280,76 @@ export default function OrderImportModal({ isOpen, onClose, onSuccess }: OrderIm
     }
   };
 
-  const downloadSampleTemplate = async () => {
+  const downloadSampleTemplate = () => {
     try {
-      window.open('/api/sales/import/template', '_blank');
-    } catch {
+      const sampleData = [
+        {
+          'Name': 'NEW PILOT',
+          'Batch Used': 'BATCH ONE',
+          'Order Date': '04 Aug 2026',
+          'Delivery Date': '06 Aug 2026',
+          'Type': 'WHITE CANDLE',
+          'Quantity (KG)': 30,
+          'Production Cost': 4980,
+          'Selling Cost': 6000,
+          'Margin %': '17.00%',
+          'Margin Amount': 1020,
+          'Total Selling Cost': 6000,
+          'Status': 'DELIVERED',
+        },
+        {
+          'Name': 'ELLIKKAL TRADERS',
+          'Batch Used': 'BATCH ZERO, BATCH ONE',
+          'Order Date': '16 Aug 2026',
+          'Delivery Date': '18 Aug 2026',
+          'Type': 'WHITE CANDLE',
+          'Quantity (KG)': 150,
+          'Production Cost': 24900,
+          'Selling Cost': 28050,
+          'Margin %': '24.77%',
+          'Margin Amount': 3150,
+          'Total Selling Cost': 28050,
+          'Status': 'DELIVERED',
+        },
+        {
+          'Name': 'MAHESH AGENCIES',
+          'Batch Used': 'BATCH TWO',
+          'Order Date': '19 Aug 2026',
+          'Delivery Date': '',
+          'Type': 'COLOR CANDLE',
+          'Quantity (KG)': 75,
+          'Production Cost': 12500,
+          'Selling Cost': 15000,
+          'Margin %': '16.67%',
+          'Margin Amount': 2500,
+          'Total Selling Cost': 15000,
+          'Status': 'PENDING',
+        },
+      ];
+
+      const ws = XLSX.utils.json_to_sheet(sampleData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Orders Template');
+
+      ws['!cols'] = [
+        { wch: 22 },
+        { wch: 26 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 18 },
+        { wch: 15 },
+        { wch: 18 },
+        { wch: 15 },
+        { wch: 12 },
+        { wch: 16 },
+        { wch: 18 },
+        { wch: 14 },
+      ];
+
+      XLSX.writeFile(wb, 'orders_sample_template.xlsx');
+      toast.success('Sample template downloaded successfully!');
+    } catch (err: any) {
+      console.error('Failed to generate sample template:', err);
       toast.error('Failed to download template.');
     }
   };
