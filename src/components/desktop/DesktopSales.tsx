@@ -840,7 +840,7 @@ export default function DesktopSales() {
                     value={editFormData.totalAmount || 0}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-gray-50 text-gray-900 font-semibold dark:border-gray-800 dark:bg-gray-900 dark:text-white cursor-not-allowed"
                   />
-                  <p className="text-[10px] text-gray-500 mt-1">Auto-calculated: Qty × Unit Price</p>
+                  <p className="text-[10px] text-gray-500 mt-1">Auto-calculated: {Number(editFormData.totalWeightKg || 0).toFixed(2)} KG × ₹{items?.[0]?.unitPrice || 0}/KG</p>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Margin % & Amount</label>
