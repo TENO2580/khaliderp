@@ -348,13 +348,16 @@ export default function MobileProductionPage() {
               </h4>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] text-gray-600 dark:text-gray-400">Wax Used (KG)</label>
+                  <label className="block text-[11px] font-bold text-blue-700 dark:text-blue-400">Wax Used & Output (KG)</label>
                   <input
                     type="number"
                     step="0.1"
                     value={formData.waxUsed}
-                    onChange={(e) => setFormData({ ...formData, waxUsed: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
-                    className="mt-1 w-full rounded-xl border border-gray-200 p-2 text-sm bg-white dark:bg-gray-900 dark:border-gray-800"
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? '' : Number(e.target.value);
+                      setFormData({ ...formData, waxUsed: val as any, quantityProduced: val as any });
+                    }}
+                    className="mt-1 w-full rounded-xl border border-blue-500 p-2 text-sm bg-white dark:bg-gray-900 font-bold"
                   />
                 </div>
                 <div>
@@ -396,18 +399,6 @@ export default function MobileProductionPage() {
                   />
                 </div>
               </div>
-            </div>
-
-            {/* Output Qty */}
-            <div>
-              <label className="block text-xs font-bold text-gray-900 dark:text-white">Output Qty (KG) *</label>
-              <input
-                type="number"
-                required
-                value={formData.quantityProduced}
-                onChange={(e) => setFormData({ ...formData, quantityProduced: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
-                className="mt-1 w-full rounded-xl border border-blue-500 p-3 text-sm dark:bg-gray-900 font-bold"
-              />
             </div>
 
             <div>
