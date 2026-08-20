@@ -140,7 +140,7 @@ export async function POST(req: NextRequest) {
           ...(primaryBatchId ? { id: { not: primaryBatchId } } : {}),
         },
         orderBy: [
-          { purchaseDate: 'asc' },
+          { batchNumber: 'asc' },
           { createdAt: 'asc' },
         ],
       });
