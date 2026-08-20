@@ -134,16 +134,16 @@ export default function DesktopSales() {
     const weightPerUnit = Number(editFormData.weightPerUnit) || 1;
     
     const totalWeightKg = qty * weightPerUnit;
-    const totalSellingCost = totalWeightKg > 0 && unitSellingPrice > 0 ? (totalWeightKg * unitSellingPrice) : (qty * unitSellingPrice);
+    const totalSellingCost = qty * unitSellingPrice;
     const totalProdCost = totalWeightKg * prodCostPerKg;
     
     setEditFormData(prev => {
       let marginStr = '';
       let profitAmt = 0;
       
-      if (unitSellingPrice > 0 || prodCostPerKg > 0) {
-        profitAmt = unitSellingPrice - prodCostPerKg;
-        const marginPct = unitSellingPrice > 0 ? ((profitAmt / unitSellingPrice) * 100).toFixed(2) : '0';
+      if (totalSellingCost > 0 || totalProdCost > 0) {
+        profitAmt = totalSellingCost - totalProdCost;
+        const marginPct = totalSellingCost > 0 ? ((profitAmt / totalSellingCost) * 100).toFixed(2) : '0';
         marginStr = `${marginPct}% (₹${profitAmt.toFixed(2)})`;
       }
 
@@ -154,14 +154,14 @@ export default function DesktopSales() {
         prevTotalAmt !== totalSellingCost || 
         prev.margin !== marginStr ||
         prevTotalWeight !== totalWeightKg ||
-        prev.productionCost !== prodCostPerKg.toFixed(2) ||
+        prev.productionCost !== totalProdCost.toFixed(2) ||
         prev.sellingCost !== unitSellingPrice.toFixed(2)
       ) {
         return {
           ...prev, 
           totalAmount: totalSellingCost,
           sellingCost: unitSellingPrice.toFixed(2),
-          productionCost: prodCostPerKg.toFixed(2),
+          productionCost: totalProdCost.toFixed(2),
           profitAmt: profitAmt,
           totalWeightKg: totalWeightKg,
           margin: marginStr
@@ -840,7 +840,7 @@ export default function DesktopSales() {
                     value={editFormData.totalAmount || 0}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-gray-50 text-gray-900 font-semibold dark:border-gray-800 dark:bg-gray-900 dark:text-white cursor-not-allowed"
                   />
-                  <p className="text-[10px] text-gray-500 mt-1">Auto-calculated: {Number(editFormData.totalWeightKg || 0).toFixed(2)} KG × ₹{items?.[0]?.unitPrice || 0}/KG</p>
+                  <p className="text-[10px] text-gray-500 mt-1">Auto-calculated: Qty (Units) × Unit Price</p>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Margin % & Amount</label>
