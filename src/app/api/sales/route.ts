@@ -111,8 +111,16 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const count = await prisma.salesOrder.count();
-    const orderNumber = `SO-2026-${String(count + 1).padStart(4, '0')}`;
+    const lastOrder = await prisma.salesOrder.findFirst({
+      orderBy: { orderNumber: 'desc' },
+      select: { orderNumber: true },
+    });
+    let nextNum = 1;
+    if (lastOrder?.orderNumber) {
+      const match = lastOrder.orderNumber.match(/(\d+)$/);
+      if (match) nextNum = parseInt(match[1], 10) + 1;
+    }
+    const orderNumber = `SO-2026-${String(nextNum).padStart(4, '0')}`;
 
     const { customerId, items, paymentMethod, notes, discount = 0, transportCharge = 0, orderDate, deliveryDate, status } = body;
 

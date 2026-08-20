@@ -75,8 +75,16 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const count = await prisma.production.count();
-    const productionNumber = `PROD-2026-${String(count + 1).padStart(4, '0')}`;
+    const lastProd = await prisma.production.findFirst({
+      orderBy: { productionNumber: 'desc' },
+      select: { productionNumber: true },
+    });
+    let nextProdNum = 1;
+    if (lastProd?.productionNumber) {
+      const match = lastProd.productionNumber.match(/(\d+)$/);
+      if (match) nextProdNum = parseInt(match[1], 10) + 1;
+    }
+    const productionNumber = `PROD-2026-${String(nextProdNum).padStart(4, '0')}`;
 
     let {
       date,
@@ -192,9 +200,10 @@ export async function POST(req: NextRequest) {
 
     // If still no batch exists, create a default batch
     if (!primaryBatchId) {
+      const batchCount = await prisma.batch.count();
       const newBatch = await prisma.batch.create({
         data: {
-          batchNumber: `BATCH-${String(count + 1).padStart(3, '0')}`,
+          batchNumber: `BATCH-${String(batchCount).padStart(3, '0')}`,
           purchaseDate: new Date(),
           waxInitialQty: waxNum,
           waxStock: 0,
