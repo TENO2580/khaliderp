@@ -320,7 +320,7 @@ model Production {
   id               String   @id @default(cuid())
   productionNumber String   @unique // e.g., PROD-2026-0001
   date             DateTime
-  batchId          String
+  batchId          String?
   operatorId       String
   shift            Shift    @default(DAY)
 
@@ -350,8 +350,8 @@ model Production {
   updatedAt DateTime @updatedAt
 
   // Relations
-  batch    Batch @relation(fields: [batchId], references: [id])
-  operator User  @relation(fields: [operatorId], references: [id])
+  batch    Batch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  operator User   @relation(fields: [operatorId], references: [id])
 
   @@index([date])
   @@index([batchId])

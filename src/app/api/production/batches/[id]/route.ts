@@ -80,14 +80,11 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       data: { batchId: null },
     });
 
-    // 2. Check for linked production runs and block deletion if any exist
-    const linkedProductions = await prisma.production.count({
+    // 2. Unlink any production runs referencing this batch
+    await prisma.production.updateMany({
       where: { batchId: id },
+      data: { batchId: null },
     });
-
-    if (linkedProductions > 0) {
-      return errorResponse(`Cannot delete batch because it has ${linkedProductions} production run(s) logged against it. Please delete the production runs first.`, 400);
-    }
 
     // 3. Delete the batch
     await prisma.batch.delete({
