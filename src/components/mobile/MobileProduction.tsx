@@ -23,6 +23,7 @@ export default function MobileProductionPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [editId, setEditId] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     batchId: 'FIFO',
@@ -109,6 +110,9 @@ export default function MobileProductionPage() {
       toast.error('Please select a production batch');
       return;
     }
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    
     try {
       if (isEdit) {
         await api.put(`/production/${editId}`, formData);
@@ -123,6 +127,8 @@ export default function MobileProductionPage() {
       fetchData();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Error saving production run');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -415,9 +421,10 @@ export default function MobileProductionPage() {
             <div className="pt-4">
               <button
                 type="submit"
-                className="w-full rounded-xl bg-blue-600 p-3.5 text-sm font-semibold text-white shadow-lg active:bg-blue-700"
+                disabled={isSubmitting}
+                className="w-full rounded-xl bg-blue-600 p-3.5 text-sm font-semibold text-white shadow-lg active:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isEdit ? 'Save Changes' : 'Confirm Production Run'}
+                {isSubmitting ? 'Processing...' : (isEdit ? 'Save Changes' : 'Confirm Production Run')}
               </button>
             </div>
           </form>

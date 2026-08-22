@@ -19,6 +19,7 @@ export default function DesktopProduction() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [editId, setEditId] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     batchId: 'FIFO',
@@ -105,6 +106,9 @@ export default function DesktopProduction() {
       toast.error('Please select a production batch');
       return;
     }
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    
     try {
       if (isEdit) {
         await api.put(`/production/${editId}`, formData);
@@ -119,6 +123,8 @@ export default function DesktopProduction() {
       fetchData();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Error saving production run');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -388,9 +394,10 @@ export default function DesktopProduction() {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm"
+                  disabled={isSubmitting}
+                  className="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isEdit ? 'Save Changes' : 'Confirm Production Run'}
+                  {isSubmitting ? 'Processing...' : (isEdit ? 'Save Changes' : 'Confirm Production Run')}
                 </button>
               </div>
             </form>
