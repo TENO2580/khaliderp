@@ -172,29 +172,9 @@ export async function POST(req: NextRequest) {
         remainingWaxToDeduct -= deduct;
       }
 
-      // If wax required exceeds ALL available wax stock, deduct overflow from newest batch
+      // If wax required exceeds ALL available wax stock, prevent negative stock
       if (remainingWaxToDeduct > 0) {
-        const latestBatch = await prisma.batch.findFirst({
-          orderBy: { createdAt: 'desc' },
-        });
-
-        if (latestBatch) {
-          if (!primaryBatchId) primaryBatchId = latestBatch.id;
-
-          const existingUpdate = batchUpdates.find(u => u.batchId === latestBatch.id);
-          const producedShare = waxNum > 0 ? (remainingWaxToDeduct / waxNum) * outputQty : remainingWaxToDeduct;
-
-          if (existingUpdate) {
-            existingUpdate.deductedWax += remainingWaxToDeduct;
-            existingUpdate.addedProduced += producedShare;
-          } else {
-            batchUpdates.push({
-              batchId: latestBatch.id,
-              deductedWax: remainingWaxToDeduct,
-              addedProduced: producedShare,
-            });
-          }
-        }
+        return errorResponse(`Insufficient wax stock. You are trying to use ${waxNum} KG but only have ${waxNum - remainingWaxToDeduct} KG available across active batches.`, 400);
       }
     }
 

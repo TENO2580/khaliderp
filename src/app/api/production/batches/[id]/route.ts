@@ -9,6 +9,19 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params;
     const body = await req.json();
+
+    if (
+      (body.waxInitialQty !== undefined && body.waxInitialQty < 0) ||
+      (body.waxRate !== undefined && body.waxRate < 0) ||
+      (body.waxStock !== undefined && body.waxStock < 0) ||
+      (body.sellingPrice !== undefined && body.sellingPrice < 0) ||
+      (body.producedQty !== undefined && body.producedQty < 0) ||
+      (body.soldQty !== undefined && body.soldQty < 0) ||
+      (body.remainingQty !== undefined && body.remainingQty < 0)
+    ) {
+      return errorResponse('Negative values are not allowed', 400);
+    }
+
     const batch = await prisma.batch.update({
       where: { id },
       data: {

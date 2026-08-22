@@ -47,6 +47,16 @@ export async function POST(req: NextRequest) {
       ? Number(waxStock)
       : initialWaxQty;
 
+    if (
+      initialWaxQty < 0 ||
+      initialWaxStock < 0 ||
+      Number(producedQty || 0) < 0 ||
+      Number(sellingPrice || 0) < 0 ||
+      Number(waxRate || 0) < 0
+    ) {
+      return errorResponse('Negative values are not allowed', 400);
+    }
+
     const batch = await prisma.batch.create({
       data: {
         batchNumber,

@@ -359,6 +359,7 @@ export default function DesktopBatches() {
                   <input
                     type="number"
                     step="0.01"
+                    min="0"
                     required
                     value={waxInitialQty}
                     onChange={(e) => setWaxInitialQty(e.target.value === '' ? '' : (e.target.value === '' ? '' : Number(e.target.value)) as any)}
@@ -370,6 +371,7 @@ export default function DesktopBatches() {
                   <input
                     type="number"
                     step="0.01"
+                    min="0"
                     required
                     value={waxRate}
                     onChange={(e) => setWaxRate(e.target.value === '' ? '' : (e.target.value === '' ? '' : Number(e.target.value)) as any)}
@@ -381,6 +383,7 @@ export default function DesktopBatches() {
                   <input
                     type="number"
                     step="0.01"
+                    min="0"
                     value={sellingPrice}
                     onChange={(e) => setSellingPrice((e.target.value === '' ? '' : Number(e.target.value)) as any)}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
@@ -430,6 +433,7 @@ export default function DesktopBatches() {
                   <input
                     type="number"
                     step="any"
+                    min="0"
                     required
                     value={editBatch.waxInitialQty}
                     onChange={(e) => {
@@ -449,6 +453,7 @@ export default function DesktopBatches() {
                   <input
                     type="number"
                     step="any"
+                    min="0"
                     required
                     value={editBatch.waxRate}
                     onChange={(e) => setEditBatch({ ...editBatch, waxRate: (e.target.value === '' ? '' : parseFloat(e.target.value)) as any })}
@@ -460,6 +465,7 @@ export default function DesktopBatches() {
                   <input
                     type="number"
                     step="any"
+                    min="0"
                     required
                     value={editBatch.waxStock !== undefined && editBatch.waxStock !== null ? editBatch.waxStock : 0}
                     onChange={(e) => setEditBatch({ ...editBatch, waxStock: (e.target.value === '' ? '' : parseFloat(e.target.value)) as any })}
@@ -471,6 +477,7 @@ export default function DesktopBatches() {
                   <input
                     type="number"
                     step="any"
+                    min="0"
                     required
                     value={editBatch.sellingPrice}
                     onChange={(e) => setEditBatch({ ...editBatch, sellingPrice: (e.target.value === '' ? '' : parseFloat(e.target.value)) as any })}
@@ -482,6 +489,7 @@ export default function DesktopBatches() {
                   <input
                     type="number"
                     step="any"
+                    min="0"
                     required
                     value={editBatch.producedQty}
                     onChange={(e) => {
@@ -501,6 +509,7 @@ export default function DesktopBatches() {
                   <input
                     type="number"
                     step="0.01"
+                    min="0"
                     required
                     value={editBatch.soldQty}
                     onChange={(e) => setEditBatch({ ...editBatch, soldQty: parseFloat(e.target.value) || 0 })}
