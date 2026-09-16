@@ -282,3 +282,41 @@ export async function POST(req: NextRequest) {
     return errorResponse(msg, 400, { detail: err.message, code: err.code });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  const { user, error } = await authenticateRequest(req);
+  if (error) return error;
+
+  try {
+    const { searchParams } = new URL(req.url);
+    const idsParam = searchParams.get('ids');
+    let idsToDelete: string[] = [];
+    
+    if (idsParam) {
+      idsToDelete = idsParam.split(',').filter(Boolean);
+    } else {
+      const body = await req.json();
+      idsToDelete = Array.isArray(body.ids) ? body.ids : [];
+    }
+
+    if (idsToDelete.length === 0) {
+      return errorResponse('No IDs provided for deletion', 400);
+    }
+
+    // Since sales orders have items, and prisma schema usually cascades or we need to delete items first.
+    // Assuming cascading deletes are configured in schema, otherwise we use transaction.
+    const result = await prisma.salesOrder.deleteMany({
+      where: {
+        id: { in: idsToDelete }
+      }
+    });
+
+    return jsonResponse({
+      message: `Successfully deleted ${result.count} sales orders`,
+      count: result.count
+    });
+  } catch (err: any) {
+    console.error('Error deleting sales orders:', err);
+    return errorResponse(err.message, 500);
+  }
+}

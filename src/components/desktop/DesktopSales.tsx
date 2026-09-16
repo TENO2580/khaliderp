@@ -88,6 +88,24 @@ export default function DesktopSales() {
     mutateSales();
   };
 
+  const handleDeleteSelected = async (ids: string[]) => {
+    try {
+      const res = await fetch('/api/sales', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({ ids }),
+      });
+      if (!res.ok) throw new Error('Failed to delete selected orders');
+      toast.success(`Successfully deleted ${ids.length} orders`);
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
   // FIFO Batch Calculation (just for batch tracking)
   useEffect(() => {
     if (!isEdit && batches.length > 0 && items[0].productId) {
@@ -694,6 +712,8 @@ export default function DesktopSales() {
         ]}
         enableInlineEdit={true}
         onBatchSave={handleBatchSave}
+        selectable={true}
+        onDeleteSelected={handleDeleteSelected}
       />
 
       {/* Create Order Modal */}
