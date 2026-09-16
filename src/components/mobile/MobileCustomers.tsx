@@ -128,19 +128,15 @@ export default function MobileCustomers() {
 
   const handleDeleteSelected = async (ids: string[]) => {
     try {
-      const res = await fetch('/api/customers', {
+      await api.request({
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({ ids }),
+        url: '/customers',
+        data: { ids }
       });
-      if (!res.ok) throw new Error('Failed to delete selected customers');
       toast.success(`Successfully deleted ${ids.length} customers`);
       fetchCustomers();
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error(error.response?.data?.error || error.response?.data?.message || 'Failed to delete selected customers');
     }
   };
 

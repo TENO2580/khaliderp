@@ -90,26 +90,15 @@ export default function MobileSales() {
 
   const handleDeleteSelected = async (ids: string[]) => {
     try {
-      const res = await fetch('/api/sales', {
+      await api.request({
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({ ids }),
+        url: '/sales',
+        data: { ids }
       });
-      if (!res.ok) {
-        let errStr = 'Failed to delete selected orders';
-        try {
-          const errData = await res.json();
-          if (errData?.error) errStr = errData.error;
-        } catch(e) {}
-        throw new Error(errStr);
-      }
       toast.success(`Successfully deleted ${ids.length} orders`);
       fetchData();
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error(error.response?.data?.error || error.response?.data?.message || 'Failed to delete selected orders');
     }
   };
 
