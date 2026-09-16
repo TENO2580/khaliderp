@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     // Get current count to generate customerIds
     const currentCount = await prisma.customer.count();
 
-    const createdCustomers = [];
+    const createdCustomers: any[] = [];
     let countOffset = currentCount + 1;
 
     // Process all inside a transaction for efficiency
