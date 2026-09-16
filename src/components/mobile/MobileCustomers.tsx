@@ -5,6 +5,7 @@ import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, customerTypeLabels } from '@/lib/utils';
 import { 
+  Users, Search, Plus, X, Filter, Download, Building, MapPin, 
   Phone, Mail, Calendar, TrendingUp, AlertCircle, Edit, History, Pencil, Trash2, LayoutGrid, Table, Upload
 } from 'lucide-react';
 import api from '@/lib/api';
