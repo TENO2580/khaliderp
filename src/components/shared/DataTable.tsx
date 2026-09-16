@@ -15,6 +15,7 @@ import {
   Pin,
   List,
   Upload,
+  Trash2,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -70,6 +71,8 @@ interface DataTableProps<T> {
   enableInlineEdit?: boolean;
   onBatchSave?: (edits: { rowId: string; key: string; value: string }[]) => void;
   hideToolbar?: boolean;
+  selectable?: boolean;
+  onDeleteSelected?: (ids: string[]) => void;
 }
 
 export default function DataTable<T extends { id?: string }>({
@@ -99,12 +102,38 @@ export default function DataTable<T extends { id?: string }>({
   enableInlineEdit = false,
   onBatchSave,
   hideToolbar = false,
+  selectable = false,
+  onDeleteSelected,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState(searchValue || '');
   const [isUnlocked, setIsUnlocked] = useState(false);
   const pendingEditsRef = useRef<Record<string, Record<string, string>>>({});
   const [pendingCount, setPendingCount] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [selectedRowIds, setSelectedRowIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    setSelectedRowIds(new Set());
+  }, [data]);
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedRowIds(new Set(data.filter(item => item.id).map(item => item.id as string)));
+    } else {
+      setSelectedRowIds(new Set());
+    }
+  };
+
+  const handleSelectRow = (id: string, checked: boolean) => {
+    const newSet = new Set(selectedRowIds);
+    if (checked) {
+      newSet.add(id);
+    } else {
+      newSet.delete(id);
+    }
+    setSelectedRowIds(newSet);
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -596,6 +625,16 @@ export default function DataTable<T extends { id?: string }>({
         <table className={cn("min-w-max text-left text-sm text-gray-600 dark:text-gray-400", globalLayout === 'auto' ? 'w-auto' : 'w-full')}>
           <thead className="sticky top-0 z-30 bg-gray-50 text-xs uppercase font-semibold tracking-wider text-gray-500 dark:bg-gray-950 dark:text-gray-400 shadow-sm border-b border-gray-200 dark:border-gray-800">
             <tr>
+              {selectable && (
+                <th className="sticky top-0 z-20 w-12 border-b border-gray-200 bg-gray-50 px-4 py-4 text-left dark:border-gray-800 dark:bg-gray-900">
+                  <input 
+                    type="checkbox" 
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800"
+                    checked={data.length > 0 && selectedRowIds.size === data.filter(i => i.id).length}
+                    onChange={handleSelectAll}
+                  />
+                </th>
+              )}
               {reorderedColumns.map((col, idx) => {
                 const isLeftPinned = col._pref.pinned === 'left';
                 const isRightPinned = col._pref.pinned === 'right';
@@ -672,6 +711,20 @@ export default function DataTable<T extends { id?: string }>({
                   key={row.id || rIdx}
                   className="group transition-colors hover:bg-gray-50/80 dark:hover:bg-gray-800/50"
                 >
+                  {selectable && (
+                    <td className="w-12 border-b border-gray-100 px-4 py-4 dark:border-gray-800 bg-white dark:bg-gray-900 sticky left-0 z-10 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.1)]">
+                      <input 
+                        type="checkbox"
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800"
+                        checked={((row as any).id) ? selectedRowIds.has((row as any).id) : false}
+                        onChange={(e) => {
+                          const id = (row as any).id;
+                          if (id) handleSelectRow(id, e.target.checked);
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </td>
+                  )}
                   {reorderedColumns.map((col, cIdx) => {
                     const isLeftPinned = col._pref.pinned === 'left';
                     const isRightPinned = col._pref.pinned === 'right';
@@ -749,6 +802,26 @@ export default function DataTable<T extends { id?: string }>({
           </tbody>
         </table>
       </div>
+
+      {/* Floating Action Bar for Bulk Selection */}
+      {selectable && selectedRowIds.size > 0 && onDeleteSelected && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 bg-gray-900/95 backdrop-blur-sm text-white px-6 py-3 rounded-full shadow-2xl border border-gray-800 animate-in slide-in-from-bottom-8">
+          <span className="font-semibold text-sm whitespace-nowrap">{selectedRowIds.size} selected</span>
+          <div className="w-px h-5 bg-gray-700"></div>
+          <button
+            onClick={() => {
+              if (confirm(`Are you sure you want to delete ${selectedRowIds.size} selected items?`)) {
+                onDeleteSelected(Array.from(selectedRowIds));
+                setSelectedRowIds(new Set());
+              }
+            }}
+            className="flex items-center gap-2 text-red-400 hover:text-red-300 font-medium text-sm transition-colors whitespace-nowrap"
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete Selected
+          </button>
+        </div>
+      )}
 
       <div className="flex items-center justify-between border-t border-gray-200/80 px-6 py-4 dark:border-gray-800">
         <div className="flex items-center gap-4">

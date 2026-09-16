@@ -125,3 +125,39 @@ export async function POST(req: NextRequest) {
     return errorResponse(err.message || 'Failed to create customer', 400);
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  const { user, error } = await authenticateRequest(req);
+  if (error) return error;
+
+  try {
+    const { searchParams } = new URL(req.url);
+    const idsParam = searchParams.get('ids');
+    let idsToDelete: string[] = [];
+    
+    if (idsParam) {
+      idsToDelete = idsParam.split(',').filter(Boolean);
+    } else {
+      const body = await req.json();
+      idsToDelete = Array.isArray(body.ids) ? body.ids : [];
+    }
+
+    if (idsToDelete.length === 0) {
+      return errorResponse('No IDs provided for deletion', 400);
+    }
+
+    const result = await prisma.customer.deleteMany({
+      where: {
+        id: { in: idsToDelete }
+      }
+    });
+
+    return jsonResponse({
+      message: `Successfully deleted ${result.count} customers`,
+      count: result.count
+    });
+  } catch (err: any) {
+    console.error('Error deleting customers:', err);
+    return errorResponse(err.message, 500);
+  }
+}

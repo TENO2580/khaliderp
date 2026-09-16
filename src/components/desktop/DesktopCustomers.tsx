@@ -404,6 +404,24 @@ export default function DesktopCustomers() {
     }
   };
 
+  const handleDeleteSelected = async (ids: string[]) => {
+    try {
+      const res = await fetch('/api/customers', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({ ids }),
+      });
+      if (!res.ok) throw new Error('Failed to delete selected customers');
+      toast.success(`Successfully deleted ${ids.length} customers`);
+      fetchCustomers();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -455,6 +473,8 @@ export default function DesktopCustomers() {
         ]}
         enableInlineEdit={true}
         onBatchSave={handleBatchSave}
+        selectable={true}
+        onDeleteSelected={handleDeleteSelected}
       />
 
       {/* Create Customer Modal */}

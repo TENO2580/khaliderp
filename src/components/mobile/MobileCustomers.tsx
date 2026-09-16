@@ -126,6 +126,24 @@ export default function MobileCustomers() {
     setIsCreateOpen(true);
   };
 
+  const handleDeleteSelected = async (ids: string[]) => {
+    try {
+      const res = await fetch('/api/customers', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({ ids }),
+      });
+      if (!res.ok) throw new Error('Failed to delete selected customers');
+      toast.success(`Successfully deleted ${ids.length} customers`);
+      fetchCustomers();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
   const handleExport = async (mode: 'visible' | 'all' = 'all', visibleHeaders: string[] = []) => {
     try {
       const toastId = toast.loading('Exporting customers...');
@@ -472,6 +490,8 @@ export default function MobileCustomers() {
             onPageChange={setPage}
             limit={limit}
             onLimitChange={setLimit}
+            selectable={true}
+            onDeleteSelected={handleDeleteSelected}
           />
         </div>
       ) : (
