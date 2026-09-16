@@ -12,6 +12,7 @@ import api from '@/lib/api';
 import { toast } from 'sonner';
 import useSWR from 'swr';
 import { useSearchParams } from 'next/navigation';
+import * as XLSX from 'xlsx';
 
 const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
@@ -34,6 +35,13 @@ export default function DesktopCustomers() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [editId, setEditId] = useState('');
+  
+  // Import states
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [importData, setImportData] = useState<any[]>([]);
+  const [importHeaders, setImportHeaders] = useState<string[]>([]);
+  const [columnMapping, setColumnMapping] = useState<Record<string, string>>({});
+
   const [formData, setFormData] = useState({
     name: '',
     ownerName: '',
@@ -158,6 +166,78 @@ export default function DesktopCustomers() {
     } catch (error) {
       toast.dismiss();
       toast.error('Failed to export customers');
+    }
+  };
+
+  const handleImportClick = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = e.target?.result;
+        const workbook = XLSX.read(data, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
+        
+        if (jsonData.length > 0) {
+          const headers = jsonData[0] || [];
+          const rows = jsonData.slice(1).map(row => {
+            const obj: any = {};
+            headers.forEach((h, i) => { obj[h] = row[i]; });
+            return obj;
+          });
+          
+          setImportHeaders(headers);
+          setImportData(rows);
+          setIsImportOpen(true);
+          
+          const initialMapping: Record<string, string> = {};
+          headers.forEach(h => {
+            const hLower = String(h).toLowerCase();
+            if (hLower.includes('name') && !hLower.includes('owner')) initialMapping[h] = 'name';
+            else if (hLower.includes('owner')) initialMapping[h] = 'ownerName';
+            else if (hLower.includes('phone') || hLower.includes('mobile')) initialMapping[h] = 'phone';
+            else if (hLower.includes('whatsapp')) initialMapping[h] = 'whatsapp';
+            else if (hLower.includes('email')) initialMapping[h] = 'email';
+            else if (hLower.includes('gst')) initialMapping[h] = 'gstNumber';
+            else if (hLower.includes('district') || hLower.includes('location')) initialMapping[h] = 'district';
+            else if (hLower.includes('address')) initialMapping[h] = 'address';
+            else if (hLower.includes('route') || hLower.includes('area')) initialMapping[h] = 'route';
+            else if (hLower.includes('type') || hLower.includes('category')) initialMapping[h] = 'type';
+            else if (hLower.includes('limit')) initialMapping[h] = 'creditLimit';
+            else if (hLower.includes('selling') || hLower.includes('price') || hLower.includes('cost')) initialMapping[h] = 'sellingPrice';
+            else if (hLower.includes('note')) initialMapping[h] = 'notes';
+          });
+          setColumnMapping(initialMapping);
+        }
+      } catch (err) {
+        toast.error('Failed to parse file');
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
+  const handleImportSubmit = async () => {
+    try {
+      const toastId = toast.loading('Importing customers...');
+      const mappedCustomers = importData.map(row => {
+        const customer: any = { type: 'RETAILER', status: 'ACTIVE', creditLimit: 50000, sellingPrice: 0 };
+        Object.entries(columnMapping).forEach(([fileHeader, dbField]) => {
+          if (dbField && row[fileHeader] !== undefined) {
+            customer[dbField] = String(row[fileHeader]);
+          }
+        });
+        return customer;
+      });
+      
+      const res = await api.post('/customers/batch', { customers: mappedCustomers });
+      toast.dismiss(toastId);
+      toast.success(`${res.data.data?.count || mappedCustomers.length} customers imported successfully`);
+      setIsImportOpen(false);
+      fetchCustomers();
+    } catch (err: any) {
+      toast.dismiss();
+      toast.error(err.response?.data?.message || 'Failed to import customers');
     }
   };
 
@@ -336,6 +416,7 @@ export default function DesktopCustomers() {
         }}
         addButtonLabel="Add Customer"
         onExportClick={handleExport}
+        onImportClick={handleImportClick}
         page={page}
         totalPages={totalPages}
         totalItems={totalItems}
@@ -536,6 +617,76 @@ export default function DesktopCustomers() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Import Customer Modal */}
+      {isImportOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+              Import Customers ({importData.length} rows found)
+            </h2>
+            <p className="text-sm text-gray-500 mb-6">
+              Map the columns from your uploaded file to the customer fields in the system. Unmapped columns will be ignored.
+            </p>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 border-b border-gray-200 dark:border-gray-800 pb-2">
+                <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">File Column</div>
+                <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">System Field</div>
+              </div>
+              {importHeaders.map(header => (
+                <div key={header} className="grid grid-cols-2 gap-4 items-center">
+                  <div className="text-sm font-medium text-gray-600 dark:text-gray-400 truncate" title={header}>
+                    {header}
+                  </div>
+                  <div>
+                    <select
+                      value={columnMapping[header] || ''}
+                      onChange={(e) => setColumnMapping({ ...columnMapping, [header]: e.target.value })}
+                      className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                    >
+                      <option value="">-- Ignore --</option>
+                      <option value="name">Customer Name *</option>
+                      <option value="ownerName">Owner Name</option>
+                      <option value="phone">Phone / Mobile</option>
+                      <option value="whatsapp">WhatsApp</option>
+                      <option value="email">Email</option>
+                      <option value="gstNumber">GST Number</option>
+                      <option value="address">Address</option>
+                      <option value="district">Location / District</option>
+                      <option value="state">State</option>
+                      <option value="pincode">Pincode</option>
+                      <option value="route">Route / Area</option>
+                      <option value="type">Customer Type (RETAILER, etc.)</option>
+                      <option value="creditLimit">Credit Limit</option>
+                      <option value="status">Status (ACTIVE, etc.)</option>
+                      <option value="sellingPrice">Selling Price / Cost</option>
+                      <option value="notes">Notes</option>
+                    </select>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end gap-3 pt-6 mt-4 border-t border-gray-200 dark:border-gray-800">
+              <button
+                type="button"
+                onClick={() => setIsImportOpen(false)}
+                className="rounded-xl px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-400"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleImportSubmit}
+                className="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                Import {importData.length} Customers
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -14,6 +14,7 @@ import {
   GripVertical,
   Pin,
   List,
+  Upload,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -55,6 +56,7 @@ interface DataTableProps<T> {
   totalPages?: number;
   onPageChange?: (page: number) => void;
   onExportClick?: (mode: 'visible' | 'all', visibleHeaders: string[]) => void;
+  onImportClick?: (file: File) => void;
   isLoading?: boolean;
   limit?: number;
   onLimitChange?: (limit: number) => void;
@@ -83,6 +85,7 @@ export default function DataTable<T extends { id?: string }>({
   totalPages,
   onPageChange,
   onExportClick,
+  onImportClick,
   isLoading = false,
   limit,
   onLimitChange,
@@ -101,6 +104,15 @@ export default function DataTable<T extends { id?: string }>({
   const [isUnlocked, setIsUnlocked] = useState(false);
   const pendingEditsRef = useRef<Record<string, Record<string, string>>>({});
   const [pendingCount, setPendingCount] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onImportClick) {
+      onImportClick(file);
+    }
+    if (e.target) e.target.value = '';
+  };
 
   // Sync external search value
   useEffect(() => {
@@ -527,6 +539,25 @@ export default function DataTable<T extends { id?: string }>({
                 </div>
               )}
             </div>
+          )}
+
+          {onImportClick && (
+            <>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange}
+                accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" 
+                className="hidden" 
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition-colors dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+              >
+                <Upload className="h-4 w-4" />
+                <span>Import</span>
+              </button>
+            </>
           )}
 
           {onAddClick && (

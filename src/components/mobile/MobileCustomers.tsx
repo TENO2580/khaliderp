@@ -5,14 +5,14 @@ import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, customerTypeLabels } from '@/lib/utils';
 import { 
-  Users, Search, Plus, X, Filter, Download, Building, MapPin, 
-  Phone, Mail, Calendar, TrendingUp, AlertCircle, Edit, History, Pencil, Trash2, LayoutGrid, Table
+  Phone, Mail, Calendar, TrendingUp, AlertCircle, Edit, History, Pencil, Trash2, LayoutGrid, Table, Upload
 } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import useSWR from 'swr';
 import { useSearchParams } from 'next/navigation';
 import { useViewMode } from '@/hooks/useViewMode';
+import * as XLSX from 'xlsx';
 import MobileFilterBar from './MobileFilterBar';
 import MobilePagination from './MobilePagination';
 
@@ -38,6 +38,14 @@ export default function MobileCustomers() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [editId, setEditId] = useState('');
+  
+  // Import states
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [importData, setImportData] = useState<any[]>([]);
+  const [importHeaders, setImportHeaders] = useState<string[]>([]);
+  const [columnMapping, setColumnMapping] = useState<Record<string, string>>({});
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
   const [formData, setFormData] = useState({
     name: '',
     ownerName: '',
@@ -162,6 +170,81 @@ export default function MobileCustomers() {
     } catch (error) {
       toast.dismiss();
       toast.error('Failed to export customers');
+    }
+  };
+
+  const handleImportClick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = e.target?.result;
+        const workbook = XLSX.read(data, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
+        
+        if (jsonData.length > 0) {
+          const headers = jsonData[0] || [];
+          const rows = jsonData.slice(1).map(row => {
+            const obj: any = {};
+            headers.forEach((h, i) => { obj[h] = row[i]; });
+            return obj;
+          });
+          
+          setImportHeaders(headers);
+          setImportData(rows);
+          setIsImportOpen(true);
+          
+          const initialMapping: Record<string, string> = {};
+          headers.forEach(h => {
+            const hLower = String(h).toLowerCase();
+            if (hLower.includes('name') && !hLower.includes('owner')) initialMapping[h] = 'name';
+            else if (hLower.includes('owner')) initialMapping[h] = 'ownerName';
+            else if (hLower.includes('phone') || hLower.includes('mobile')) initialMapping[h] = 'phone';
+            else if (hLower.includes('whatsapp')) initialMapping[h] = 'whatsapp';
+            else if (hLower.includes('email')) initialMapping[h] = 'email';
+            else if (hLower.includes('gst')) initialMapping[h] = 'gstNumber';
+            else if (hLower.includes('district') || hLower.includes('location')) initialMapping[h] = 'district';
+            else if (hLower.includes('address')) initialMapping[h] = 'address';
+            else if (hLower.includes('route') || hLower.includes('area')) initialMapping[h] = 'route';
+            else if (hLower.includes('type') || hLower.includes('category')) initialMapping[h] = 'type';
+            else if (hLower.includes('limit')) initialMapping[h] = 'creditLimit';
+            else if (hLower.includes('selling') || hLower.includes('price') || hLower.includes('cost')) initialMapping[h] = 'sellingPrice';
+            else if (hLower.includes('note')) initialMapping[h] = 'notes';
+          });
+          setColumnMapping(initialMapping);
+        }
+      } catch (err) {
+        toast.error('Failed to parse file');
+      }
+    };
+    reader.readAsBinaryString(file);
+    if (e.target) e.target.value = '';
+  };
+
+  const handleImportSubmit = async () => {
+    try {
+      const toastId = toast.loading('Importing customers...');
+      const mappedCustomers = importData.map(row => {
+        const customer: any = { type: 'RETAILER', status: 'ACTIVE', creditLimit: 50000, sellingPrice: 0 };
+        Object.entries(columnMapping).forEach(([fileHeader, dbField]) => {
+          if (dbField && row[fileHeader] !== undefined) {
+            customer[dbField] = String(row[fileHeader]);
+          }
+        });
+        return customer;
+      });
+      
+      const res = await api.post('/customers/batch', { customers: mappedCustomers });
+      toast.dismiss(toastId);
+      toast.success(`${res.data.data?.count || mappedCustomers.length} customers imported successfully`);
+      setIsImportOpen(false);
+      fetchCustomers();
+    } catch (err: any) {
+      toast.dismiss();
+      toast.error(err.response?.data?.message || 'Failed to import customers');
     }
   };
 
@@ -316,7 +399,21 @@ export default function MobileCustomers() {
           <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate">Customer CRM</h1>
           <p className="text-xs text-gray-500 line-clamp-1">Manage retailers, wholesalers, and field routes</p>
         </div>
-        <div className="flex shrink-0">
+        <div className="flex shrink-0 gap-2">
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleImportClick}
+            accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" 
+            className="hidden" 
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="rounded-xl bg-white p-2 text-gray-600 shadow-sm border border-gray-200 active:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:active:bg-gray-800"
+            title="Import Customers"
+          >
+            <Upload className="h-5 w-5" />
+          </button>
           <button
             onClick={toggleViewMode}
             className="rounded-xl bg-white p-2 text-gray-600 shadow-sm border border-gray-200 active:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:active:bg-gray-800"
@@ -591,6 +688,72 @@ export default function MobileCustomers() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Import Customer Modal */}
+      {isImportOpen && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-gray-50 dark:bg-gray-950 overflow-y-auto pt-4 pb-20 px-4">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                Import Customers
+              </h2>
+              <p className="text-xs text-gray-500 mt-1">
+                {importData.length} rows found
+              </p>
+            </div>
+            <button onClick={() => setIsImportOpen(false)} className="p-2 rounded-full bg-gray-200 dark:bg-gray-800">
+              <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            </button>
+          </div>
+          <div className="space-y-6 flex-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Map your file's columns to the system fields.
+            </p>
+            <div className="space-y-4">
+              {importHeaders.map(header => (
+                <div key={header} className="flex flex-col gap-1 border-b border-gray-200 dark:border-gray-800 pb-3">
+                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate" title={header}>
+                    {header}
+                  </div>
+                  <select
+                    value={columnMapping[header] || ''}
+                    onChange={(e) => setColumnMapping({ ...columnMapping, [header]: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-white dark:border-gray-800 dark:bg-gray-900 dark:text-white"
+                  >
+                    <option value="">-- Ignore --</option>
+                    <option value="name">Customer Name *</option>
+                    <option value="ownerName">Owner Name</option>
+                    <option value="phone">Phone / Mobile</option>
+                    <option value="whatsapp">WhatsApp</option>
+                    <option value="email">Email</option>
+                    <option value="gstNumber">GST Number</option>
+                    <option value="address">Address</option>
+                    <option value="district">Location / District</option>
+                    <option value="state">State</option>
+                    <option value="pincode">Pincode</option>
+                    <option value="route">Route / Area</option>
+                    <option value="type">Customer Type</option>
+                    <option value="creditLimit">Credit Limit</option>
+                    <option value="status">Status</option>
+                    <option value="sellingPrice">Selling Price</option>
+                    <option value="notes">Notes</option>
+                  </select>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-4">
+              <button
+                type="button"
+                onClick={handleImportSubmit}
+                className="w-full rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 active:bg-blue-800"
+              >
+                Import {importData.length} Customers
+              </button>
+            </div>
           </div>
         </div>
       )}
