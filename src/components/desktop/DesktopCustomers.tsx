@@ -41,6 +41,8 @@ export default function DesktopCustomers() {
   const [importData, setImportData] = useState<any[]>([]);
   const [importHeaders, setImportHeaders] = useState<string[]>([]);
   const [columnMapping, setColumnMapping] = useState<Record<string, string>>({});
+  const [duplicateStrategy, setDuplicateStrategy] = useState('SKIP');
+  const [duplicateCriteria, setDuplicateCriteria] = useState('PHONE');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -230,7 +232,11 @@ export default function DesktopCustomers() {
         return customer;
       });
       
-      const res = await api.post('/customers/batch', { customers: mappedCustomers });
+      const res = await api.post('/customers/batch', { 
+        customers: mappedCustomers,
+        duplicateStrategy,
+        duplicateCriteria
+      });
       toast.dismiss(toastId);
       toast.success(`${res.data.data?.count || mappedCustomers.length} customers imported successfully`);
       setIsImportOpen(false);
@@ -631,6 +637,32 @@ export default function DesktopCustomers() {
             <p className="text-sm text-gray-500 mb-6">
               Map the columns from your uploaded file to the customer fields in the system. Unmapped columns will be ignored.
             </p>
+
+            <div className="grid grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Duplicate Strategy</label>
+                <select
+                  value={duplicateStrategy}
+                  onChange={(e) => setDuplicateStrategy(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-900 dark:text-white"
+                >
+                  <option value="SKIP">Skip Duplicates</option>
+                  <option value="OVERWRITE">Overwrite Existing Data</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Identify Duplicates By</label>
+                <select
+                  value={duplicateCriteria}
+                  onChange={(e) => setDuplicateCriteria(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-900 dark:text-white"
+                >
+                  <option value="PHONE">Phone Number</option>
+                  <option value="NAME">Customer Name</option>
+                  <option value="BOTH">Name & Phone</option>
+                </select>
+              </div>
+            </div>
 
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4 border-b border-gray-200 dark:border-gray-800 pb-2">

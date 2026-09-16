@@ -45,6 +45,8 @@ export default function MobileCustomers() {
   const [importData, setImportData] = useState<any[]>([]);
   const [importHeaders, setImportHeaders] = useState<string[]>([]);
   const [columnMapping, setColumnMapping] = useState<Record<string, string>>({});
+  const [duplicateStrategy, setDuplicateStrategy] = useState('SKIP');
+  const [duplicateCriteria, setDuplicateCriteria] = useState('PHONE');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
@@ -238,7 +240,11 @@ export default function MobileCustomers() {
         return customer;
       });
       
-      const res = await api.post('/customers/batch', { customers: mappedCustomers });
+      const res = await api.post('/customers/batch', { 
+        customers: mappedCustomers,
+        duplicateStrategy,
+        duplicateCriteria
+      });
       toast.dismiss(toastId);
       toast.success(`${res.data.data?.count || mappedCustomers.length} customers imported successfully`);
       setIsImportOpen(false);
@@ -710,6 +716,32 @@ export default function MobileCustomers() {
             </button>
           </div>
           <div className="space-y-6 flex-1">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Duplicate Strategy</label>
+                <select
+                  value={duplicateStrategy}
+                  onChange={(e) => setDuplicateStrategy(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                >
+                  <option value="SKIP">Skip Duplicates</option>
+                  <option value="OVERWRITE">Overwrite Existing Data</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Identify Duplicates By</label>
+                <select
+                  value={duplicateCriteria}
+                  onChange={(e) => setDuplicateCriteria(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                >
+                  <option value="PHONE">Phone Number</option>
+                  <option value="NAME">Customer Name</option>
+                  <option value="BOTH">Name & Phone</option>
+                </select>
+              </div>
+            </div>
+
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Map your file's columns to the system fields.
             </p>

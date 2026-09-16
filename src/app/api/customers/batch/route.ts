@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   if (error) return error;
 
   try {
-    const { customers } = await req.json();
+    const { customers, duplicateStrategy = 'SKIP', duplicateCriteria = 'PHONE' } = await req.json();
     
     if (!Array.isArray(customers) || customers.length === 0) {
       return errorResponse('No customers provided', 400);
@@ -24,8 +24,6 @@ export async function POST(req: NextRequest) {
     // Process all inside a transaction for efficiency
     const result = await prisma.$transaction(async (tx) => {
       for (const c of customers) {
-        const customerId = `CUST-${String(countOffset).padStart(4, '0')}`;
-        
         let lastPurchaseDate = null;
         if (c.lastPurchaseDate) {
           const d = new Date(c.lastPurchaseDate);
@@ -38,6 +36,58 @@ export async function POST(req: NextRequest) {
           if (!isNaN(d.getTime())) nextFollowupDate = d.toISOString();
         }
 
+        // Duplicate Check
+        let existingCustomer = null;
+        let searchConditions: any[] = [];
+        if (duplicateCriteria === 'PHONE' || duplicateCriteria === 'BOTH') {
+          if (c.phone) searchConditions.push({ phone: c.phone });
+        }
+        if (duplicateCriteria === 'NAME' || duplicateCriteria === 'BOTH') {
+          if (c.name) searchConditions.push({ name: c.name });
+        }
+
+        if (searchConditions.length > 0) {
+          existingCustomer = await tx.customer.findFirst({
+            where: duplicateCriteria === 'BOTH' ? { AND: searchConditions } : { OR: searchConditions }
+          });
+        }
+
+        if (existingCustomer) {
+          if (duplicateStrategy === 'SKIP') {
+            continue; // Skip this record
+          } else if (duplicateStrategy === 'OVERWRITE') {
+            // Overwrite existing record
+            const updatedCustomer = await tx.customer.update({
+              where: { id: existingCustomer.id },
+              data: {
+                name: c.name || existingCustomer.name,
+                ownerName: c.ownerName || existingCustomer.ownerName,
+                phone: c.phone || existingCustomer.phone,
+                whatsapp: c.whatsapp || existingCustomer.whatsapp,
+                email: c.email || existingCustomer.email,
+                gstNumber: c.gstNumber || existingCustomer.gstNumber,
+                address: c.address || existingCustomer.address,
+                district: c.district || existingCustomer.district,
+                state: c.state || existingCustomer.state,
+                pincode: c.pincode || existingCustomer.pincode,
+                route: c.route || existingCustomer.route,
+                type: c.type || existingCustomer.type,
+                creditLimit: c.creditLimit ? Number(c.creditLimit) : existingCustomer.creditLimit,
+                status: c.status || existingCustomer.status,
+                notes: c.notes || existingCustomer.notes,
+                sellingPrice: c.sellingPrice ? Number(c.sellingPrice) : existingCustomer.sellingPrice,
+                lastPurchaseDate: lastPurchaseDate || existingCustomer.lastPurchaseDate,
+                nextFollowupDate: nextFollowupDate || existingCustomer.nextFollowupDate,
+              }
+            });
+            createdCustomers.push(updatedCustomer);
+            continue;
+          }
+        }
+
+        // If no duplicate found or not handled, create new
+        const customerId = `CUST-${String(countOffset).padStart(4, '0')}`;
+        
         const newCustomer = await tx.customer.create({
           data: {
             customerId,
