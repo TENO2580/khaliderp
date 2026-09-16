@@ -189,19 +189,32 @@ export default function MobileCustomers() {
         const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
         
         if (jsonData.length > 0) {
-          const headers = jsonData[0] || [];
+          const rawHeaders = jsonData[0] || [];
+          const headers = rawHeaders.map((h: any, i: number) => String(h || `Column ${i + 1}`).trim());
+          
+          const uniqueHeaders: string[] = [];
+          headers.forEach((h: string) => {
+            let uniqueH = h;
+            let counter = 1;
+            while (uniqueHeaders.includes(uniqueH)) {
+              uniqueH = `${h} (${counter})`;
+              counter++;
+            }
+            uniqueHeaders.push(uniqueH);
+          });
+
           const rows = jsonData.slice(1).map(row => {
             const obj: any = {};
-            headers.forEach((h, i) => { obj[h] = row[i]; });
+            uniqueHeaders.forEach((h, i) => { obj[h] = row[i]; });
             return obj;
           });
           
-          setImportHeaders(headers);
+          setImportHeaders(uniqueHeaders);
           setImportData(rows);
           setIsImportOpen(true);
           
           const initialMapping: Record<string, string> = {};
-          headers.forEach(h => {
+          uniqueHeaders.forEach(h => {
             const hLower = String(h).toLowerCase();
             if (hLower.includes('name') && !hLower.includes('owner')) initialMapping[h] = 'name';
             else if (hLower.includes('owner')) initialMapping[h] = 'ownerName';
@@ -718,22 +731,22 @@ export default function MobileCustomers() {
           <div className="space-y-6 flex-1">
             <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Duplicate Strategy</label>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Duplicate Strategy</label>
                 <select
                   value={duplicateStrategy}
                   onChange={(e) => setDuplicateStrategy(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  className="w-full rounded-xl border border-gray-200 bg-white p-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                 >
                   <option value="SKIP">Skip Duplicates</option>
                   <option value="OVERWRITE">Overwrite Existing Data</option>
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Identify Duplicates By</label>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Identify Duplicates By</label>
                 <select
                   value={duplicateCriteria}
                   onChange={(e) => setDuplicateCriteria(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                  className="w-full rounded-xl border border-gray-200 bg-white p-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                 >
                   <option value="PHONE">Phone Number</option>
                   <option value="NAME">Customer Name</option>
@@ -745,37 +758,49 @@ export default function MobileCustomers() {
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Map your file's columns to the system fields.
             </p>
-            <div className="space-y-4">
-              {importHeaders.map(header => (
-                <div key={header} className="flex flex-col gap-1 border-b border-gray-200 dark:border-gray-800 pb-3">
-                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate" title={header}>
-                    {header}
-                  </div>
-                  <select
-                    value={columnMapping[header] || ''}
-                    onChange={(e) => setColumnMapping({ ...columnMapping, [header]: e.target.value })}
-                    className="w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-white dark:border-gray-800 dark:bg-gray-900 dark:text-white"
-                  >
-                    <option value="">-- Ignore --</option>
-                    <option value="name">Customer Name *</option>
-                    <option value="ownerName">Owner Name</option>
-                    <option value="phone">Phone / Mobile</option>
-                    <option value="whatsapp">WhatsApp</option>
-                    <option value="email">Email</option>
-                    <option value="gstNumber">GST Number</option>
-                    <option value="address">Address</option>
-                    <option value="district">Location / District</option>
-                    <option value="state">State</option>
-                    <option value="pincode">Pincode</option>
-                    <option value="route">Route / Area</option>
-                    <option value="type">Customer Type</option>
-                    <option value="creditLimit">Credit Limit</option>
-                    <option value="status">Status</option>
-                    <option value="sellingPrice">Selling Price</option>
-                    <option value="notes">Notes</option>
-                  </select>
-                </div>
-              ))}
+            <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
+              <table className="w-full text-left text-sm text-gray-600 dark:text-gray-400">
+                <thead className="bg-gray-50 text-xs font-semibold uppercase text-gray-700 dark:bg-gray-900/50 dark:text-gray-300">
+                  <tr>
+                    <th className="px-4 py-3 w-[45%]">File Column</th>
+                    <th className="px-4 py-3 w-[55%]">System Field</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
+                  {importHeaders.map(header => (
+                    <tr key={header}>
+                      <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100 max-w-[120px] truncate" title={header}>
+                        {header}
+                      </td>
+                      <td className="px-4 py-2">
+                        <select
+                          value={columnMapping[header] || ''}
+                          onChange={(e) => setColumnMapping({ ...columnMapping, [header]: e.target.value })}
+                          className="w-full rounded-lg border border-gray-200 bg-white p-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                        >
+                          <option value="">-- Ignore --</option>
+                          <option value="name">Customer Name *</option>
+                          <option value="ownerName">Owner Name</option>
+                          <option value="phone">Phone / Mobile</option>
+                          <option value="whatsapp">WhatsApp</option>
+                          <option value="email">Email</option>
+                          <option value="gstNumber">GST Number</option>
+                          <option value="address">Address</option>
+                          <option value="district">Location / District</option>
+                          <option value="state">State</option>
+                          <option value="pincode">Pincode</option>
+                          <option value="route">Route / Area</option>
+                          <option value="type">Customer Type</option>
+                          <option value="creditLimit">Credit Limit</option>
+                          <option value="status">Status</option>
+                          <option value="sellingPrice">Selling Price</option>
+                          <option value="notes">Notes</option>
+                        </select>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
             <div className="pt-4">
