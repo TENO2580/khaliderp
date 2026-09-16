@@ -98,7 +98,14 @@ export default function MobileSales() {
         },
         body: JSON.stringify({ ids }),
       });
-      if (!res.ok) throw new Error('Failed to delete selected orders');
+      if (!res.ok) {
+        let errStr = 'Failed to delete selected orders';
+        try {
+          const errData = await res.json();
+          if (errData?.error) errStr = errData.error;
+        } catch(e) {}
+        throw new Error(errStr);
+      }
       toast.success(`Successfully deleted ${ids.length} orders`);
       fetchData();
     } catch (error: any) {
