@@ -169,7 +169,7 @@ model Product {
   // Pricing Engine Fields
   weightKg         Float?   @default(1)
   qty              Int      @default(1)
-  prodCostPerKg    Float?
+  prodCostPerUnit  Float?   @map("prodCostPerKg")
   totalProdCost    Float    @default(0)
   marginAmt        Float    @default(0)
   marginPct        Float    @default(0)
@@ -870,7 +870,7 @@ model CaseVariant {
   name          String // e.g., "2 RS CASE"
   weightKg      Float // e.g., 0.72
   qty           Int?   @default(1) // Number of items in a case
-  prodCostPerKg Float? // Optional override for Prod Cost/KG
+  prodCostPerUnit Float? @map("prodCostPerKg") // Optional override for Prod Cost/Unit
   sellingPrice  Float // e.g., 228.00
   mrp           Float? @default(0)
   calicutRate   Float? @default(0)
@@ -887,7 +887,7 @@ model RsCaseVariant {
   name          String 
   weightKg      Float 
   qty           Int?   @default(1) 
-  prodCostPerKg Float? 
+  prodCostPerUnit Float? @map("prodCostPerKg")
   sellingPrice  Float 
   mrp           Float? @default(0)
   calicutRate   Float? @default(0)

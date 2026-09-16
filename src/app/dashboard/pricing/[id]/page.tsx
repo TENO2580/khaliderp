@@ -151,10 +151,10 @@ export default function ProductPricingDetail({ params }: { params: Promise<{ id:
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                  Prod Cost/KG Override
-                  <span className="text-xs text-gray-400 font-normal">(Optional)</span>
+                  Production Cost / Unit
+                  <span className="text-xs text-gray-400 font-normal">(Optional Override)</span>
                 </label>
-                <input type="number" step="any" value={product.prodCostPerKg ?? ''} onChange={(e) => handleChange('prodCostPerKg', e.target.value)} placeholder="Uses global cost if empty" className="w-full rounded-xl border border-gray-200 p-2.5 dark:border-gray-800 dark:bg-gray-950" />
+                <input type="number" step="any" value={product.prodCostPerUnit ?? ''} onChange={(e) => handleChange('prodCostPerUnit', e.target.value)} placeholder="Uses global cost if empty" className="w-full rounded-xl border border-gray-200 p-2.5 dark:border-gray-800 dark:bg-gray-950" />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Selling Price (₹)</label>

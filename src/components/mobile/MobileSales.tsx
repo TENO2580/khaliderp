@@ -53,7 +53,7 @@ export default function MobileSales() {
     productId: '',
     weightPerUnit: 0,
     totalWeightKg: 0,
-    productionCostPerKg: 0,
+    productionCostPerUnit: 0,
     profitAmt: 0,
     mrp: 0,
     regionalPrice: 0,
@@ -144,12 +144,12 @@ export default function MobileSales() {
     if (!items || items.length === 0) return;
     const qty = Number(items[0]?.quantity) || 0;
     const unitSellingPrice = Number(items[0]?.unitPrice) || 0;
-    const prodCostPerKg = Number(editFormData.productionCostPerKg) || 0;
+    const prodCostPerUnit = Number(editFormData.productionCostPerUnit) || 0;
     const weightPerUnit = Number(editFormData.weightPerUnit) || 1;
     
     const totalWeightKg = qty * weightPerUnit;
     const totalSellingCost = qty * unitSellingPrice;
-    const totalProdCost = totalWeightKg * prodCostPerKg;
+    const totalProdCost = qty * prodCostPerUnit;
     
     setEditFormData(prev => {
       let marginStr = '';
@@ -183,7 +183,7 @@ export default function MobileSales() {
       }
       return prev;
     });
-  }, [items, editFormData.productionCostPerKg, editFormData.weightPerUnit]);
+  }, [items, editFormData.productionCostPerUnit, editFormData.weightPerUnit]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -213,7 +213,7 @@ export default function MobileSales() {
             weightPerUnit: editFormData.weightPerUnit,
             quantityUnits: Number(items[0].quantity) || 0,
             totalWeightKg: editFormData.totalWeightKg,
-            productionCostPerKg: editFormData.productionCostPerKg,
+            productionCostPerUnit: editFormData.productionCostPerUnit,
             productionCost: editFormData.productionCost,
             unitSellingPrice: items[0].unitPrice,
             sellingCost: editFormData.sellingCost,
@@ -267,7 +267,7 @@ export default function MobileSales() {
             weightPerUnit: editFormData.weightPerUnit,
             quantityUnits: qty,
             totalWeightKg: editFormData.totalWeightKg,
-            productionCostPerKg: editFormData.productionCostPerKg,
+            productionCostPerUnit: editFormData.productionCostPerUnit,
             productionCost: editFormData.productionCost,
             unitSellingPrice: items[0].unitPrice,
             sellingCost: editFormData.sellingCost,
@@ -343,7 +343,7 @@ export default function MobileSales() {
         productId: String(data.productId || order.items?.[0]?.productId || ''),
         weightPerUnit: Number(data.weightPerUnit) || 0,
         totalWeightKg: Number(data.totalWeightKg) || 0,
-        productionCostPerKg: Number(data.productionCostPerKg) || 0,
+        productionCostPerUnit: Number(data.productionCostPerUnit) || 0,
         profitAmt: Number(data.profitAmt) || 0,
         mrp: Number(data.mrp) || 0,
         regionalPrice: Number(data.regionalPrice) || 0,
@@ -802,7 +802,7 @@ export default function MobileSales() {
                       const selectedProduct = products.find((p: any) => p.id === val);
                       if (!selectedProduct) return;
                       const weightPerUnit = selectedProduct.weightKg || 0;
-                      const prodCostPerKg = selectedProduct.prodCostPerKg || (selectedProduct.totalProdCost / selectedProduct.weightKg) || 0;
+                      const prodCostPerUnit = selectedProduct.prodCostPerUnit || (selectedProduct.totalProdCost / (selectedProduct.qty || 1)) || 0;
                       
                       setItems([{ ...items[0], productId: val, unitPrice: selectedProduct.sellingPrice || 0 }]);
                       
@@ -811,7 +811,7 @@ export default function MobileSales() {
                         productId: val,
                         type: selectedProduct.name,
                         weightPerUnit,
-                        productionCostPerKg: prodCostPerKg,
+                        productionCostPerUnit: prodCostPerUnit,
                         mrp: selectedProduct.mrp || 0,
                         regionalPrice: selectedProduct.regionalPrice || 0,
                       });
@@ -830,7 +830,7 @@ export default function MobileSales() {
                     onChange={(e) => {
                       if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) return;
                       const newItems = [...(items || [{}])];
-                      newItems[0] = { ...newItems[0], quantity: e.target.value === '' ? '' : Number(e.target.value) };
+                      newItems[0] = { ...newItems[0], quantity: e.target.value };
                       setItems(newItems);
                     }}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
@@ -852,7 +852,7 @@ export default function MobileSales() {
                   <input
                     type="text"
                     readOnly
-                    value={Number(editFormData.productionCostPerKg || 0).toFixed(2)}
+                    value={Number(editFormData.productionCostPerUnit || 0).toFixed(2)}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-gray-50 text-gray-900 font-semibold dark:border-gray-800 dark:bg-gray-900 dark:text-white cursor-not-allowed"
                   />
                   <p className="text-[10px] text-gray-500 mt-1">From Product Pricing Engine</p>
@@ -866,7 +866,7 @@ export default function MobileSales() {
                     value={editFormData.productionCost || '0.00'}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-gray-50 text-gray-900 font-semibold dark:border-gray-800 dark:bg-gray-900 dark:text-white cursor-not-allowed"
                   />
-                  <p className="text-[10px] text-gray-500 mt-1">Auto-calculated: {Number(editFormData.totalWeightKg || 0).toFixed(2)} KG × ₹{Number(editFormData.productionCostPerKg || 0).toFixed(2)}/KG</p>
+                  <p className="text-[10px] text-gray-500 mt-1">Auto-calculated: {items?.[0]?.quantity || 1} Units × ₹{Number(editFormData.productionCostPerUnit || 0).toFixed(2)}/Unit</p>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Unit Selling Price (₹)</label>

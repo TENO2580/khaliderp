@@ -47,7 +47,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         status: body.status || 'ACTIVE',
         weightKg: Number(body.weightKg) || 0,
         qty: Number(body.qty) || 1,
-        prodCostPerKg: body.prodCostPerKg !== null && body.prodCostPerKg !== undefined && body.prodCostPerKg !== '' ? Number(body.prodCostPerKg) : null,
+        prodCostPerUnit: body.prodCostPerUnit !== null && body.prodCostPerUnit !== undefined && body.prodCostPerUnit !== '' ? Number(body.prodCostPerUnit) : null,
         sellingPrice: Number(body.sellingPrice) || 0,
         mrp: Number(body.mrp) || 0,
         regionalPrice: Number(body.regionalPrice) || 0,

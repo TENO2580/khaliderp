@@ -23,7 +23,7 @@ export default function DesktopPricing() {
     sellingPrice: 0,
     mrp: 0,
     regionalPrice: 0,
-    prodCostPerKg: '' // Optional override
+    prodCostPerUnit: '' // Optional override
   });
 
   useEffect(() => {

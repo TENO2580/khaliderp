@@ -173,8 +173,8 @@ export default function PricingScreen() {
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Case Variants Preview</Text>
               {profile.caseVariants.map((v: any, idx: number) => {
-                const effectiveProdCostPerKg = v.prodCostPerKg !== null && v.prodCostPerKg !== undefined ? Number(v.prodCostPerKg) : (totalCostPerKg + (Number(profile.packagingOverhead) || 0));
-                const totalCaseCost = Number(v.weightKg) * effectiveProdCostPerKg;
+                const effectiveProdCostPerUnit = v.prodCostPerUnit !== null && v.prodCostPerUnit !== undefined ? Number(v.prodCostPerUnit) : (totalCostPerKg + (Number(profile.packagingOverhead) || 0)) * Number(v.weightKg);
+                const totalCaseCost = effectiveProdCostPerUnit * (Number(v.qty) || 1);
                 const margin = Number(v.sellingPrice) - totalCaseCost;
                 return (
                   <View key={idx} style={styles.variantItem}>
@@ -193,14 +193,14 @@ export default function PricingScreen() {
                         />
                       </View>
                       <View style={[styles.variantFormGroup, { flex: 1.2 }]}>
-                        <Text style={styles.variantLabel}>Prod Cost/KG</Text>
+                        <Text style={styles.variantLabel}>Prod Cost/Unit</Text>
                         <TextInput 
                           style={styles.variantInput} 
-                          value={v.prodCostPerKg ? v.prodCostPerKg.toString() : ''} 
-                          placeholder={effectiveProdCostPerKg.toFixed(2)} 
+                          value={v.prodCostPerUnit ? v.prodCostPerUnit.toString() : ''} 
+                          placeholder={effectiveProdCostPerUnit.toFixed(2)} 
                           placeholderTextColor={colors.textSecondary} 
                           keyboardType="numeric" 
-                          onChangeText={(t) => handleVariantChange(idx, 'prodCostPerKg', t)} 
+                          onChangeText={(t) => handleVariantChange(idx, 'prodCostPerUnit', t)} 
                         />
                       </View>
                       <View style={[styles.variantFormGroup, { flex: 1 }]}>

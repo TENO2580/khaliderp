@@ -1,7 +1,7 @@
 export interface PricingProductInput {
   weightKg: number;
   qty: number;
-  prodCostPerKg?: number | null;
+  prodCostPerUnit?: number | null;
   sellingPrice: number;
   regionalPrice?: number | null;
   mrp?: number | null;
@@ -37,9 +37,7 @@ export function calculateProductPricing(
   const globalTotalCostPerKg = globalCostPerKg + Number(globalProfile.packagingOverhead || 0);
   
   // 2. Use Override or Global Cost
-  const effectiveProdCostPerKg = (product.prodCostPerKg !== null && product.prodCostPerKg !== undefined && product.prodCostPerKg !== 0 && String(product.prodCostPerKg) !== '') 
-    ? Number(product.prodCostPerKg) 
-    : globalTotalCostPerKg;
+  const hasOverride = (product.prodCostPerUnit !== null && product.prodCostPerUnit !== undefined && product.prodCostPerUnit !== 0 && String(product.prodCostPerUnit) !== '');
   
   // 3. Product Calculations
   const weight = Number(product.weightKg) || 0;
@@ -47,7 +45,19 @@ export function calculateProductPricing(
   const sellingPrice = Number(product.sellingPrice) || 0;
   
   const totalWeight = weight * qty;
-  const totalProdCost = totalWeight * effectiveProdCostPerKg;
+  
+  let totalProdCost = 0;
+  let effectiveProdCostPerUnit = 0;
+  
+  if (hasOverride) {
+    effectiveProdCostPerUnit = Number(product.prodCostPerUnit);
+    totalProdCost = effectiveProdCostPerUnit * qty;
+  } else {
+    // If no override, calculate cost based on total weight * global cost per KG
+    totalProdCost = totalWeight * globalTotalCostPerKg;
+    // For return mapping, determine the effective unit cost
+    effectiveProdCostPerUnit = totalProdCost / qty;
+  }
   
   // Margins calculated based on sellingPrice (identical to legacy UI logic)
   const marginAmt = sellingPrice - totalProdCost;
@@ -61,6 +71,8 @@ export function calculateProductPricing(
     marginAmt, 
     marginPct, 
     sellingCostPerKg, 
-    effectiveProdCostPerKg 
+    effectiveProdCostPerUnit,
+    // Keep this for backwards compatibility if any component strictly expects it
+    effectiveProdCostPerKg: effectiveProdCostPerUnit
   };
 }
