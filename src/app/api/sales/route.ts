@@ -303,13 +303,56 @@ export async function DELETE(req: NextRequest) {
       return errorResponse('No IDs provided for deletion', 400);
     }
 
-    // Since sales orders have items, and prisma schema usually cascades or we need to delete items first.
-    // Assuming cascading deletes are configured in schema, otherwise we use transaction.
-    const result = await prisma.salesOrder.deleteMany({
-      where: {
-        id: { in: idsToDelete }
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Fetch all items for these orders to revert batch quantities
+      const itemsToRevert = await tx.salesOrderItem.findMany({
+        where: { orderId: { in: idsToDelete }, batchId: { not: null } },
+        select: { batchId: true, quantity: true }
+      });
+
+      // 2. Aggregate quantities to revert per batch
+      const batchReversions: Record<string, number> = {};
+      for (const item of itemsToRevert) {
+        if (item.batchId) {
+          batchReversions[item.batchId] = (batchReversions[item.batchId] || 0) + item.quantity;
+        }
       }
-    });
+
+      // 3. Update batches
+      for (const [batchId, qty] of Object.entries(batchReversions)) {
+        await tx.batch.update({
+          where: { id: batchId },
+          data: {
+            soldQty: { decrement: qty },
+            remainingQty: { increment: qty },
+            status: 'PARTIALLY_SOLD'
+          }
+        });
+      }
+
+      // 4. Delete associated invoices (if any)
+      const invoices = await tx.invoice.findMany({
+        where: { orderId: { in: idsToDelete } },
+        select: { id: true }
+      });
+      const invoiceIds = invoices.map(i => i.id);
+
+      if (invoiceIds.length > 0) {
+        // Delete payments
+        await tx.payment.deleteMany({ where: { invoiceId: { in: invoiceIds } } });
+        // Delete invoice items
+        await tx.invoiceItem.deleteMany({ where: { invoiceId: { in: invoiceIds } } });
+        // Delete invoices
+        await tx.invoice.deleteMany({ where: { id: { in: invoiceIds } } });
+      }
+
+      // 5. Delete SalesOrders (SalesOrderItems will be cascade deleted)
+      const deleteResult = await tx.salesOrder.deleteMany({
+        where: { id: { in: idsToDelete } }
+      });
+
+      return deleteResult;
+    }, { maxWait: 5000, timeout: 20000 });
 
     return jsonResponse({
       message: `Successfully deleted ${result.count} sales orders`,
