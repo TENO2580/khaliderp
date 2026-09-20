@@ -811,14 +811,36 @@ export default function DesktopSales() {
                   <p className="text-[10px] text-gray-500 mt-1">Auto-calculated: Qty × {Number(editFormData.weightPerUnit || 0)} KG/Unit</p>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Unit Production Cost (₹)</label>
+                  <div className="flex justify-between items-center">
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Unit Production Cost (₹)</label>
+                    {editFormData.productId && (
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          const selectedProduct = products.find((p: any) => p.id === editFormData.productId);
+                          if (selectedProduct) {
+                            const prodCostPerUnit = selectedProduct.prodCostPerUnit || (selectedProduct.totalProdCost / (selectedProduct.qty || 1)) || 0;
+                            setEditFormData({ ...editFormData, productionCostPerUnit: prodCostPerUnit });
+                          }
+                        }}
+                        className="text-[10px] text-blue-500 hover:underline font-semibold"
+                      >
+                        Reset to Default
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="text"
-                    readOnly
-                    value={Number(editFormData.productionCostPerUnit || 0).toFixed(2)}
-                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-gray-50 text-gray-900 font-semibold dark:border-gray-800 dark:bg-gray-900 dark:text-white cursor-not-allowed"
+                    inputMode="numeric"
+                    required
+                    value={editFormData.productionCostPerUnit ?? ''}
+                    onChange={(e) => {
+                      if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) return;
+                      setEditFormData({ ...editFormData, productionCostPerUnit: e.target.value === '' ? '' : Number(e.target.value) as any });
+                    }}
+                    className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                   />
-                  <p className="text-[10px] text-gray-500 mt-1">From Product Pricing Engine</p>
+                  <p className="text-[10px] text-gray-500 mt-1">Editable (Default from Product Pricing Engine)</p>
                 </div>
 
                 <div>
