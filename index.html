@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tripidio ERP - Sign In</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #060b14;
+            --card-bg: rgba(15, 22, 36, 0.7);
+            --text-primary: #ffffff;
+            --text-secondary: #8ba1b7;
+            --accent-blue: #3b82f6;
+            --accent-gradient: linear-gradient(135deg, #2563eb, #6366f1);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --input-bg: rgba(0, 0, 0, 0.25);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Abstract Glow Backgrounds */
+        .glow-1 {
+            position: absolute;
+            top: -10%;
+            right: 0%;
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, rgba(37,99,235,0.15) 0%, rgba(6,11,20,0) 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .glow-2 {
+            position: absolute;
+            bottom: -20%;
+            left: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, rgba(6,11,20,0) 70%);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .page-container {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+            z-index: 1;
+        }
+
+        /* Left Panel */
+        .left-panel {
+            width: 50%;
+            padding: 4rem;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .brand-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 4rem;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--accent-gradient);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+        }
+
+        .brand-text h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .brand-text h1 span {
+            color: var(--accent-blue);
+        }
+
+        .brand-text p {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .hero-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .subtitle-top {
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .main-heading {
+            font-size: 3.5rem;
+            line-height: 1.1;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+
+        .main-heading span {
+            color: var(--accent-blue);
+        }
+
+        .description {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            line-height: 1.6;
+            max-width: 450px;
+            margin-bottom: 3rem;
+        }
+
+        .features-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .feature-icon {
+            width: 32px;
+            height: 32px;
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--accent-blue);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .feature-text h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+        }
+
+        .feature-text p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Right Panel */
+        .right-panel {
+            width: 50%;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .top-nav {
+            width: 100%;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .top-nav span {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .btn-outline {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            color: white;
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.2s;
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 3rem;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            margin: auto;
+        }
+
+        .login-card .welcome-text {
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .login-card h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-card h2 span {
+            color: var(--accent-blue);
+        }
+
+        .login-card .subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+            color: #d1d5db;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            left: 1rem;
+            color: var(--text-secondary);
+            width: 18px;
+            height: 18px;
+        }
+
+        .input-wrapper .eye-icon {
+            left: auto;
+            right: 1rem;
+            cursor: pointer;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            padding: 0.875rem 1rem 0.875rem 2.75rem;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: white;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        
+        .input-wrapper input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+
+        .input-wrapper input:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+
+        .form-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+            color: #d1d5db;
+        }
+
+        .checkbox-label input {
+            accent-color: var(--accent-blue);
+            width: 16px;
+            height: 16px;
+        }
+
+        .forgot-link {
+            color: var(--accent-blue);
+            font-size: 0.85rem;
+            text-decoration: none;
+        }
+
+        .forgot-link:hover {
+            text-decoration: underline;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 1rem;
+            background: var(--accent-gradient);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            transition: opacity 0.2s;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 2rem 0;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border-color);
+        }
+
+        .divider span {
+            padding: 0 1rem;
+        }
+
+        .btn-google {
+            width: 100%;
+            padding: 0.875rem;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: white;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.75rem;
+            transition: background 0.2s;
+        }
+
+        .btn-google:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .google-icon {
+            width: 18px;
+            height: 18px;
+        }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .footer-text a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+        
+        .footer-text a:hover {
+            text-decoration: underline;
+        }
+
+        .bottom-footer {
+            position: absolute;
+            bottom: 2rem;
+            right: 2rem;
+            font-size: 0.65rem;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 992px) {
+            .left-panel {
+                display: none; /* Hide on smaller screens to prioritize login */
+            }
+
+            .right-panel {
+                width: 100%;
+                padding: 1.5rem;
+                justify-content: center;
+            }
+            
+            .top-nav {
+                position: absolute;
+                top: 1.5rem;
+                right: 1.5rem;
+                margin-bottom: 0;
+            }
+
+            .login-card {
+                padding: 2rem;
+                margin-top: 4rem;
+            }
+
+            .bottom-footer {
+                position: static;
+                margin-top: 2rem;
+                text-align: center;
+            }
+        }
+        
+        /* Small Mobile */
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 1.5rem;
+                border-radius: 16px;
+                border: none;
+                background: transparent;
+                box-shadow: none;
+                backdrop-filter: none;
+            }
+            
+            .page-container {
+                background: var(--bg-color);
+            }
+            
+            .top-nav {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="glow-1"></div>
+    <div class="glow-2"></div>
+
+    <div class="page-container">
+        <!-- Left Promotional Panel -->
+        <div class="left-panel">
+            <div class="brand-header">
+                <div class="logo-icon">T</div>
+                <div class="brand-text">
+                    <h1>Tripidio <span>ERP</span></h1>
+                    <p>Smart. Simple. Powerful.</p>
+                </div>
+            </div>
+
+            <div class="hero-section">
+                <p class="subtitle-top">BUSINESS OPERATIONS, SIMPLIFIED</p>
+                <h2 class="main-heading">Manage.<br>Track. <span>Grow.</span></h2>
+                <p class="description">
+                    Tripidio ERP helps you streamline your business with powerful tools, real-time insights and a smoother workflow.
+                </p>
+
+                <ul class="features-list">
+                    <li class="feature-item">
+                        <div class="feature-icon">
+                            <i data-lucide="bar-chart-2"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>All-in-One Platform</h3>
+                            <p>Sales, Inventory, Purchases & more</p>
+                        </div>
+                    </li>
+                    <li class="feature-item">
+                        <div class="feature-icon">
+                            <i data-lucide="zap"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Real-time Insights</h3>
+                            <p>Make faster, smarter decisions</p>
+                        </div>
+                    </li>
+                    <li class="feature-item">
+                        <div class="feature-icon">
+                            <i data-lucide="users"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Built for Teams</h3>
+                            <p>Collaborate and stay in sync</p>
+                        </div>
+                    </li>
+                    <li class="feature-item">
+                        <div class="feature-icon">
+                            <i data-lucide="shield-check"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Secure & Reliable</h3>
+                            <p>Your data, always protected</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Right Login Panel -->
+        <div class="right-panel">
+            <div class="top-nav">
+                <span>New here?</span>
+                <a href="#" class="btn-outline">Contact us <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i></a>
+            </div>
+
+            <div class="login-card">
+                <p class="welcome-text">WELCOME BACK</p>
+                <h2>Sign in to <span>Tripidio ERP</span></h2>
+                <p class="subtitle">Continue to your account and keep things moving.</p>
+
+                <form action="#" method="POST">
+                    <div class="form-group">
+                        <label for="email">Email or Username</label>
+                        <div class="input-wrapper">
+                            <i data-lucide="mail"></i>
+                            <input type="text" id="email" placeholder="Enter your email or username">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <div class="input-wrapper">
+                            <i data-lucide="lock"></i>
+                            <input type="password" id="password" placeholder="Enter your password">
+                            <i data-lucide="eye" class="eye-icon"></i>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <label class="checkbox-label">
+                            <input type="checkbox" checked>
+                            <span>Keep me signed in</span>
+                        </label>
+                        <a href="#" class="forgot-link">Forgot password?</a>
+                    </div>
+
+                    <button type="submit" class="btn-primary">
+                        Sign in to Dashboard <i data-lucide="arrow-right" style="width: 18px; height: 18px;"></i>
+                    </button>
+
+                    <div class="divider">
+                        <span>OR</span>
+                    </div>
+
+                    <button type="button" class="btn-google">
+                        <!-- SVG Google Icon -->
+                        <svg class="google-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                        </svg>
+                        Sign in with Google
+                    </button>
+                </form>
+
+                <p class="footer-text">Don't have an account? <a href="#">Contact your administrator</a></p>
+            </div>
+
+            <div class="bottom-footer">
+                TRIPIDIO ERP • POWERING BUSINESSES
+            </div>
+        </div>
+    </div>
+
+    <!-- Initialize Lucide Icons -->
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
