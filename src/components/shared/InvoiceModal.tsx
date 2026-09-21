@@ -379,8 +379,6 @@ export default function InvoiceModal({ isOpen, onClose, order, customData }: Inv
         </div>
 
       </div>
-
-      </div>
     </div>
   );
 }
