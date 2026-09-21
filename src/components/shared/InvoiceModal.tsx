@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { Printer, Download, X, FileText, Check } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
@@ -136,13 +135,68 @@ export default function InvoiceModal({ isOpen, onClose, order, customData }: Inv
   const rowsArray = Array.from({ length: totalRows });
 
   const handlePrint = () => {
-    window.print();
+    if (!printRef.current) return;
+
+    // Create an off-screen iframe
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const iframeDoc = iframe.contentWindow?.document;
+    if (!iframeDoc) return;
+
+    // Grab all styles from the current document head
+    const headHtml = document.head.innerHTML;
+    const baseTag = `<base href="${window.location.origin}">`;
+
+    iframeDoc.open();
+    iframeDoc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          ${baseTag}
+          ${headHtml}
+          <style>
+            body { margin: 0; padding: 0; background: white !important; }
+            #printable-invoice {
+              width: 100% !important;
+              max-width: 100% !important;
+              margin: 0 !important;
+              padding: 20px !important;
+              border: none !important;
+              box-shadow: none !important;
+            }
+            @page { size: A4 portrait; margin: 15mm; }
+          </style>
+        </head>
+        <body class="bg-white text-black p-0 m-0">
+          ${printRef.current.outerHTML}
+        </body>
+      </html>
+    `);
+    iframeDoc.close();
+
+    // Give the iframe time to load the CSS, then print
+    setTimeout(() => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+
+      // Clean up after print dialog closes
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 1000);
+    }, 750);
   };
 
-  const modalContent = (
-    <div className="invoice-modal-portal fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm overflow-y-auto print:static print:block print:p-0 print:bg-transparent">
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm overflow-y-auto">
       {/* Modal Container */}
-      <div className="relative my-8 flex max-h-[92vh] w-full max-w-3xl flex-col rounded-3xl bg-white shadow-2xl overflow-hidden border border-gray-200 print:static print:block print:max-h-none print:w-full print:border-none print:shadow-none print:overflow-visible print:m-0">
+      <div className="relative my-8 flex max-h-[92vh] w-full max-w-3xl flex-col rounded-3xl bg-white shadow-2xl overflow-hidden border border-gray-200">
         
         {/* Action Header - Hidden during print */}
         <div className="print:hidden flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4">
@@ -187,7 +241,7 @@ export default function InvoiceModal({ isOpen, onClose, order, customData }: Inv
         </div>
 
         {/* Printable Invoice Document */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-gray-100/50 print:bg-white print:p-0 print:overflow-visible print:block">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-gray-100/50">
           <div
             ref={printRef}
             id="printable-invoice"
@@ -326,68 +380,7 @@ export default function InvoiceModal({ isOpen, onClose, order, customData }: Inv
 
       </div>
 
-      {/* Global Print CSS */}
-      <style jsx global>{`
-        @media print {
-          /* 1. Hide the main app root */
-          #main-app-root {
-            display: none !important;
-          }
-          
-          /* 2. Force body and html to allow natural flow */
-          html, body {
-            height: auto !important;
-            min-height: 100vh !important;
-            overflow: visible !important;
-            background: white !important;
-          }
-
-          /* 3. Strip all layout constraints from the portal wrappers */
-          .invoice-modal-portal,
-          .invoice-modal-portal > div,
-          .invoice-modal-portal > div > div {
-            position: static !important;
-            display: block !important;
-            width: 100% !important;
-            max-width: none !important;
-            height: auto !important;
-            max-height: none !important;
-            min-height: 0 !important;
-            overflow: visible !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            border: none !important;
-            box-shadow: none !important;
-            transform: none !important;
-            background: transparent !important;
-          }
-
-          /* 4. Hide the modal action header */
-          .invoice-modal-portal .print\\:hidden {
-            display: none !important;
-          }
-
-          /* 5. Ensure the printable invoice flows naturally */
-          #printable-invoice {
-            position: static !important;
-            display: block !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            border: none !important;
-            box-shadow: none !important;
-            overflow: visible !important;
-          }
-
-          @page {
-            size: A4 portrait;
-            margin: 15mm;
-          }
-        }
-      `}</style>
+      </div>
     </div>
   );
-
-  return createPortal(modalContent, document.body);
 }
