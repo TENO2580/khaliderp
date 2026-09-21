@@ -134,63 +134,165 @@ export default function InvoiceModal({ isOpen, onClose, order, customData }: Inv
   const totalRows = Math.max(minRows, items.length);
   const rowsArray = Array.from({ length: totalRows });
 
+  const buildPrintHtml = () => {
+    // Build item rows with inline styles
+    const cellStyle = 'padding: 6px; border-right: 1px solid black; border-bottom: 1px solid black;';
+    const cellStyleLast = 'padding: 6px; border-bottom: 1px solid black;';
+    const centerStyle = 'text-align: center;';
+    const boldStyle = 'font-weight: bold;';
+
+    let itemRowsHtml = '';
+    for (let idx = 0; idx < totalRows; idx++) {
+      const item = items[idx];
+      const isLastFiller = idx === totalRows - 1;
+
+      if (item) {
+        itemRowsHtml += `<tr>
+          <td style="${cellStyle} ${centerStyle} font-weight: 500;">${idx + 1}</td>
+          <td style="${cellStyle} text-transform: uppercase; font-weight: 500;">${item.description}</td>
+          <td style="${cellStyle} ${centerStyle}">${formatInvoiceNumber(item.quantity)}</td>
+          <td style="${cellStyle} ${centerStyle}">${formatInvoiceNumber(item.rate)}</td>
+          <td style="${cellStyle} ${centerStyle}">${formatInvoiceNumber(item.amount)}</td>
+          <td style="${cellStyleLast} ${centerStyle}">${item.remarks || ''}</td>
+        </tr>`;
+      } else if (isLastFiller && totalRows <= minRows) {
+        itemRowsHtml += `<tr style="height: 32px;">
+          <td style="${cellStyle} ${centerStyle}">${idx + 1}</td>
+          <td style="${cellStyle}"></td>
+          <td style="${cellStyle}"></td>
+          <td style="${cellStyle} ${boldStyle} ${centerStyle}">Grand Total: -</td>
+          <td style="${cellStyle} ${boldStyle} ${centerStyle}">\u20B9${formatInvoiceNumber(grandTotal)}/-</td>
+          <td style="${cellStyleLast}"></td>
+        </tr>`;
+      } else {
+        itemRowsHtml += `<tr style="height: 32px;">
+          <td style="${cellStyle} ${centerStyle}">${idx + 1}</td>
+          <td style="${cellStyle}"></td>
+          <td style="${cellStyle}"></td>
+          <td style="${cellStyle}"></td>
+          <td style="${cellStyle}"></td>
+          <td style="${cellStyleLast}"></td>
+        </tr>`;
+      }
+    }
+
+    // Grand total row for > 5 items
+    let grandTotalRowHtml = '';
+    if (totalRows > minRows) {
+      grandTotalRowHtml = `<tr style="${boldStyle}">
+        <td colspan="3" style="${cellStyle}"></td>
+        <td style="${cellStyle} ${boldStyle} ${centerStyle}">Grand Total: -</td>
+        <td style="${cellStyle} ${boldStyle} ${centerStyle}">\u20B9${formatInvoiceNumber(grandTotal)}/-</td>
+        <td style="${cellStyleLast}"></td>
+      </tr>`;
+    }
+
+    return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Invoice - ${invoiceNo}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; color: black; background: white; padding: 20px; font-size: 13px; line-height: 1.4; }
+    table { border-collapse: collapse; width: 100%; }
+    @page { size: A4 portrait; margin: 15mm; }
+  </style>
+</head>
+<body>
+  <div style="max-width: 720px; margin: 0 auto;">
+    <!-- Company Header -->
+    <div style="text-align: center; margin-bottom: 24px;">
+      <h1 style="font-family: Georgia, serif; font-size: 28px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin: 0;">${companyName}</h1>
+      <p style="font-size: 14px; font-weight: bold; margin-top: 4px;">${companySubtitle}</p>
+      <p style="font-size: 12px; margin-top: 2px;">${companyAddress} &nbsp; ${companyPhone}</p>
+    </div>
+
+    <!-- Document Title -->
+    <div style="text-align: center; margin: 16px 0;">
+      <h2 style="font-family: Georgia, serif; font-size: 16px; font-weight: 900; letter-spacing: 3px; text-transform: uppercase; display: inline-block;">${invoiceType}</h2>
+    </div>
+
+    <!-- Metadata Table -->
+    <table style="border: 1px solid black; margin-bottom: 0;">
+      <tr style="border-bottom: 1px solid black;">
+        <td style="width: 25%; padding: 6px; font-weight: bold; border-right: 1px solid black;">Invoice No.</td>
+        <td style="width: 25%; padding: 6px; border-right: 1px solid black;">${invoiceNo}</td>
+        <td style="width: 25%; padding: 6px; font-weight: bold; border-right: 1px solid black;">Date</td>
+        <td style="width: 25%; padding: 6px;">${invoiceDate}</td>
+      </tr>
+      <tr style="border-bottom: 1px solid black;">
+        <td style="padding: 6px; font-weight: bold; border-right: 1px solid black;">Customer</td>
+        <td style="padding: 6px; font-weight: 600; text-transform: uppercase; border-right: 1px solid black;">${customerName}</td>
+        <td style="padding: 6px; font-weight: bold; border-right: 1px solid black;">Mobile</td>
+        <td style="padding: 6px;">${mobile}</td>
+      </tr>
+      <tr>
+        <td style="padding: 6px; font-weight: bold; border-right: 1px solid black;">Location</td>
+        <td style="padding: 6px; border-right: 1px solid black;">${location}</td>
+        <td style="padding: 6px; font-weight: bold; border-right: 1px solid black;">Address</td>
+        <td style="padding: 6px;">${address}</td>
+      </tr>
+    </table>
+
+    <!-- Line Items Table -->
+    <table style="border-left: 1px solid black; border-right: 1px solid black;">
+      <thead>
+        <tr style="border-bottom: 1px solid black; font-weight: bold; text-align: center;">
+          <th style="padding: 6px; border-right: 1px solid black; width: 40px;">Sl</th>
+          <th style="padding: 6px; border-right: 1px solid black; text-align: left;">Description</th>
+          <th style="padding: 6px; border-right: 1px solid black; width: 60px;">Qty</th>
+          <th style="padding: 6px; border-right: 1px solid black; width: 90px;">Rate (\u20B9)</th>
+          <th style="padding: 6px; border-right: 1px solid black; width: 100px;">Amount (\u20B9)</th>
+          <th style="padding: 6px; width: 90px;">Remarks</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itemRowsHtml}
+        ${grandTotalRowHtml}
+      </tbody>
+    </table>
+
+    <!-- Signatures -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 64px; padding-top: 32px; font-family: Georgia, serif; font-size: 13px;">
+      <div style="text-align: center; font-weight: bold;">Customer Signature</div>
+      <div style="text-align: center; font-weight: bold;">
+        <div>For ${companyName}</div>
+        <div style="margin-top: 32px; font-weight: normal;">Authorized Signature</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+  };
+
   const handlePrint = () => {
-    if (!printRef.current) return;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Please allow popups for this site to print invoices.');
+      return;
+    }
+    printWindow.document.write(buildPrintHtml());
+    printWindow.document.close();
 
-    // Create an off-screen iframe
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = '0';
-    document.body.appendChild(iframe);
-
-    const iframeDoc = iframe.contentWindow?.document;
-    if (!iframeDoc) return;
-
-    // Grab all styles from the current document head
-    const headHtml = document.head.innerHTML;
-    const baseTag = `<base href="${window.location.origin}">`;
-
-    iframeDoc.open();
-    iframeDoc.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          ${baseTag}
-          ${headHtml}
-          <style>
-            body { margin: 0; padding: 0; background: white !important; }
-            #printable-invoice {
-              width: 100% !important;
-              max-width: 100% !important;
-              margin: 0 !important;
-              padding: 20px !important;
-              border: none !important;
-              box-shadow: none !important;
-            }
-            @page { size: A4 portrait; margin: 15mm; }
-          </style>
-        </head>
-        <body class="bg-white text-black p-0 m-0">
-          ${printRef.current.outerHTML}
-        </body>
-      </html>
-    `);
-    iframeDoc.close();
-
-    // Give the iframe time to load the CSS, then print
+    // Wait for content to render, then trigger print
+    printWindow.onload = () => {
+      printWindow.focus();
+      printWindow.print();
+      // Close the window after printing (or cancelling)
+      printWindow.onafterprint = () => {
+        printWindow.close();
+      };
+    };
+    // Fallback: if onload already fired (some browsers)
     setTimeout(() => {
-      iframe.contentWindow?.focus();
-      iframe.contentWindow?.print();
-
-      // Clean up after print dialog closes
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-      }, 1000);
-    }, 750);
+      try {
+        printWindow.focus();
+        printWindow.print();
+      } catch (e) {
+        // already printed or closed
+      }
+    }, 500);
   };
 
   return (
