@@ -63,6 +63,9 @@ export class ImportExecutionService {
     // 3. Pre-fetch default product or products
     const defaultProduct = await prisma.product.findFirst();
     const allProducts = await prisma.product.findMany();
+    
+    // Initial order count for unique order numbers
+    let currentOrderCount = await prisma.salesOrder.count();
 
     // 4. Pre-fetch / prepare customers
     const customerNameMap = new Map<string, string>(); // name.toLowerCase() -> customerId
@@ -218,12 +221,21 @@ export class ImportExecutionService {
                 continue;
               } else if (mode === 'UPDATE_EXISTING' || mode === 'ADD_AND_UPDATE') {
                 // Find existing order
-                const existingOrder = await tx.salesOrder.findFirst({
-                  where: {
-                    customerId,
-                    orderDate: orderDateObj,
-                  },
-                });
+                let existingOrder = null;
+                if (row.existingOrderId) {
+                  existingOrder = await tx.salesOrder.findUnique({
+                    where: { id: row.existingOrderId },
+                  });
+                }
+
+                if (!existingOrder) {
+                  existingOrder = await tx.salesOrder.findFirst({
+                    where: {
+                      customerId,
+                      orderDate: orderDateObj,
+                    },
+                  });
+                }
 
                 if (existingOrder) {
                   await tx.salesOrder.update({
@@ -282,8 +294,8 @@ export class ImportExecutionService {
             }
 
             // CREATE NEW SALES ORDER
-            const count = await tx.salesOrder.count();
-            const orderNumber = `SO-2026-${String(count + 1).padStart(4, '0')}`;
+            currentOrderCount++;
+            const orderNumber = `SO-2026-${String(currentOrderCount).padStart(4, '0')}`;
 
             const createdOrder = await tx.salesOrder.create({
               data: {

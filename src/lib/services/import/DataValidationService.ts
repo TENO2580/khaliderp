@@ -21,6 +21,7 @@ export interface ValidatedRow {
   isValid: boolean;
   isDuplicate?: boolean;
   duplicateDetails?: string;
+  existingOrderId?: string;
   errors: { field: string; message: string; suggestedFix?: string }[];
   warnings: { field: string; message: string }[];
 }

@@ -101,6 +101,7 @@ export class DuplicateDetectionService {
           ...row,
           isDuplicate: true,
           duplicateDetails: matchInfo.matchReason,
+          existingOrderId: matchInfo.existingOrderId,
           warnings: [
             ...row.warnings,
             {
