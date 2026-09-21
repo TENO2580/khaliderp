@@ -15,9 +15,8 @@ export async function GET(req: NextRequest) {
 
   const batches = await prisma.batch.findMany({
     orderBy: [
-      { batchNumber: 'asc' },
-      { purchaseDate: 'asc' },
       { createdAt: 'asc' },
+      { batchNumber: 'asc' },
     ],
     take: limit,
     include: { 

@@ -41,9 +41,8 @@ export async function GET(req: NextRequest) {
     prisma.batch.findMany({
       where,
       orderBy: [
-        { batchNumber: 'asc' },
-        { purchaseDate: 'asc' },
         { createdAt: 'asc' },
+        { batchNumber: 'asc' },
       ],
       skip,
       take: limit,
