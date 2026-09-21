@@ -329,8 +329,8 @@ export default function InvoiceModal({ isOpen, onClose, order, customData }: Inv
       {/* Global Print CSS */}
       <style jsx global>{`
         @media print {
-          /* 1. Hide everything else in the body */
-          body > *:not(.invoice-modal-portal) {
+          /* 1. Hide the main app root */
+          #main-app-root {
             display: none !important;
           }
           
