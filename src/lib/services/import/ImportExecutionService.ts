@@ -63,9 +63,17 @@ export class ImportExecutionService {
     // 3. Pre-fetch default product or products
     const defaultProduct = await prisma.product.findFirst();
     const allProducts = await prisma.product.findMany();
-    
+
     // Initial order count for unique order numbers
-    let currentOrderCount = await prisma.salesOrder.count();
+    const lastOrder = await prisma.salesOrder.findFirst({
+      orderBy: { orderNumber: 'desc' },
+      select: { orderNumber: true },
+    });
+    let currentOrderSequence = 0;
+    if (lastOrder && lastOrder.orderNumber) {
+      const match = lastOrder.orderNumber.match(/\d+$/);
+      if (match) currentOrderSequence = parseInt(match[0], 10);
+    }
 
     // 4. Pre-fetch / prepare customers
     const customerNameMap = new Map<string, string>(); // name.toLowerCase() -> customerId
@@ -294,8 +302,8 @@ export class ImportExecutionService {
             }
 
             // CREATE NEW SALES ORDER
-            currentOrderCount++;
-            const orderNumber = `SO-2026-${String(currentOrderCount).padStart(4, '0')}`;
+            currentOrderSequence++;
+            const orderNumber = `SO-2026-${String(currentOrderSequence).padStart(4, '0')}`;
 
             const createdOrder = await tx.salesOrder.create({
               data: {
