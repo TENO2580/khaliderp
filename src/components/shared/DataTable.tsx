@@ -157,6 +157,7 @@ export default function DataTable<T extends { id?: string }>({
   const tablePrefKey = `tripidio_table_prefs_${pathname.replace(/\//g, '_')}`;
 
   const defaultPrefs: TablePreferences = useMemo(() => ({
+    columns: columns.map((c, i) => {
       const h = c.header.toUpperCase();
       const isActions = h === 'ACTIONS' || h === 'ACTION';
       const isBatch = h === 'BATCH #' || h === 'BATCH' || h === 'BATCH NO';
