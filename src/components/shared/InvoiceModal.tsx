@@ -329,21 +329,57 @@ export default function InvoiceModal({ isOpen, onClose, order, customData }: Inv
       {/* Global Print CSS */}
       <style jsx global>{`
         @media print {
+          /* 1. Hide everything else in the body */
           body > *:not(.invoice-modal-portal) {
             display: none !important;
           }
-          .invoice-modal-portal {
+          
+          /* 2. Force body and html to allow natural flow */
+          html, body {
+            height: auto !important;
+            min-height: 100vh !important;
+            overflow: visible !important;
+            background: white !important;
+          }
+
+          /* 3. Strip all layout constraints from the portal wrappers */
+          .invoice-modal-portal,
+          .invoice-modal-portal > div,
+          .invoice-modal-portal > div > div {
             position: static !important;
             display: block !important;
+            width: 100% !important;
+            max-width: none !important;
+            height: auto !important;
+            max-height: none !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            transform: none !important;
+            background: transparent !important;
           }
+
+          /* 4. Hide the modal action header */
+          .invoice-modal-portal .print\\:hidden {
+            display: none !important;
+          }
+
+          /* 5. Ensure the printable invoice flows naturally */
           #printable-invoice {
+            position: static !important;
+            display: block !important;
             width: 100% !important;
             max-width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
             border: none !important;
             box-shadow: none !important;
+            overflow: visible !important;
           }
+
           @page {
             size: A4 portrait;
             margin: 15mm;
