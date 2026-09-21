@@ -14,6 +14,8 @@ export interface ValidatedRow {
     marginAmount: number;
     totalSellingCost: number;
     status: string;
+    qtyUnits?: number;
+    credit?: number;
     unmappedFields?: Record<string, any>;
   };
   isValid: boolean;
@@ -267,6 +269,16 @@ export class DataValidationService {
         });
       }
 
+      // 6.5 Qty (Units)
+      const qtyUnitsHeader = mappings.qtyUnits;
+      const rawQtyUnits = qtyUnitsHeader ? rawRow[qtyUnitsHeader] : '';
+      const qtyUnits = this.parseNumber(rawQtyUnits, 0);
+
+      // 6.6 Credit
+      const creditHeader = mappings.credit;
+      const rawCredit = creditHeader ? rawRow[creditHeader] : '';
+      const credit = this.parseNumber(rawCredit, 0);
+
       // 7. Costs & Calculations
       const prodCostHeader = mappings.productionCost;
       const rawProdCost = prodCostHeader ? rawRow[prodCostHeader] : '';
@@ -349,6 +361,8 @@ export class DataValidationService {
           marginAmount,
           totalSellingCost: totalSellingCost || sellingCost,
           status,
+          qtyUnits: qtyUnits || undefined,
+          credit: credit || undefined,
           unmappedFields: Object.keys(unmappedFields).length > 0 ? unmappedFields : undefined,
         },
         isValid,

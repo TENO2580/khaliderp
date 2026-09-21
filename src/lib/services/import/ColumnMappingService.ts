@@ -121,6 +121,24 @@ export const ORDER_SYSTEM_FIELDS: SystemFieldDefinition[] = [
     dataType: 'status',
     synonyms: ['status', 'order status', 'delivery status', 'current status', 'state', 'order_status'],
   },
+  {
+    key: 'qtyUnits',
+    label: 'Qty (Units)',
+    category: 'order',
+    description: 'Order quantity in Units',
+    required: false,
+    dataType: 'number',
+    synonyms: ['qty (units)', 'qty units', 'quantity (units)', 'quantity units', 'units', 'pieces', 'pcs'],
+  },
+  {
+    key: 'credit',
+    label: 'Credit',
+    category: 'cost',
+    description: 'Outstanding credit amount',
+    required: false,
+    dataType: 'number',
+    synonyms: ['credit', 'credit amount', 'outstanding', 'outstanding amount', 'due amount', 'balance', 'balance amount'],
+  },
 ];
 
 export interface ColumnMappingResult {
