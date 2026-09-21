@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Printer, Download, X, FileText, Check } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
@@ -38,8 +39,13 @@ interface InvoiceModalProps {
 export default function InvoiceModal({ isOpen, onClose, order, customData }: InvoiceModalProps) {
   const [invoiceType, setInvoiceType] = useState(customData?.invoiceType || 'PROFORMA INVOICE');
   const printRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !mounted) return null;
 
   // Extract / Normalize Order Data
   const parseNotes = (notes: any) => {
@@ -133,10 +139,10 @@ export default function InvoiceModal({ isOpen, onClose, order, customData }: Inv
     window.print();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm overflow-y-auto">
+  const modalContent = (
+    <div className="invoice-modal-portal fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm overflow-y-auto print:static print:block print:p-0 print:bg-transparent">
       {/* Modal Container */}
-      <div className="relative my-8 flex max-h-[92vh] w-full max-w-3xl flex-col rounded-3xl bg-white shadow-2xl overflow-hidden border border-gray-200">
+      <div className="relative my-8 flex max-h-[92vh] w-full max-w-3xl flex-col rounded-3xl bg-white shadow-2xl overflow-hidden border border-gray-200 print:static print:block print:max-h-none print:w-full print:border-none print:shadow-none print:overflow-visible print:m-0">
         
         {/* Action Header - Hidden during print */}
         <div className="print:hidden flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-4">
@@ -181,7 +187,7 @@ export default function InvoiceModal({ isOpen, onClose, order, customData }: Inv
         </div>
 
         {/* Printable Invoice Document */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-gray-100/50 print:bg-white print:p-0 print:overflow-visible">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-gray-100/50 print:bg-white print:p-0 print:overflow-visible print:block">
           <div
             ref={printRef}
             id="printable-invoice"
@@ -323,20 +329,18 @@ export default function InvoiceModal({ isOpen, onClose, order, customData }: Inv
       {/* Global Print CSS */}
       <style jsx global>{`
         @media print {
-          body * {
-            visibility: hidden;
+          body > *:not(.invoice-modal-portal) {
+            display: none !important;
           }
-          #printable-invoice, #printable-invoice * {
-            visibility: visible;
+          .invoice-modal-portal {
+            position: static !important;
+            display: block !important;
           }
           #printable-invoice {
-            position: absolute;
-            left: 0;
-            top: 0;
             width: 100% !important;
             max-width: 100% !important;
             margin: 0 !important;
-            padding: 20px !important;
+            padding: 0 !important;
             border: none !important;
             box-shadow: none !important;
           }
@@ -348,4 +352,6 @@ export default function InvoiceModal({ isOpen, onClose, order, customData }: Inv
       `}</style>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
