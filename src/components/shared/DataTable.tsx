@@ -20,6 +20,7 @@ import {
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useDeviceDetect } from '@/hooks/useDeviceDetect';
 
 export interface ColumnPreference {
   header: string;
@@ -110,6 +111,7 @@ export default function DataTable<T extends { id?: string }>({
   const pendingEditsRef = useRef<Record<string, Record<string, string>>>({});
   const [pendingCount, setPendingCount] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { isMobile } = useDeviceDetect();
 
   const [selectedRowIds, setSelectedRowIds] = useState<Set<string>>(new Set());
 
@@ -155,17 +157,20 @@ export default function DataTable<T extends { id?: string }>({
   const tablePrefKey = `tripidio_table_prefs_${pathname.replace(/\//g, '_')}`;
 
   const defaultPrefs: TablePreferences = useMemo(() => ({
-    columns: columns.map((c, i) => {
       const h = c.header.toUpperCase();
       const isActions = h === 'ACTIONS' || h === 'ACTION';
       const isBatch = h === 'BATCH #' || h === 'BATCH' || h === 'BATCH NO';
       const isName = h === 'NAME' || h === 'CUSTOMER' || h === 'CUSTOMER NAME';
-      const isPinnedLeft = c.pinned === 'left' || isActions || isBatch || isName;
+      
+      // Pin Name/Batch to the left. Pin Actions to the right (desktop only for right pin to avoid mobile overlap).
+      const isPinnedLeft = c.pinned === 'left' || isBatch || isName;
+      const isPinnedRight = c.pinned === 'right' || isActions;
+
       return {
         header: c.header,
         visible: true,
-        order: isActions ? -3 : isBatch ? -2 : isName ? -1 : i,
-        pinned: (isPinnedLeft ? 'left' : c.pinned === 'right' ? 'right' : null) as 'left' | 'right' | null
+        order: isActions ? 999 : isBatch ? -2 : isName ? -1 : i, // Actions at the end
+        pinned: (isPinnedLeft ? 'left' : isPinnedRight ? 'right' : null) as 'left' | 'right' | null
       };
     })
   }), [columns]);
@@ -207,19 +212,21 @@ export default function DataTable<T extends { id?: string }>({
           const isActions = h === 'ACTIONS' || h === 'ACTION';
           const isBatch = h === 'BATCH #' || h === 'BATCH' || h === 'BATCH NO';
           const isName = h === 'NAME' || h === 'CUSTOMER' || h === 'CUSTOMER NAME';
-          const shouldPinLeft = c.pinned === 'left' || isActions || isBatch || isName;
+          
+          const shouldPinLeft = c.pinned === 'left' || isBatch || isName;
+          const shouldPinRight = c.pinned === 'right' || isActions;
 
           if (savedCol) {
             return {
               ...savedCol,
-              pinned: savedCol.pinned !== undefined ? savedCol.pinned : (shouldPinLeft ? 'left' : null),
+              pinned: savedCol.pinned !== undefined ? savedCol.pinned : (shouldPinLeft ? 'left' : shouldPinRight ? 'right' : null),
             };
           }
           return {
             header: c.header,
             visible: true,
-            order: isActions ? -3 : isBatch ? -2 : isName ? -1 : 999 + i,
-            pinned: (shouldPinLeft ? 'left' : c.pinned === 'right' ? 'right' : null) as 'left' | 'right' | null,
+            order: isActions ? 999 : isBatch ? -2 : isName ? -1 : 999 + i,
+            pinned: (shouldPinLeft ? 'left' : shouldPinRight ? 'right' : null) as 'left' | 'right' | null,
           };
         });
         setPrefs({ columns: mergedColumns });
@@ -272,7 +279,10 @@ export default function DataTable<T extends { id?: string }>({
 
     for (let i = 0; i < reorderedColumns.length; i++) {
       const col = reorderedColumns[i];
-      if (col._pref.pinned === 'left') {
+      // On mobile, only pin the first pinned column (usually Name) to prevent overlaps
+      const allowLeftPin = !isMobile || leftOffsets.size === 0;
+      
+      if (col._pref.pinned === 'left' && allowLeftPin) {
         leftOffsets.set(col.header, currentLeft);
         const w = getColWidth(col.header, col._pref.width);
         currentLeft += w;
@@ -285,7 +295,10 @@ export default function DataTable<T extends { id?: string }>({
     let firstRight = '';
     for (let i = reorderedColumns.length - 1; i >= 0; i--) {
       const col = reorderedColumns[i];
-      if (col._pref.pinned === 'right') {
+      // Disable right pinned columns entirely on mobile to prevent overlap with left pinned columns
+      const allowRightPin = !isMobile;
+      
+      if (col._pref.pinned === 'right' && allowRightPin) {
         rightOffsets.set(col.header, currentRight);
         const w = getColWidth(col.header, col._pref.width);
         currentRight += w;
@@ -474,10 +487,10 @@ export default function DataTable<T extends { id?: string }>({
   const padClass = getDensityPadding();
 
   return (
-    <div className="flex flex-col max-h-[calc(100vh-8rem)] rounded-2xl border border-gray-200/80 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 overflow-hidden relative">
+    <div className="flex flex-col w-full max-w-full max-h-[calc(100vh-8rem)] rounded-2xl border border-gray-200/80 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 overflow-hidden relative">
       {!hideToolbar && (
-        <div className="flex-none flex flex-col gap-4 border-b border-gray-200/80 p-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative flex-1 max-w-md flex gap-2">
+        <div className="flex-none flex flex-col gap-4 border-b border-gray-200/80 p-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between w-full max-w-full overflow-hidden">
+          <div className="relative flex-1 w-full flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
@@ -621,7 +634,7 @@ export default function DataTable<T extends { id?: string }>({
       </div>
       )}
 
-      <div className="flex-1 overflow-x-auto w-full relative">
+      <div className="flex-1 overflow-x-auto w-full max-w-full relative min-w-0">
         <table className={cn("min-w-max text-left text-sm text-gray-600 dark:text-gray-400", globalLayout === 'auto' ? 'w-auto' : 'w-full')}>
           <thead className="sticky top-0 z-30 bg-gray-50 text-xs uppercase font-semibold tracking-wider text-gray-500 dark:bg-gray-950 dark:text-gray-400 shadow-sm border-b border-gray-200 dark:border-gray-800">
             <tr>
@@ -636,10 +649,10 @@ export default function DataTable<T extends { id?: string }>({
                 </th>
               )}
               {reorderedColumns.map((col, idx) => {
-                const isLeftPinned = col._pref.pinned === 'left';
-                const isRightPinned = col._pref.pinned === 'right';
-                const leftPos = isLeftPinned ? (leftOffsets.get(col.header) ?? 0) : undefined;
-                const rightPos = isRightPinned ? (rightOffsets.get(col.header) ?? 0) : undefined;
+                const isLeftPinned = leftOffsets.has(col.header);
+                const isRightPinned = rightOffsets.has(col.header);
+                const leftPos = isLeftPinned ? leftOffsets.get(col.header) : undefined;
+                const rightPos = isRightPinned ? rightOffsets.get(col.header) : undefined;
                 const colWidth = col._pref.width || getColWidth(col.header, col._pref.width);
                 const isLastLeft = isLeftPinned && col.header === lastLeftPinnedHeader;
 
@@ -677,10 +690,10 @@ export default function DataTable<T extends { id?: string }>({
               Array.from({ length: Math.min(5, actualLimit) }).map((_, rIdx) => (
                 <tr key={rIdx} className="animate-pulse">
                   {reorderedColumns.map((col, cIdx) => {
-                    const isLeftPinned = col._pref.pinned === 'left';
-                    const isRightPinned = col._pref.pinned === 'right';
-                    const leftPos = isLeftPinned ? (leftOffsets.get(col.header) ?? 0) : undefined;
-                    const rightPos = isRightPinned ? (rightOffsets.get(col.header) ?? 0) : undefined;
+                    const isLeftPinned = leftOffsets.has(col.header);
+                    const isRightPinned = rightOffsets.has(col.header);
+                    const leftPos = isLeftPinned ? leftOffsets.get(col.header) : undefined;
+                    const rightPos = isRightPinned ? rightOffsets.get(col.header) : undefined;
                     const colWidth = col._pref.width || getColWidth(col.header, col._pref.width);
                     return (
                       <td
@@ -726,10 +739,10 @@ export default function DataTable<T extends { id?: string }>({
                     </td>
                   )}
                   {reorderedColumns.map((col, cIdx) => {
-                    const isLeftPinned = col._pref.pinned === 'left';
-                    const isRightPinned = col._pref.pinned === 'right';
-                    const leftPos = isLeftPinned ? (leftOffsets.get(col.header) ?? 0) : undefined;
-                    const rightPos = isRightPinned ? (rightOffsets.get(col.header) ?? 0) : undefined;
+                    const isLeftPinned = leftOffsets.has(col.header);
+                    const isRightPinned = rightOffsets.has(col.header);
+                    const leftPos = isLeftPinned ? leftOffsets.get(col.header) : undefined;
+                    const rightPos = isRightPinned ? rightOffsets.get(col.header) : undefined;
                     const colWidth = col._pref.width || getColWidth(col.header, col._pref.width);
                     const isLastLeft = isLeftPinned && col.header === lastLeftPinnedHeader;
 
