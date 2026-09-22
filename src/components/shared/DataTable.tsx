@@ -636,7 +636,7 @@ export default function DataTable<T extends { id?: string }>({
       )}
 
       <div className="flex-1 overflow-x-auto w-full max-w-full relative min-w-0">
-        <table className={cn("min-w-max text-left text-sm text-gray-600 dark:text-gray-400", globalLayout === 'auto' ? 'w-auto' : 'w-full')}>
+        <table className={cn("min-w-max table-fixed text-left text-sm text-gray-600 dark:text-gray-400", globalLayout === 'auto' ? 'w-auto' : 'w-full')}>
           <thead className="sticky top-0 z-30 bg-gray-50 text-xs uppercase font-semibold tracking-wider text-gray-500 dark:bg-gray-950 dark:text-gray-400 shadow-sm border-b border-gray-200 dark:border-gray-800">
             <tr>
               {selectable && (

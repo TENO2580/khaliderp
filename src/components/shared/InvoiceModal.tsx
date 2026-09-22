@@ -267,32 +267,33 @@ export default function InvoiceModal({ isOpen, onClose, order, customData }: Inv
   };
 
   const handlePrint = () => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      alert('Please allow popups for this site to print invoices.');
-      return;
-    }
-    printWindow.document.write(buildPrintHtml());
-    printWindow.document.close();
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
 
-    // Wait for content to render, then trigger print
-    printWindow.onload = () => {
-      printWindow.focus();
-      printWindow.print();
-      // Close the window after printing (or cancelling)
-      printWindow.onafterprint = () => {
-        printWindow.close();
-      };
-    };
-    // Fallback: if onload already fired (some browsers)
-    setTimeout(() => {
-      try {
-        printWindow.focus();
-        printWindow.print();
-      } catch (e) {
-        // already printed or closed
-      }
-    }, 500);
+    const doc = iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(buildPrintHtml());
+      doc.close();
+
+      iframe.contentWindow?.focus();
+      // Add a slight delay to ensure rendering is complete before printing
+      setTimeout(() => {
+        iframe.contentWindow?.print();
+        // Remove iframe after printing
+        setTimeout(() => {
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
+          }
+        }, 1000);
+      }, 250);
+    }
   };
 
   return (
