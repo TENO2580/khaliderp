@@ -123,7 +123,7 @@ export async function GET(req: NextRequest) {
           prisma.inventory.findMany({ take: 100, select: { currentStock: true, unitCost: true, value: true, reorderLevel: true, product: { select: { name: true, unit: true } } } }),
           prisma.rawMaterial.findMany({ take: 100, select: { name: true, currentStock: true, unit: true, unitCost: true, reorderLevel: true } }),
         ]);
-        const batchStats = await prisma.$queryRaw`
+        const batchStats = await prisma.$queryRaw<any[]>`
           SELECT COALESCE(SUM(("waxStock" * "waxRate")), 0) as rawValue,
                  COALESCE(SUM(COALESCE("remainingQty" * (("waxInitialQty" - "waxStock") * "waxRate") / NULLIF("producedQty", 0), 0)), 0) as finishedValue
           FROM "batches"
