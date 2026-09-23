@@ -1,9 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import DataTable, { Column } from '@/components/shared/DataTable';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { Download, AlertCircle, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Download, AlertCircle, ArrowUpRight, ArrowDownRight, CheckCircle2, Loader2 } from 'lucide-react';
 import useSWR from 'swr';
 import api from '@/lib/api';
 import { useViewMode } from '@/hooks/useViewMode';
@@ -12,9 +12,23 @@ const fetcher = (url: string) => api.get(url).then(res => res.data.data);
 
 export default function OverdueModule({ isMobile }: { isMobile?: boolean }) {
   const { viewMode } = useViewMode();
+  const [settlingId, setSettlingId] = useState<string | null>(null);
   
-  const { data: overdueData, isLoading } = useSWR('/accounts/overdue', fetcher);
+  const { data: overdueData, isLoading, mutate } = useSWR('/accounts/overdue', fetcher);
   const items = overdueData || [];
+
+  const handleSettle = async (id: string, type: string) => {
+    try {
+      setSettlingId(id);
+      await api.post('/accounts/overdue/settle', { id, type });
+      await mutate();
+    } catch (error) {
+      console.error('Failed to settle account', error);
+      alert('Failed to settle account. Please try again.');
+    } finally {
+      setSettlingId(null);
+    }
+  };
 
   const handleExport = () => {
     if (!items.length) return;
@@ -133,6 +147,25 @@ export default function OverdueModule({ isMobile }: { isMobile?: boolean }) {
         return <span className="inline-flex items-center rounded-md bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20 dark:bg-yellow-900/50 dark:text-yellow-200 dark:ring-yellow-500/20">{text}</span>;
       },
     },
+    {
+      header: 'Actions',
+      accessorKey: 'actions',
+      cell: (row: any) => (
+        <button
+          onClick={() => handleSettle(row.id, row.type)}
+          disabled={settlingId === row.id}
+          className="flex items-center justify-center gap-1.5 rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 dark:hover:bg-indigo-900/50 transition-colors"
+          title={row.type === 'RECEIVABLE' ? 'Mark as Received' : 'Mark as Paid'}
+        >
+          {settlingId === row.id ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <CheckCircle2 className="h-3.5 w-3.5" />
+          )}
+          <span>{row.type === 'RECEIVABLE' ? 'Receive' : 'Pay'}</span>
+        </button>
+      ),
+    }
   ];
 
   return (
