@@ -85,8 +85,8 @@ export default function EmployeeAttendancePage() {
   const daysPresent = rows.filter(r => r.isPresent).length;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 pb-24 sm:pb-0">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link
             href="/dashboard/employees"
@@ -95,16 +95,16 @@ export default function EmployeeAttendancePage() {
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-[#1e3a8a] dark:text-blue-400">Employee Production & Attendance</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-[#1e3a8a] dark:text-blue-400">Production & Attendance</h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex flex-wrap gap-2">
             <select
               value={selectedEmployeeId}
               onChange={(e) => setSelectedEmployeeId(e.target.value)}
-              className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
+              className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
             >
               {employees.map(emp => (
                 <option key={emp.id} value={emp.id}>{emp.name}</option>
@@ -113,7 +113,7 @@ export default function EmployeeAttendancePage() {
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth((e.target.value === '' ? '' : Number(e.target.value)) as any)}
-              className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
+              className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
             >
               {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
                 <option key={m} value={m}>
@@ -124,28 +124,48 @@ export default function EmployeeAttendancePage() {
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear((e.target.value === '' ? '' : Number(e.target.value)) as any)}
-              className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
+              className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
             >
               {[2024, 2025, 2026, 2027].map((y) => (
                 <option key={y} value={y}>{y}</option>
               ))}
             </select>
           </div>
-          <button 
-            onClick={() => setIsEditUnlocked(!isEditUnlocked)}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition-colors ${isEditUnlocked ? 'bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'}`}
-          >
-            {isEditUnlocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
-            {isEditUnlocked ? 'Lock Rates' : 'Unlock Edit'}
-          </button>
-          <button 
-            onClick={handleSave}
-            disabled={isLoading}
-            className="flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 transition-colors disabled:opacity-50"
-          >
-            <Save className="h-4 w-4" /> Save Records
-          </button>
+          <div className="hidden sm:flex items-center gap-2">
+            <button 
+              onClick={() => setIsEditUnlocked(!isEditUnlocked)}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition-colors ${isEditUnlocked ? 'bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'}`}
+            >
+              {isEditUnlocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+              {isEditUnlocked ? 'Lock Rates' : 'Unlock Edit'}
+            </button>
+            <button 
+              onClick={handleSave}
+              disabled={isLoading}
+              className="flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 transition-colors disabled:opacity-50"
+            >
+              <Save className="h-4 w-4" /> Save Records
+            </button>
+          </div>
         </div>
+      </div>
+
+      {/* Floating Action Bar for Mobile */}
+      <div className="sm:hidden fixed bottom-16 left-0 right-0 p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 flex gap-2">
+        <button 
+          onClick={() => setIsEditUnlocked(!isEditUnlocked)}
+          className={`flex-1 flex justify-center items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold shadow-sm transition-colors ${isEditUnlocked ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}`}
+        >
+          {isEditUnlocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+          {isEditUnlocked ? 'Lock' : 'Unlock'}
+        </button>
+        <button 
+          onClick={handleSave}
+          disabled={isLoading}
+          className="flex-1 flex justify-center items-center gap-2 rounded-xl bg-[#1e3a8a] px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 transition-colors disabled:opacity-50"
+        >
+          <Save className="h-4 w-4" /> Save
+        </button>
       </div>
 
       <div className="flex justify-center -mt-2 mb-4">
