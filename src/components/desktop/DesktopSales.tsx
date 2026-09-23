@@ -92,7 +92,7 @@ export default function DesktopSales() {
     try {
       toast.loading('Preparing export...', { id: 'export' });
       const res = await api.get(`/sales?page=1&limit=5000&search=${encodeURIComponent(search)}&startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`);
-      const allOrders = res.data.data;
+      const allOrders = res.data?.data?.data || [];
       
       const headers = ['Order ID', 'Order Date', 'Delivery Date', 'Customer', 'Batch', 'Product', 'Quantity (Units)', 'Total Weight (KG)', 'Sales Value', 'Production Cost', 'Profit', 'Margin', 'Status'];
       const rows = allOrders.map((o: any) => {
