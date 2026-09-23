@@ -267,14 +267,7 @@ export async function POST(req: NextRequest) {
     }
 
     const waxCost = waxNum * (primaryBatch?.waxRate || 85);
-    const fragranceCost = Number(fragranceUsed) * 400;
-    const colorCost = Number(colorUsed) * 250;
-    const containerCost = Number(containerUsed) * 25;
-    const wickCost = Number(wickUsed) * 2;
-
-    const totalRawMaterialCost = waxCost + fragranceCost + colorCost + containerCost + wickCost;
-    const totalOverheadCost = Number(labourCost) + Number(gasCost) + Number(electricityCost) + Number(otherCosts);
-    const totalCost = totalRawMaterialCost + totalOverheadCost;
+    const totalCost = waxCost;
 
     const costPerKg = waxNum > 0 ? totalCost / waxNum : 0;
     const totalRevenue = outputQty * Number(sellingPrice);
@@ -289,14 +282,14 @@ export async function POST(req: NextRequest) {
         operatorId: user.id,
         shift: shift === 'NIGHT' ? 'NIGHT' : 'DAY',
         waxUsed: waxNum,
-        fragranceUsed: Number(fragranceUsed),
-        colorUsed: Number(colorUsed),
-        containerUsed: Number(containerUsed),
-        wickUsed: Number(wickUsed),
-        labourCost: Number(labourCost),
-        gasCost: Number(gasCost),
-        electricityCost: Number(electricityCost),
-        otherCosts: Number(otherCosts),
+        fragranceUsed: 0,
+        colorUsed: 0,
+        containerUsed: 0,
+        wickUsed: 0,
+        labourCost: 0,
+        gasCost: 0,
+        electricityCost: 0,
+        otherCosts: 0,
         totalCost,
         quantityProduced: outputQty,
         costPerKg,
