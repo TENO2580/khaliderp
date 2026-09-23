@@ -195,7 +195,7 @@ export default function DesktopDashboard() {
           {/* Primary KPI Grid (16 cards in 4x4 grid) */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <KPICard
-              title="Today's Sales"
+              title="Today's Sales Revenue"
               value={formatCurrency(kpis?.todaysSales || 0)}
               icon={DollarSign}
               color="blue"
@@ -207,7 +207,7 @@ export default function DesktopDashboard() {
               color="emerald"
             />
             <KPICard
-              title={`${periodLabel} Sales`}
+              title={`${periodLabel} Sales Revenue`}
               value={formatCurrency(kpis?.monthlySales || 0)}
               change={salesChange !== 0 ? `${salesChange > 0 ? '+' : ''}${salesChange}%` : undefined}
               isPositive={salesChange >= 0}

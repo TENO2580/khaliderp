@@ -153,7 +153,7 @@ export default function MobileDashboard() {
       {/* Metric Grid */}
       <div className="grid grid-cols-2 gap-3">
         <KPICard
-          title="Today's Sales"
+          title="Today's Sales Revenue"
           value={formatCurrency(kpis?.todaysSales || 0)}
           icon={DollarSign}
           color="blue"
@@ -165,7 +165,7 @@ export default function MobileDashboard() {
           color="emerald"
         />
         <KPICard
-          title={`${periodLabel} Sales`}
+          title={`${periodLabel} Sales Revenue`}
           value={formatCurrency(kpis?.monthlySales || 0)}
           change={salesChange !== 0 ? `${salesChange > 0 ? '+' : ''}${salesChange}%` : undefined}
           isPositive={salesChange >= 0}
