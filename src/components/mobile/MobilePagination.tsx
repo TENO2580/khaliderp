@@ -6,6 +6,8 @@ interface MobilePaginationProps {
   totalPages: number;
   onPageChange: (page: number) => void;
   totalItems: number;
+  limit?: number;
+  onLimitChange?: (limit: number) => void;
 }
 
 export default function MobilePagination({
@@ -13,6 +15,8 @@ export default function MobilePagination({
   totalPages,
   onPageChange,
   totalItems,
+  limit,
+  onLimitChange,
 }: MobilePaginationProps) {
   if (totalPages <= 1) return null;
 

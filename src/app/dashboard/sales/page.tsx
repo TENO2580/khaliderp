@@ -2,13 +2,12 @@
 
 import React from 'react';
 import { useDeviceDetect } from '@/hooks/useDeviceDetect';
-import DesktopSales from '@/components/desktop/DesktopSales';
-import MobileSales from '@/components/mobile/MobileSales';
+import SalesModule from '@/components/shared/modules/SalesModule';
 
 export default function SalesPageWrapper() {
   const { isMobile, isMounted } = useDeviceDetect();
 
   if (!isMounted) return null;
 
-  return isMobile ? <MobileSales /> : <DesktopSales />;
+  return <SalesModule isMobile={isMobile} />;
 }

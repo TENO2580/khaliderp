@@ -14,7 +14,7 @@ export default function DesktopNotifications() {
   
   const endpoint = `/api/notifications?limit=50${filter === 'UNREAD' ? '&unread=true' : ''}${moduleFilter !== 'ALL' ? `&module=${moduleFilter}` : ''}`;
   
-  const { data: notifRes, mutate } = useSWR(endpoint, fetcher, { 
+  const { data: notifRes, mutate, isLoading, error } = useSWR(endpoint, fetcher, { 
     refreshInterval: 300000,
     revalidateOnFocus: false,
     dedupingInterval: 60000,
@@ -120,9 +120,14 @@ export default function DesktopNotifications() {
 
           {/* Main List */}
           <div className="flex-1 overflow-y-auto p-4 md:p-6">
-            {!notifRes ? (
+            {isLoading ? (
               <div className="flex h-full items-center justify-center">
                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
+              </div>
+            ) : error ? (
+              <div className="flex h-full flex-col items-center justify-center text-center">
+                <p className="text-red-500 mb-4 font-medium">Unable to load notifications</p>
+                <button onClick={() => mutate()} className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors">Retry</button>
               </div>
             ) : notifications.length === 0 ? (
               <div className="flex h-full flex-col items-center justify-center text-center">
