@@ -259,7 +259,7 @@ export async function GET(req: NextRequest) {
     // 7) Period financials
     const monthlyFinancials = [
       { name: 'Sales', amount: Math.round(periodSales) },
-      { name: 'Profit', amount: Math.round(periodProfit > 0 ? periodProfit : 0) },
+      { name: 'Profit', amount: Math.round(periodProfit) },
       { name: 'Expenses', amount: Math.round(periodExpenses) },
     ];
 
