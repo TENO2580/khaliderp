@@ -669,7 +669,7 @@ export default function DataTable<T extends { id?: string }>({
                     style={{
                       width: `${colWidth}px`,
                       minWidth: `${colWidth}px`,
-                      maxWidth: `${colWidth}px`,
+                      
                       left: leftPos !== undefined ? `${leftPos}px` : undefined,
                       right: rightPos !== undefined ? `${rightPos}px` : undefined,
                     }}
@@ -759,7 +759,7 @@ export default function DataTable<T extends { id?: string }>({
                         style={{
                           width: `${colWidth}px`,
                           minWidth: `${colWidth}px`,
-                          maxWidth: `${colWidth}px`,
+                          
                           left: leftPos !== undefined ? `${leftPos}px` : undefined,
                           right: rightPos !== undefined ? `${rightPos}px` : undefined,
                         }}

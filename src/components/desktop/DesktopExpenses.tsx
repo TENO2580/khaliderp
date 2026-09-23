@@ -306,34 +306,36 @@ export default function DesktopExpenses() {
         </div>
       )}
 
-      <DataTable
-        totalItems={totalItems}
-        limit={limit}
-        onLimitChange={(l) => { setLimit(l); setPage(1); }}
-        columns={columns}
-        data={expenses}
-        searchPlaceholder="Search expense description..."
-        onSearch={setSearch}
-        onAddClick={() => setIsCreateOpen(true)}
-        addButtonLabel="Record Expense"
-        isLoading={isLoading}
-        page={page}
-        totalPages={totalPages}
-        onPageChange={setPage}
-        startDate={startDate}
-        onStartDateChange={setStartDate}
-        endDate={endDate}
-        onEndDateChange={setEndDate}
-        statusFilter={statusFilter}
-        onStatusChange={setStatusFilter}
-        statusOptions={[
-          { label: 'Pending', value: 'PENDING' },
-          { label: 'Approved', value: 'APPROVED' },
-          { label: 'Rejected', value: 'REJECTED' },
-        ]}
-        enableInlineEdit={true}
-        onBatchSave={handleBatchSave}
-      />
+      <div className="bg-white dark:bg-[#12121a]/50 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+        <DataTable
+          totalItems={totalItems}
+          limit={limit}
+          onLimitChange={(l) => { setLimit(l); setPage(1); }}
+          columns={columns}
+          data={expenses}
+          searchPlaceholder="Search expense description..."
+          onSearch={setSearch}
+          onAddClick={() => setIsCreateOpen(true)}
+          addButtonLabel="Record Expense"
+          isLoading={isLoading}
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          startDate={startDate}
+          onStartDateChange={setStartDate}
+          endDate={endDate}
+          onEndDateChange={setEndDate}
+          statusFilter={statusFilter}
+          onStatusChange={setStatusFilter}
+          statusOptions={[
+            { label: 'Pending', value: 'PENDING' },
+            { label: 'Approved', value: 'APPROVED' },
+            { label: 'Rejected', value: 'REJECTED' },
+          ]}
+          enableInlineEdit={true}
+          onBatchSave={handleBatchSave}
+        />
+      </div>
 
       {/* Add Expense Modal */}
       {isCreateOpen && (
