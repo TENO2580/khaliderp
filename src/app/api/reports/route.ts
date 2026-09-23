@@ -1,81 +1,71 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/db';
-import { jsonResponse, errorResponse } from '@/lib/middleware-server';
+import { authenticateRequest, jsonResponse, errorResponse } from '@/lib/middleware-server';
+
+export const dynamic = 'force-dynamic';
+
 
 export async function GET(req: NextRequest) {
+  const { user, error } = await authenticateRequest(req);
+  if (error) return error;
+
+  const url = new URL(req.url);
+  const type = url.searchParams.get('type') || 'sales';
+
   try {
-    const { searchParams } = new URL(req.url);
-    const type = searchParams.get('type');
-
-    if (!type) {
-      return errorResponse('Report type is required', 400);
-    }
-
     switch (type) {
       case 'sales': {
-        const [salesAgg, topCustomersRaw] = await Promise.all([
-          prisma.salesOrder.aggregate({
-            _sum: { totalAmount: true, paidAmount: true, outstanding: true },
-            _count: true
-          }),
-          prisma.salesOrder.groupBy({
-            by: ['customerId'],
-            _sum: { totalAmount: true },
-            _count: true,
-            orderBy: { _sum: { totalAmount: 'desc' } },
-            take: 5
-          })
-        ]);
-
-        const customerIds = topCustomersRaw.map(t => t.customerId);
-        const customers = await prisma.customer.findMany({
-          where: { id: { in: customerIds } },
-          select: { id: true, name: true }
+        const orders = await prisma.salesOrder.findMany({
+          orderBy: { orderDate: 'desc' },
+          select: { id: true, orderNumber: true, orderDate: true, totalAmount: true, paidAmount: true, outstanding: true, status: true, paymentStatus: true, customer: { select: { name: true } } },
+          take: 100,
         });
-        const customerMap = Object.fromEntries(customers.map(c => [c.id, c.name]));
-
-        const totalRevenue = salesAgg._sum.totalAmount || 0;
-        const totalPaid = salesAgg._sum.paidAmount || 0;
-        const totalOutstanding = salesAgg._sum.outstanding || 0;
-        const orderCount = salesAgg._count || 0;
-
+        const totalRevenue = orders.reduce((s, o) => s + o.totalAmount, 0);
+        const totalPaid = orders.reduce((s, o) => s + o.paidAmount, 0);
+        const totalOutstanding = orders.reduce((s, o) => s + o.outstanding, 0);
+        const orderCount = orders.length;
         return jsonResponse({
           summary: { totalRevenue, totalPaid, totalOutstanding, orderCount },
-          rows: topCustomersRaw.map((t, idx) => ({
-            rank: idx + 1,
-            customer: customerMap[t.customerId] || 'Unknown',
-            orders: t._count,
-            revenue: t._sum.totalAmount || 0,
-            contribution: totalRevenue > 0 ? (((t._sum.totalAmount || 0) / totalRevenue) * 100).toFixed(1) + '%' : '0%',
-          }))
+          rows: orders.map((o) => ({
+            id: o.id,
+            orderNumber: o.orderNumber,
+            customer: o.customer?.name || 'N/A',
+            date: o.orderDate,
+            amount: o.totalAmount,
+            paid: o.paidAmount,
+            outstanding: o.outstanding,
+            status: o.status,
+            paymentStatus: o.paymentStatus,
+          })),
         });
       }
 
       case 'customer': {
-        const [activeCount, leadCount, totalCount, outAgg, topCustomers] = await Promise.all([
+        const [customers, activeCount, leadCount, totalCount, outAgg] = await Promise.all([
+          prisma.customer.findMany({
+            select: { id: true, customerId: true, name: true, phone: true, type: true, status: true, outstanding: true, salesOrders: { select: { totalAmount: true } } },
+            orderBy: { name: 'asc' },
+            take: 100, // Limit to prevent massive database egress
+          }),
           prisma.customer.count({ where: { status: 'ACTIVE' } }),
           prisma.customer.count({ where: { status: 'LEAD' } }),
           prisma.customer.count(),
-          prisma.customer.aggregate({ _sum: { outstanding: true } }),
-          prisma.customer.findMany({
-            orderBy: { outstanding: 'desc' },
-            take: 5,
-            select: { name: true, phone: true, type: true, outstanding: true }
-          })
+          prisma.customer.aggregate({ _sum: { outstanding: true } })
         ]);
-        
         const inactiveCount = totalCount - activeCount - leadCount;
         const totalOutstanding = outAgg._sum.outstanding || 0;
-        
         return jsonResponse({
           summary: { total: totalCount, active: activeCount, leads: leadCount, inactive: inactiveCount, totalOutstanding },
-          rows: topCustomers.map((c, idx) => ({
-            rank: idx + 1,
-            customer: c.name,
-            phone: c.phone || 'N/A',
+          rows: customers.map((c) => ({
+            id: c.id,
+            customerId: c.customerId,
+            name: c.name,
+            phone: c.phone,
             type: c.type,
+            status: c.status,
             outstanding: c.outstanding,
-            riskShare: totalOutstanding > 0 ? ((c.outstanding / totalOutstanding) * 100).toFixed(1) + '%' : '0%'
+            totalOrders: c.salesOrders.length,
+            totalRevenue: c.salesOrders.reduce((s, o) => s + o.totalAmount, 0),
           })),
         });
       }
@@ -112,32 +102,26 @@ export async function GET(req: NextRequest) {
           by: ['categoryId'],
           _sum: { amount: true },
           _count: true,
-          orderBy: { _sum: { amount: 'desc' } },
-          take: 5
         });
         const catIds = expensesByCategory.map((e) => e.categoryId);
         const categories = catIds.length > 0 ? await prisma.expenseCategory.findMany({ where: { id: { in: catIds } } }) : [];
         const catMap = Object.fromEntries(categories.map((c) => [c.id, c.name]));
-        
-        const totalAgg = await prisma.expense.aggregate({ _sum: { amount: true }, _count: true });
-        const totalExpenses = totalAgg._sum.amount || 0;
-        
+        const totalExpenses = expensesByCategory.reduce((s, e) => s + (e._sum.amount || 0), 0);
         return jsonResponse({
-          summary: { totalExpenses, categoryCount: totalAgg._count },
-          rows: expensesByCategory.map((e, idx) => ({
-            rank: idx + 1,
+          summary: { totalExpenses, categoryCount: expensesByCategory.length },
+          rows: expensesByCategory.map((e) => ({
             category: catMap[e.categoryId] || 'Unknown',
             amount: e._sum.amount || 0,
-            expenseCount: e._count,
-            contribution: totalExpenses > 0 ? (((e._sum.amount || 0) / totalExpenses) * 100).toFixed(1) + '%' : '0%',
+            count: e._count,
+            percentage: totalExpenses > 0 ? ((e._sum.amount || 0) / totalExpenses) * 100 : 0,
           })),
         });
       }
 
       case 'inventory': {
         const [products, rawMaterials] = await Promise.all([
-          prisma.inventory.findMany({ orderBy: { value: 'desc' }, take: 5, select: { currentStock: true, unitCost: true, value: true, product: { select: { name: true, unit: true } } } }),
-          prisma.rawMaterial.findMany({ orderBy: { currentStock: 'desc' }, take: 5, select: { name: true, currentStock: true, unit: true, unitCost: true } }),
+          prisma.inventory.findMany({ take: 100, select: { currentStock: true, unitCost: true, value: true, reorderLevel: true, product: { select: { name: true, unit: true } } } }),
+          prisma.rawMaterial.findMany({ take: 100, select: { name: true, currentStock: true, unit: true, unitCost: true, reorderLevel: true } }),
         ]);
         const batchStats = await prisma.$queryRaw<any[]>`
           SELECT COALESCE(SUM(("waxStock" * "waxRate")), 0) as rawValue,
@@ -151,110 +135,103 @@ export async function GET(req: NextRequest) {
         return jsonResponse({
           summary: { finishedGoodsValue: finishedValue, rawMaterialValue: rawValue, totalValue: finishedValue + rawValue },
           rows: [
-            ...products.map((p, idx) => ({
-              rank: idx + 1,
-              type: 'Top Finished Good',
-              item: p.product?.name || 'Unknown',
+            ...products.map((p) => ({
+              type: 'Finished Good',
+              name: p.product?.name || 'Unknown',
               stock: p.currentStock,
+              unit: p.product?.unit || 'KG',
               unitCost: p.unitCost,
               totalValue: p.value,
+              reorderLevel: p.reorderLevel,
+              lowStock: p.currentStock <= p.reorderLevel,
             })),
-            ...rawMaterials.map((r, idx) => ({
-              rank: idx + 1,
-              type: 'Top Raw Material',
-              item: r.name,
+            ...rawMaterials.map((r) => ({
+              type: 'Raw Material',
+              name: r.name,
               stock: r.currentStock,
+              unit: r.unit,
               unitCost: r.unitCost,
               totalValue: r.currentStock * r.unitCost,
+              reorderLevel: r.reorderLevel,
+              lowStock: r.currentStock <= r.reorderLevel,
             })),
           ],
         });
       }
 
       case 'production': {
-        const [prodAgg, topOperators] = await Promise.all([
-          prisma.production.aggregate({ _sum: { quantityProduced: true, totalCost: true }, _count: true }),
-          prisma.production.groupBy({
-            by: ['operatorId'],
-            _sum: { quantityProduced: true },
-            _count: true,
-            orderBy: { _sum: { quantityProduced: 'desc' } },
-            take: 5
-          })
-        ]);
-        
-        const operatorIds = topOperators.filter(t => t.operatorId).map(t => t.operatorId as string);
-        const operators = await prisma.user.findMany({ where: { id: { in: operatorIds } }, select: { id: true, name: true } });
-        const operatorMap = Object.fromEntries(operators.map(o => [o.id, o.name]));
-        
-        const totalQty = prodAgg._sum.quantityProduced || 0;
-        const totalCost = prodAgg._sum.totalCost || 0;
+        const productions = await prisma.production.findMany({
+          orderBy: { date: 'desc' },
+          select: { id: true, productionNumber: true, date: true, shift: true, waxUsed: true, quantityProduced: true, totalCost: true, costPerKg: true, margin: true, batch: { select: { batchNumber: true } }, operator: { select: { name: true } } },
+          take: 100,
+        });
+        const totalQty = productions.reduce((s, p) => s + p.quantityProduced, 0);
+        const totalCost = productions.reduce((s, p) => s + p.totalCost, 0);
         const avgCostPerKg = totalQty > 0 ? totalCost / totalQty : 0;
-        
         return jsonResponse({
-          summary: { totalProductions: prodAgg._count, totalQty, totalCost, avgCostPerKg },
-          rows: topOperators.map((t, idx) => ({
-            rank: idx + 1,
-            operator: t.operatorId ? (operatorMap[t.operatorId] || 'Unknown') : 'N/A',
-            productionsCount: t._count,
-            quantityProduced: t._sum.quantityProduced || 0,
-            contribution: totalQty > 0 ? (((t._sum.quantityProduced || 0) / totalQty) * 100).toFixed(1) + '%' : '0%',
+          summary: { totalProductions: productions.length, totalQty, totalCost, avgCostPerKg },
+          rows: productions.map((p) => ({
+            id: p.id,
+            productionNumber: p.productionNumber,
+            batchNumber: p.batch?.batchNumber || 'N/A',
+            date: p.date,
+            shift: p.shift,
+            waxUsed: p.waxUsed,
+            quantityProduced: p.quantityProduced,
+            totalCost: p.totalCost,
+            costPerKg: p.costPerKg,
+            margin: p.margin,
+            operator: p.operator?.name || 'N/A',
           })),
         });
       }
 
       case 'gst': {
-        const [gstAgg, topInvoices] = await Promise.all([
-          prisma.invoice.aggregate({
-            _sum: { totalAmount: true, totalGst: true, cgst: true, sgst: true, igst: true },
-            _count: true
-          }),
-          prisma.invoice.findMany({
-            orderBy: { totalGst: 'desc' },
-            select: { invoiceNumber: true, invoiceDate: true, totalAmount: true, totalGst: true, customer: { select: { name: true } } },
-            take: 5,
-          })
-        ]);
-        
-        const totalTaxable = (gstAgg._sum.totalAmount || 0) - (gstAgg._sum.totalGst || 0);
-        const totalCgst = gstAgg._sum.cgst || 0;
-        const totalSgst = gstAgg._sum.sgst || 0;
-        const totalIgst = gstAgg._sum.igst || 0;
-        const totalGst = gstAgg._sum.totalGst || 0;
-        
+        const invoices = await prisma.invoice.findMany({
+          orderBy: { invoiceDate: 'desc' },
+          select: { id: true, invoiceNumber: true, invoiceDate: true, totalAmount: true, totalGst: true, cgst: true, sgst: true, igst: true, customer: { select: { name: true } } },
+          take: 100,
+        });
+        const totalTaxable = invoices.reduce((s, i) => s + (i.totalAmount - i.totalGst), 0);
+        const totalCgst = invoices.reduce((s, i) => s + i.cgst, 0);
+        const totalSgst = invoices.reduce((s, i) => s + i.sgst, 0);
+        const totalIgst = invoices.reduce((s, i) => s + i.igst, 0);
+        const totalGst = invoices.reduce((s, i) => s + i.totalGst, 0);
         return jsonResponse({
-          summary: { invoiceCount: gstAgg._count, totalTaxable, totalCgst, totalSgst, totalIgst, totalGst },
-          rows: topInvoices.map((i, idx) => ({
-            rank: idx + 1,
+          summary: { invoiceCount: invoices.length, totalTaxable, totalCgst, totalSgst, totalIgst, totalGst },
+          rows: invoices.map((i) => ({
+            id: i.id,
             invoiceNumber: i.invoiceNumber,
             customer: i.customer?.name || 'N/A',
             date: i.invoiceDate,
             taxableAmount: i.totalAmount - i.totalGst,
+            cgst: i.cgst,
+            sgst: i.sgst,
+            igst: i.igst,
             totalGst: i.totalGst,
-            gstContribution: totalGst > 0 ? ((i.totalGst / totalGst) * 100).toFixed(1) + '%' : '0%',
             totalAmount: i.totalAmount,
           })),
         });
       }
 
       case 'outstanding': {
-        const [outAgg, topCustomers] = await Promise.all([
-          prisma.customer.aggregate({ _sum: { outstanding: true } }),
-          prisma.customer.findMany({
-            where: { outstanding: { gt: 0 } },
-            orderBy: { outstanding: 'desc' },
-            select: { name: true, outstanding: true },
-            take: 5
-          })
-        ]);
-        const totalOutstanding = outAgg._sum.outstanding || 0;
+        const customers = await prisma.customer.findMany({
+          where: { outstanding: { gt: 0 } },
+          orderBy: { outstanding: 'desc' },
+          select: { id: true, customerId: true, name: true, phone: true, outstanding: true, creditLimit: true, invoices: { where: { outstanding: { gt: 0 } }, orderBy: { dueDate: 'asc' }, select: { dueDate: true } } },
+        });
+        const totalOutstanding = customers.reduce((s, c) => s + c.outstanding, 0);
         return jsonResponse({
-          summary: { totalOutstanding },
-          rows: topCustomers.map((c, idx) => ({
-            rank: idx + 1,
-            customer: c.name,
+          summary: { totalOutstanding, customersWithDues: customers.length },
+          rows: customers.map((c) => ({
+            id: c.id,
+            customerId: c.customerId,
+            name: c.name,
+            phone: c.phone,
             outstanding: c.outstanding,
-            shareOfDebt: totalOutstanding > 0 ? ((c.outstanding / totalOutstanding) * 100).toFixed(1) + '%' : '0%'
+            creditLimit: c.creditLimit,
+            invoiceCount: c.invoices.length,
+            oldestDue: c.invoices.length > 0 ? c.invoices[0].dueDate : null,
           })),
         });
       }
