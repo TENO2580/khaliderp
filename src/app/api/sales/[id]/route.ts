@@ -18,6 +18,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       outstanding, 
       notes,
       quantity, // this is for the first item
+      paymentMethod,
+      paidAmount,
     } = body;
 
     let parsedOrderDate = undefined;
@@ -164,6 +166,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
           ...(status && { status }),
           ...(totalAmount !== undefined && { totalAmount: Number(totalAmount) }),
           ...(outstanding !== undefined && { outstanding: Number(outstanding) }),
+          ...(paidAmount !== undefined && { paidAmount: Number(paidAmount) }),
+          ...(paymentMethod !== undefined && { paymentMethod }),
           ...(notes && { notes: JSON.stringify(notes) }),
         },
         include: { items: true }

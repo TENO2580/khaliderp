@@ -61,6 +61,8 @@ export async function GET(req: NextRequest) {
         orderDate: true,
         deliveryDate: true,
         totalAmount: true,
+        paidAmount: true,
+        paymentMethod: true,
         outstanding: true,
         status: true,
         notes: true,
@@ -122,7 +124,7 @@ export async function POST(req: NextRequest) {
     }
     const orderNumber = `SO-2026-${String(nextNum).padStart(4, '0')}`;
 
-    const { customerId, items, paymentMethod, notes, discount = 0, transportCharge = 0, orderDate, deliveryDate, status } = body;
+    const { customerId, items, paymentMethod, notes, discount = 0, transportCharge = 0, orderDate, deliveryDate, status, paidAmount } = body;
 
     let subtotal = 0;
     const orderItemsData: any[] = [];
@@ -235,7 +237,9 @@ export async function POST(req: NextRequest) {
           discount: Number(discount),
           transportCharge: Number(transportCharge),
           totalAmount,
-          outstanding: totalAmount,
+          paidAmount: paymentMethod === 'CREDIT' ? Number(paidAmount || 0) : totalAmount,
+          creditAmount: paymentMethod === 'CREDIT' ? totalAmount - Number(paidAmount || 0) : 0,
+          outstanding: paymentMethod === 'CREDIT' ? totalAmount - Number(paidAmount || 0) : 0,
           paymentMethod: paymentMethod || 'CREDIT',
           notes: notes ? JSON.stringify(notes) : undefined,
           createdBy: user.id,

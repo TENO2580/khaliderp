@@ -48,6 +48,7 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
   const [editId, setEditId] = useState('');
   const [customerId, setCustomerId] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('CREDIT');
+  const [paidAmount, setPaidAmount] = useState<number | ''>('');
   const [items, setItems] = useState<any[]>([
     { productId: '', quantity: 10, unitPrice: 350, gstRate: 18 },
   ]);
@@ -255,12 +256,17 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
     }
     try {
       if (isEdit) {
+        const calcOutstanding = paymentMethod === 'CREDIT' 
+          ? editFormData.totalAmount - (paidAmount === '' ? 0 : Number(paidAmount))
+          : 0;
         await api.put(`/sales/${editId}`, {
+          paymentMethod,
+          paidAmount: paymentMethod === 'CREDIT' ? (paidAmount === '' ? 0 : paidAmount) : editFormData.totalAmount,
           orderDate: editFormData.orderDate,
           deliveryDate: editFormData.deliveryDate,
           status: editFormData.status,
           totalAmount: editFormData.totalAmount,
-          outstanding: editFormData.outstanding,
+          outstanding: calcOutstanding,
           quantity: items[0].quantity,
           notes: {
             productId: editFormData.productId,
@@ -312,6 +318,7 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
         await api.post('/sales', {
           customerId,
           paymentMethod,
+          paidAmount: paidAmount === '' ? 0 : paidAmount,
           items: itemsToSend,
           orderDate: editFormData.orderDate,
           deliveryDate: editFormData.deliveryDate,
@@ -412,6 +419,8 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
       });
       
       setCustomerId(order.customerId || '');
+      setPaymentMethod(order.paymentMethod || 'CREDIT');
+      setPaidAmount(order.paidAmount || '');
       setItems([
         {
           productId: String(data.productId || order.items?.[0]?.productId || ''),
@@ -749,6 +758,8 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
           onAddClick={() => {
             setIsEdit(false);
             setCustomerId('');
+            setPaymentMethod('CREDIT');
+            setPaidAmount('');
             setItems([{ productId: products[0]?.product?.id || products[0]?.id || '', quantity: '', unitPrice: 350, gstRate: 18 }]);
             setEditFormData({
               batchUsed: '',
@@ -793,6 +804,8 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
             onAddClick={() => {
               setIsEdit(false);
               setCustomerId('');
+              setPaymentMethod('CREDIT');
+              setPaidAmount('');
               setItems([{ productId: products[0]?.product?.id || products[0]?.id || '', quantity: '', unitPrice: 350, gstRate: 18 }]);
               setEditFormData({
                 batchUsed: '',
@@ -936,7 +949,12 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Payment Terms</label>
                   <select
                     value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    onChange={(e) => {
+                      setPaymentMethod(e.target.value);
+                      if (e.target.value !== 'CREDIT') {
+                        setPaidAmount('');
+                      }
+                    }}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                   >
                     <option value="CREDIT">Credit (On Account)</option>
@@ -946,6 +964,26 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
                   </select>
                 </div>
               </div>
+
+              {paymentMethod === 'CREDIT' && (
+                <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Advance / Paid Amount (₹)</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="0.00"
+                      value={paidAmount}
+                      onChange={(e) => {
+                        if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) return;
+                        setPaidAmount(e.target.value === '' ? '' : Number(e.target.value));
+                      }}
+                      className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                    />
+                    <p className="text-[10px] text-gray-500 mt-1">Leave empty or 0 if fully on credit. Outstanding will be calculated automatically.</p>
+                  </div>
+                </div>
+              )}
 
               {/* Order Details */}
               <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100 dark:border-gray-800">
