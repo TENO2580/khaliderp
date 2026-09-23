@@ -150,33 +150,33 @@ enum FollowupType {
 // ============================================
 
 model Product {
-  id           String   @id @default(cuid())
-  name         String
-  sku          String   @unique
-  category     String?
-  unit         String   @default("KG")
-  description  String?
-  hsnCode      String?
-  gstRate      Float    @default(18)
-  sellingPrice Float    @default(0)
-  mrp          Float?   @default(0)
-  regionalPrice Float?  @default(0) // Formerly calicutRate
-  isActive     Boolean  @default(true)
-  status       String   @default("ACTIVE") // ACTIVE, ARCHIVED
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String   @id @default(cuid())
+  name          String
+  sku           String   @unique
+  category      String?
+  unit          String   @default("KG")
+  description   String?
+  hsnCode       String?
+  gstRate       Float    @default(18)
+  sellingPrice  Float    @default(0)
+  mrp           Float?   @default(0)
+  regionalPrice Float?   @default(0) // Formerly calicutRate
+  isActive      Boolean  @default(true)
+  status        String   @default("ACTIVE") // ACTIVE, ARCHIVED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // Pricing Engine Fields
-  weightKg         Float?   @default(1)
-  qty              Int      @default(1)
-  prodCostPerUnit  Float?   @map("prodCostPerKg")
-  totalProdCost    Float    @default(0)
-  marginAmt        Float    @default(0)
-  marginPct        Float    @default(0)
-  sellingCostPerKg Float    @default(0)
-  
-  profileId        String?  // Links to CostingProfile
-  profile          CostingProfile? @relation(fields: [profileId], references: [id])
+  weightKg         Float? @default(1)
+  qty              Int    @default(1)
+  prodCostPerUnit  Float? @map("prodCostPerKg")
+  totalProdCost    Float  @default(0)
+  marginAmt        Float  @default(0)
+  marginPct        Float  @default(0)
+  sellingCostPerKg Float  @default(0)
+
+  profileId String? // Links to CostingProfile
+  profile   CostingProfile? @relation(fields: [profileId], references: [id])
 
   // Relations
   inventory       Inventory?
@@ -857,23 +857,23 @@ model CostingProfile {
   sellingPrice      Float    @default(195.00)
   updatedAt         DateTime @updatedAt
 
-  caseVariants CaseVariant[]
+  caseVariants   CaseVariant[]
   rsCaseVariants RsCaseVariant[]
-  products Product[]
+  products       Product[]
 
   @@map("costing_profiles")
 }
 
 model CaseVariant {
-  id            String @id @default(cuid())
-  profileId     String
-  name          String // e.g., "2 RS CASE"
-  weightKg      Float // e.g., 0.72
-  qty           Int?   @default(1) // Number of items in a case
+  id              String @id @default(cuid())
+  profileId       String
+  name            String // e.g., "2 RS CASE"
+  weightKg        Float // e.g., 0.72
+  qty             Int?   @default(1) // Number of items in a case
   prodCostPerUnit Float? @map("prodCostPerKg") // Optional override for Prod Cost/Unit
-  sellingPrice  Float // e.g., 228.00
-  mrp           Float? @default(0)
-  calicutRate   Float? @default(0)
+  sellingPrice    Float // e.g., 228.00
+  mrp             Float? @default(0)
+  calicutRate     Float? @default(0)
 
   profile CostingProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
@@ -882,15 +882,15 @@ model CaseVariant {
 }
 
 model RsCaseVariant {
-  id            String @id @default(cuid())
-  profileId     String
-  name          String 
-  weightKg      Float 
-  qty           Int?   @default(1) 
+  id              String @id @default(cuid())
+  profileId       String
+  name            String
+  weightKg        Float
+  qty             Int?   @default(1)
   prodCostPerUnit Float? @map("prodCostPerKg")
-  sellingPrice  Float 
-  mrp           Float? @default(0)
-  calicutRate   Float? @default(0)
+  sellingPrice    Float
+  mrp             Float? @default(0)
+  calicutRate     Float? @default(0)
 
   profile CostingProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
@@ -1301,10 +1301,10 @@ model ImportHistory {
   skippedCount Int      @default(0)
   failedCount  Int      @default(0)
   mode         String   @default("ADD_NEW") // ADD_NEW, UPDATE_EXISTING, ADD_AND_UPDATE
-  mappingUsed  String   // JSON string of field mappings
-  summary      String?  // JSON string summary
-  errors       String?  // JSON array of row errors/warnings
-  importedData String?  // JSON preview of imported records
+  mappingUsed  String // JSON string of field mappings
+  summary      String? // JSON string summary
+  errors       String? // JSON array of row errors/warnings
+  importedData String? // JSON preview of imported records
   userId       String?
   userName     String?
   createdAt    DateTime @default(now())
@@ -1317,11 +1317,11 @@ model ImportHistory {
 
 model MappingPreset {
   id          String   @id @default(cuid())
-  name        String   // e.g. "Odell Order Excel Format"
+  name        String // e.g. "Odell Order Excel Format"
   module      String   @default("ORDERS")
   description String?
-  mappings    String   // JSON string { systemField: uploadedHeader }
-  options     String?  // JSON string (calculation toggles, default options)
+  mappings    String // JSON string { systemField: uploadedHeader }
+  options     String? // JSON string (calculation toggles, default options)
   isDefault   Boolean  @default(false)
   userId      String?
   createdAt   DateTime @default(now())
@@ -1330,4 +1330,3 @@ model MappingPreset {
   @@index([module])
   @@map("mapping_presets")
 }
-

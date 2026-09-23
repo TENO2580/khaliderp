@@ -49,14 +49,6 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       batchId = existing.batchId,
       shift = existing.shift,
       waxUsed = existing.waxUsed,
-      fragranceUsed = existing.fragranceUsed,
-      colorUsed = existing.colorUsed,
-      containerUsed = existing.containerUsed,
-      wickUsed = existing.wickUsed,
-      labourCost = existing.labourCost,
-      gasCost = existing.gasCost,
-      electricityCost = existing.electricityCost,
-      otherCosts = existing.otherCosts,
       quantityProduced = existing.quantityProduced,
       sellingPrice = existing.sellingPrice,
       notes = existing.notes,
@@ -83,14 +75,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     const waxCost = newWaxUsed * 85;
-    const fragranceCost = Number(fragranceUsed) * 400;
-    const colorCost = Number(colorUsed) * 250;
-    const containerCost = Number(containerUsed) * 25;
-    const wickCost = Number(wickUsed) * 2;
-
-    const totalRawMaterialCost = waxCost + fragranceCost + colorCost + containerCost + wickCost;
-    const totalOverheadCost = Number(labourCost) + Number(gasCost) + Number(electricityCost) + Number(otherCosts);
-    const totalCost = totalRawMaterialCost + totalOverheadCost;
+    const totalCost = waxCost;
 
     const costPerKg = newWaxUsed > 0 ? totalCost / newWaxUsed : 0;
     const totalRevenue = newQtyProduced * Number(sellingPrice);
@@ -104,14 +89,14 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         batchId: finalBatchId,
         shift: shift === 'NIGHT' ? 'NIGHT' : 'DAY',
         waxUsed: newWaxUsed,
-        fragranceUsed: Number(fragranceUsed),
-        colorUsed: Number(colorUsed),
-        containerUsed: Number(containerUsed),
-        wickUsed: Number(wickUsed),
-        labourCost: Number(labourCost),
-        gasCost: Number(gasCost),
-        electricityCost: Number(electricityCost),
-        otherCosts: Number(otherCosts),
+        fragranceUsed: 0,
+        colorUsed: 0,
+        containerUsed: 0,
+        wickUsed: 0,
+        labourCost: 0,
+        gasCost: 0,
+        electricityCost: 0,
+        otherCosts: 0,
         totalCost,
         quantityProduced: newQtyProduced,
         costPerKg,

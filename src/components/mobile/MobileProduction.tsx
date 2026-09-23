@@ -30,14 +30,6 @@ export default function MobileProductionPage() {
     operatorId: '',
     shift: 'DAY',
     waxUsed: 100,
-    fragranceUsed: 2,
-    colorUsed: 0.5,
-    containerUsed: 500,
-    wickUsed: 500,
-    labourCost: 1500,
-    gasCost: 400,
-    electricityCost: 200,
-    otherCosts: 100,
     quantityProduced: 100,
     sellingPrice: 350,
     notes: '',
@@ -76,14 +68,6 @@ export default function MobileProductionPage() {
       operatorId: p.operatorId || (userRes?.id || ''),
       shift: p.shift || 'DAY',
       waxUsed: p.waxUsed !== undefined ? p.waxUsed : 100,
-      fragranceUsed: p.fragranceUsed !== undefined ? p.fragranceUsed : 2,
-      colorUsed: p.colorUsed !== undefined ? p.colorUsed : 0.5,
-      containerUsed: p.containerUsed !== undefined ? p.containerUsed : 500,
-      wickUsed: p.wickUsed !== undefined ? p.wickUsed : 500,
-      labourCost: p.labourCost !== undefined ? p.labourCost : 1500,
-      gasCost: p.gasCost !== undefined ? p.gasCost : 400,
-      electricityCost: p.electricityCost !== undefined ? p.electricityCost : 200,
-      otherCosts: p.otherCosts !== undefined ? p.otherCosts : 100,
       quantityProduced: p.quantityProduced !== undefined ? p.quantityProduced : 100,
       sellingPrice: p.sellingPrice !== undefined ? p.sellingPrice : 350,
       notes: p.notes || '',
@@ -270,14 +254,6 @@ export default function MobileProductionPage() {
             operatorId: userRes?.id || '',
             shift: 'DAY',
             waxUsed: 100,
-            fragranceUsed: 2,
-            colorUsed: 0.5,
-            containerUsed: 500,
-            wickUsed: 500,
-            labourCost: 1500,
-            gasCost: 400,
-            electricityCost: 200,
-            otherCosts: 100,
             quantityProduced: 100,
             sellingPrice: 350,
             notes: '',
@@ -364,44 +340,6 @@ export default function MobileProductionPage() {
                       setFormData({ ...formData, waxUsed: val as any, quantityProduced: val as any });
                     }}
                     className="mt-1 w-full rounded-xl border border-blue-500 p-2 text-sm bg-white dark:bg-gray-900 font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] text-gray-600 dark:text-gray-400">Fragrance (LTR)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={formData.fragranceUsed}
-                    onChange={(e) => setFormData({ ...formData, fragranceUsed: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
-                    className="mt-1 w-full rounded-xl border border-gray-200 p-2 text-sm bg-white dark:bg-gray-900 dark:border-gray-800"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] text-gray-600 dark:text-gray-400">Color Dye (KG)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={formData.colorUsed}
-                    onChange={(e) => setFormData({ ...formData, colorUsed: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
-                    className="mt-1 w-full rounded-xl border border-gray-200 p-2 text-sm bg-white dark:bg-gray-900 dark:border-gray-800"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] text-gray-600 dark:text-gray-400">Containers (PCS)</label>
-                  <input
-                    type="number"
-                    value={formData.containerUsed}
-                    onChange={(e) => setFormData({ ...formData, containerUsed: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
-                    className="mt-1 w-full rounded-xl border border-gray-200 p-2 text-sm bg-white dark:bg-gray-900 dark:border-gray-800"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-[11px] text-gray-600 dark:text-gray-400">Wicks (PCS)</label>
-                  <input
-                    type="number"
-                    value={formData.wickUsed}
-                    onChange={(e) => setFormData({ ...formData, wickUsed: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
-                    className="mt-1 w-full rounded-xl border border-gray-200 p-2 text-sm bg-white dark:bg-gray-900 dark:border-gray-800"
                   />
                 </div>
               </div>
