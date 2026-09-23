@@ -119,13 +119,19 @@ export async function GET(req: NextRequest) {
       }
 
       case 'inventory': {
-        const [products, rawMaterials, invAgg] = await Promise.all([
+        const [products, rawMaterials] = await Promise.all([
           prisma.inventory.findMany({ take: 100, select: { currentStock: true, unitCost: true, value: true, reorderLevel: true, product: { select: { name: true, unit: true } } } }),
           prisma.rawMaterial.findMany({ take: 100, select: { name: true, currentStock: true, unit: true, unitCost: true, reorderLevel: true } }),
-          prisma.inventory.aggregate({ _sum: { value: true } })
         ]);
-        const finishedValue = invAgg._sum.value || 0;
-        const rawValue = rawMaterials.reduce((s, r) => s + r.currentStock * r.unitCost, 0); // Note: Approximation for top 100 raw materials
+        const batchStats = await prisma.$queryRaw`
+          SELECT COALESCE(SUM(("waxStock" * "waxRate")), 0) as rawValue,
+                 COALESCE(SUM(COALESCE("remainingQty" * (("waxInitialQty" - "waxStock") * "waxRate") / NULLIF("producedQty", 0), 0)), 0) as finishedValue
+          FROM "batches"
+        `;
+        const stats = batchStats[0] || { rawvalue: 0, finishedvalue: 0 };
+        const rawValue = Number(stats.rawvalue || 0);
+        const finishedValue = Number(stats.finishedvalue || 0);
+
         return jsonResponse({
           summary: { finishedGoodsValue: finishedValue, rawMaterialValue: rawValue, totalValue: finishedValue + rawValue },
           rows: [

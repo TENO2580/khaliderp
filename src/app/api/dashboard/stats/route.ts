@@ -116,7 +116,7 @@ export async function GET(req: NextRequest) {
         (SELECT COALESCE(SUM("outstanding"), 0) FROM "sales_orders" WHERE "outstanding" > 0) as "outstandingCredit",
         (SELECT COALESCE(SUM("waxInitialQty" - "producedQty"), 0) FROM "batches") as "waxStock",
         (SELECT COALESCE(SUM("remainingQty"), 0) FROM "batches") as "finishedGoodsStock",
-        (SELECT COALESCE(SUM("value"), 0) FROM "inventory") as "inventoryValue",
+        (SELECT COALESCE(SUM(("waxStock" * "waxRate") + COALESCE("remainingQty" * (("waxInitialQty" - "waxStock") * "waxRate") / NULLIF("producedQty", 0), 0)), 0) FROM "batches") as "inventoryValue",
         (SELECT COALESCE(SUM("quantityProduced"), 0) FROM "productions" WHERE "date" >= ${todayStart} AND "date" <= ${todayEnd}) as "productionToday",
         (SELECT COALESCE(SUM("quantityProduced"), 0) FROM "productions" WHERE "date" >= ${rangeStart} AND "date" <= ${rangeEnd}) as "productionPeriod",
         (SELECT COUNT(*) FROM "attendance" WHERE "date" >= ${todayStart} AND "date" <= ${todayEnd} AND "status" IN ('PRESENT', 'LATE')) as "employeeAttendanceToday",
