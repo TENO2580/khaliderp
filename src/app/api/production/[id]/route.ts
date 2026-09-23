@@ -62,6 +62,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       notes = existing.notes,
     } = body;
 
+    const finalBatchId = batchId === 'FIFO' ? existing.batchId : batchId;
+
     const newWaxUsed = Number(waxUsed);
     const newQtyProduced = Number(quantityProduced);
 
@@ -69,9 +71,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const deltaProduced = newQtyProduced - existing.quantityProduced;
 
     // Adjust batch stock for the difference
-    if (batchId && (deltaWax !== 0 || deltaProduced !== 0)) {
+    if (finalBatchId && (deltaWax !== 0 || deltaProduced !== 0)) {
       await prisma.batch.update({
-        where: { id: batchId },
+        where: { id: finalBatchId },
         data: {
           waxStock: { decrement: deltaWax },
           producedQty: { increment: deltaProduced },
@@ -99,7 +101,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       where: { id },
       data: {
         date: date ? new Date(date) : existing.date,
-        batchId,
+        batchId: finalBatchId,
         shift: shift === 'NIGHT' ? 'NIGHT' : 'DAY',
         waxUsed: newWaxUsed,
         fragranceUsed: Number(fragranceUsed),
