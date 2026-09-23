@@ -72,10 +72,14 @@ export const NAV_ITEMS: NavItem[] = [
     permission: 'purchase:read',
   },
   {
-    title: 'Expenses',
-    href: '/dashboard/expenses',
+    title: 'Accounts',
+    href: '/dashboard/accounts',
     icon: Receipt,
     permission: 'expenses:read',
+    children: [
+      { title: 'Expenses', href: '/dashboard/accounts/expenses' },
+      { title: 'Overdue', href: '/dashboard/accounts/overdue' },
+    ]
   },
   {
     title: 'Pricing Engine',
