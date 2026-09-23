@@ -143,7 +143,7 @@ export async function GET(req: NextRequest) {
     const activeCustomers = Number(row.activeCustomers || 0);
     const employeeAttendanceToday = Number(row.employeeAttendanceToday || 0);
 
-    const periodProfit = periodSales - (periodProductionCost + periodExpenses);
+    const periodProfit = periodSales - periodExpenses;
     const grossMargin = periodSales > 0 ? Math.round((periodProfit / periodSales) * 100 * 10) / 10 : 0;
     const todaysProfit = periodSales > 0 ? Math.round(todaysSales * (periodProfit / periodSales)) : 0;
 
