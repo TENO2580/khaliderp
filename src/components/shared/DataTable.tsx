@@ -74,6 +74,10 @@ interface DataTableProps<T> {
   hideToolbar?: boolean;
   selectable?: boolean;
   onDeleteSelected?: (ids: string[]) => void;
+  // External unlock control (for mobile filter bar integration)
+  externalUnlocked?: boolean;
+  onExternalUnlockToggle?: () => void;
+  externalPendingCount?: number;
 }
 
 export default function DataTable<T extends { id?: string }>({
@@ -105,9 +109,13 @@ export default function DataTable<T extends { id?: string }>({
   hideToolbar = false,
   selectable = false,
   onDeleteSelected,
+  externalUnlocked,
+  onExternalUnlockToggle,
+  externalPendingCount,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState(searchValue || '');
-  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [internalUnlocked, setInternalUnlocked] = useState(false);
+  const isUnlocked = externalUnlocked !== undefined ? externalUnlocked : internalUnlocked;
   const pendingEditsRef = useRef<Record<string, Record<string, string>>>({});
   const [pendingCount, setPendingCount] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -386,7 +394,8 @@ export default function DataTable<T extends { id?: string }>({
       pendingEditsRef.current = {};
       setPendingCount(0);
     }
-    setIsUnlocked(!isUnlocked);
+    setInternalUnlocked(!isUnlocked);
+    if (onExternalUnlockToggle) onExternalUnlockToggle();
   };
 
   // DND Logic for Drawer

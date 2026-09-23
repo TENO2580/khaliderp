@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Filter, X } from 'lucide-react';
+import { Search, Filter, X, Plus, Lock, Unlock, Settings } from 'lucide-react';
 
 interface MobileFilterBarProps {
   search: string;
@@ -12,6 +12,12 @@ interface MobileFilterBarProps {
   statusFilter?: string;
   onStatusChange?: (val: string) => void;
   statusOptions?: { label: string; value: string }[];
+  // Action buttons
+  onAddClick?: () => void;
+  addButtonLabel?: string;
+  onUnlockToggle?: () => void;
+  isUnlocked?: boolean;
+  pendingEditCount?: number;
 }
 
 export default function MobileFilterBar({
@@ -24,7 +30,12 @@ export default function MobileFilterBar({
   onEndDateChange,
   statusFilter,
   onStatusChange,
-  statusOptions
+  statusOptions,
+  onAddClick,
+  addButtonLabel = 'Add New',
+  onUnlockToggle,
+  isUnlocked = false,
+  pendingEditCount = 0,
 }: MobileFilterBarProps) {
   const [isOpen, setIsOpen] = React.useState(false);
 
@@ -47,18 +58,16 @@ export default function MobileFilterBar({
             className="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors dark:text-white placeholder-gray-400"
           />
         </div>
-        {(onStartDateChange || onEndDateChange || onStatusChange) && (
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className={`p-2 rounded-xl border transition-colors ${
-              hasActiveFilters || isOpen
-                ? 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400'
-                : 'bg-white border-gray-200 text-gray-600 active:bg-gray-50 dark:bg-gray-900 dark:border-gray-800 dark:text-gray-400 dark:active:bg-gray-800'
-            }`}
-          >
-            {isOpen ? <X className="h-5 w-5" /> : <Filter className="h-5 w-5" />}
-          </button>
-        )}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className={`p-2 rounded-xl border transition-colors ${
+            hasActiveFilters || isOpen
+              ? 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400'
+              : 'bg-white border-gray-200 text-gray-600 active:bg-gray-50 dark:bg-gray-900 dark:border-gray-800 dark:text-gray-400 dark:active:bg-gray-800'
+          }`}
+        >
+          {isOpen ? <X className="h-5 w-5" /> : <Filter className="h-5 w-5" />}
+        </button>
       </div>
 
       {isOpen && (
@@ -102,6 +111,39 @@ export default function MobileFilterBar({
               />
             )}
           </div>
+
+          {/* Action Buttons */}
+          {(onAddClick || onUnlockToggle) && (
+            <div className="flex gap-2 pt-1">
+              {onUnlockToggle && (
+                <button
+                  onClick={onUnlockToggle}
+                  className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors relative ${
+                    isUnlocked
+                      ? 'bg-amber-500 text-white active:bg-amber-600'
+                      : 'bg-white border border-gray-200 text-gray-700 active:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  {isUnlocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                  <span>{isUnlocked ? 'Save & Lock' : 'Unlock Edit'}</span>
+                  {isUnlocked && pendingEditCount > 0 && (
+                    <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                      {pendingEditCount}
+                    </span>
+                  )}
+                </button>
+              )}
+              {onAddClick && (
+                <button
+                  onClick={onAddClick}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm active:bg-blue-700 transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>{addButtonLabel}</span>
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
