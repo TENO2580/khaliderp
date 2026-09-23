@@ -182,7 +182,7 @@ export default function DataTable<T extends { id?: string }>({
 
   // Column Management & Preferences
   const pathname = usePathname();
-  const tablePrefKey = `tripidio_table_prefs_${pathname.replace(/\//g, '_')}`;
+  const tablePrefKey = `tripidio_prefs_v2_${pathname.replace(/\//g, '_')}`;
 
   const defaultPrefs: TablePreferences = useMemo(() => ({
     columns: columns.map((c, i) => {
