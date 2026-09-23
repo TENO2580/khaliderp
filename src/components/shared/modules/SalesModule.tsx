@@ -36,6 +36,7 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
   const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [mobileUnlocked, setMobileUnlocked] = useState(false);
+  const [mobilePendingCount, setMobilePendingCount] = useState(0);
 
   // Create/Edit Order Modal
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -774,6 +775,7 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
           addButtonLabel="Create Sales Order"
           onUnlockToggle={() => setMobileUnlocked(!mobileUnlocked)}
           isUnlocked={mobileUnlocked}
+          pendingEditCount={mobilePendingCount}
         />
       )}
 
@@ -842,6 +844,7 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
             hideToolbar={isMobile}
             externalUnlocked={isMobile ? mobileUnlocked : undefined}
             onExternalUnlockToggle={isMobile ? () => setMobileUnlocked(!mobileUnlocked) : undefined}
+            onPendingCountChange={isMobile ? setMobilePendingCount : undefined}
           />
         </div>
       ) : (

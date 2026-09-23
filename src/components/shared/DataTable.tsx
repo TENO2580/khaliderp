@@ -74,10 +74,9 @@ interface DataTableProps<T> {
   hideToolbar?: boolean;
   selectable?: boolean;
   onDeleteSelected?: (ids: string[]) => void;
-  // External unlock control (for mobile filter bar integration)
   externalUnlocked?: boolean;
   onExternalUnlockToggle?: () => void;
-  externalPendingCount?: number;
+  onPendingCountChange?: (count: number) => void;
 }
 
 export default function DataTable<T extends { id?: string }>({
@@ -111,7 +110,7 @@ export default function DataTable<T extends { id?: string }>({
   onDeleteSelected,
   externalUnlocked,
   onExternalUnlockToggle,
-  externalPendingCount,
+  onPendingCountChange,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState(searchValue || '');
   const [internalUnlocked, setInternalUnlocked] = useState(false);
@@ -126,6 +125,27 @@ export default function DataTable<T extends { id?: string }>({
   useEffect(() => {
     setSelectedRowIds(new Set());
   }, [data]);
+
+  // Handle external unlock toggles (e.g., from MobileFilterBar)
+  // When externalUnlocked goes from true to false, we save the pending edits.
+  useEffect(() => {
+    if (externalUnlocked === false) {
+      if (Object.keys(pendingEditsRef.current).length > 0 && onBatchSave) {
+        const edits: { rowId: string; key: string; value: string }[] = [];
+        for (const [rowId, fields] of Object.entries(pendingEditsRef.current)) {
+          for (const [key, value] of Object.entries(fields)) {
+            edits.push({ rowId, key, value });
+          }
+        }
+        if (edits.length > 0) {
+          onBatchSave(edits);
+        }
+        pendingEditsRef.current = {};
+        setPendingCount(0);
+        if (onPendingCountChange) onPendingCountChange(0);
+      }
+    }
+  }, [externalUnlocked, onBatchSave]);
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
@@ -378,6 +398,7 @@ export default function DataTable<T extends { id?: string }>({
       count += Object.keys(pendingEditsRef.current[rid]).length;
     }
     setPendingCount(count);
+    if (onPendingCountChange) onPendingCountChange(count);
   };
 
   const handleLock = () => {
@@ -393,6 +414,7 @@ export default function DataTable<T extends { id?: string }>({
       }
       pendingEditsRef.current = {};
       setPendingCount(0);
+      if (onPendingCountChange) onPendingCountChange(0);
     }
     setInternalUnlocked(!isUnlocked);
     if (onExternalUnlockToggle) onExternalUnlockToggle();
