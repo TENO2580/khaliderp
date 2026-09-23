@@ -5,7 +5,7 @@ import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { SearchableSelect } from '@/components/shared/SearchableSelect';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { Plus, FileText, CheckCircle2, DollarSign, X, Upload, History, FileSpreadsheet, Printer } from 'lucide-react';
+import { Plus, FileText, CheckCircle2, DollarSign, X, Upload, History, FileSpreadsheet, Printer, Download } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import useSWR from 'swr';
@@ -86,6 +86,45 @@ export default function DesktopSales() {
 
   const fetchData = () => {
     mutateSales();
+  };
+
+  const handleExport = async () => {
+    try {
+      toast.loading('Preparing export...', { id: 'export' });
+      const res = await api.get(`/sales?page=1&limit=5000&search=${encodeURIComponent(search)}&startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`);
+      const allOrders = res.data.data;
+      
+      const headers = ['Order ID', 'Order Date', 'Delivery Date', 'Customer', 'Batch', 'Product', 'Quantity (Units)', 'Total Weight (KG)', 'Sales Value', 'Production Cost', 'Profit', 'Margin', 'Status'];
+      const rows = allOrders.map((o: any) => [
+        o.orderNumber,
+        new Date(o.orderDate).toLocaleDateString(),
+        o.deliveryDate ? new Date(o.deliveryDate).toLocaleDateString() : '',
+        `"${(o.customer?.name || '').replace(/"/g, '""')}"`,
+        `"${(o.batch?.batchNumber || o.notes?.batchUsed || '').replace(/"/g, '""')}"`,
+        `"${(o.productType || o.notes?.type || '').replace(/"/g, '""')}"`,
+        o.quantity,
+        o.notes?.totalWeightKg || '',
+        o.totalAmount,
+        o.productionCost,
+        o.notes?.profitAmt || (o.totalAmount - o.productionCost),
+        `${o.marginPercentage}%`,
+        o.status
+      ]);
+
+      const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `sales_export_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success('Export downloaded!', { id: 'export' });
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to export data', { id: 'export' });
+    }
   };
 
   const handleDeleteSelected = async (ids: string[]) => {
@@ -638,6 +677,14 @@ export default function DesktopSales() {
           >
             <History className="h-4 w-4 text-purple-600 dark:text-purple-400" />
             <span>Import History</span>
+          </button>
+
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition-colors dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+          >
+            <Download className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <span>Export CSV</span>
           </button>
 
           <button
