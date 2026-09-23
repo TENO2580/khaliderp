@@ -95,21 +95,30 @@ export default function DesktopSales() {
       const allOrders = res.data.data;
       
       const headers = ['Order ID', 'Order Date', 'Delivery Date', 'Customer', 'Batch', 'Product', 'Quantity (Units)', 'Total Weight (KG)', 'Sales Value', 'Production Cost', 'Profit', 'Margin', 'Status'];
-      const rows = allOrders.map((o: any) => [
-        o.orderNumber,
-        new Date(o.orderDate).toLocaleDateString(),
-        o.deliveryDate ? new Date(o.deliveryDate).toLocaleDateString() : '',
-        `"${(o.customer?.name || '').replace(/"/g, '""')}"`,
-        `"${(o.batch?.batchNumber || o.notes?.batchUsed || '').replace(/"/g, '""')}"`,
-        `"${(o.productType || o.notes?.type || '').replace(/"/g, '""')}"`,
-        o.quantity,
-        o.notes?.totalWeightKg || '',
-        o.totalAmount,
-        o.productionCost,
-        o.notes?.profitAmt || (o.totalAmount - o.productionCost),
-        `${o.marginPercentage}%`,
-        o.status
-      ]);
+      const rows = allOrders.map((o: any) => {
+        const data = parseNotes(o.notes);
+        const qty = o.items?.reduce((sum: number, i: any) => sum + (Number(i.quantity) || 0), 0) || 0;
+        const totalWeightKg = data.totalWeightKg ? Number(data.totalWeightKg).toFixed(2) : '';
+        const prodCost = data.productionCost ? Number(data.productionCost).toFixed(2) : '';
+        const sellingCost = data.sellingCost ? Number(data.sellingCost).toFixed(2) : '';
+        const margin = data.margin ? `${data.margin}%` : '';
+
+        return [
+          o.orderNumber || '',
+          o.orderDate ? new Date(o.orderDate).toLocaleDateString() : '',
+          o.deliveryDate ? new Date(o.deliveryDate).toLocaleDateString() : '',
+          `"${(o.customer?.name || '').replace(/"/g, '""')}"`,
+          `"${(o.fifoBatches || data.batchUsed || '').replace(/"/g, '""')}"`,
+          `"${(data.type || '').replace(/"/g, '""')}"`,
+          qty,
+          totalWeightKg,
+          sellingCost,
+          prodCost,
+          data.profitAmt || '',
+          margin,
+          o.status || 'PENDING'
+        ];
+      });
 
       const csvContent = [headers.join(','), ...rows.map((r: any[]) => r.join(','))].join('\n');
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -121,9 +130,10 @@ export default function DesktopSales() {
       link.click();
       document.body.removeChild(link);
       toast.success('Export downloaded!', { id: 'export' });
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error('Failed to export data', { id: 'export' });
+      const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message || 'Unknown error';
+      toast.error(`Failed to export data: ${errorMsg}`, { id: 'export' });
     }
   };
 
