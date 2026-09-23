@@ -265,11 +265,14 @@ export default function DataTable<T extends { id?: string }>({
   const getColWidth = (header: string, customWidth?: number) => {
     if (customWidth && customWidth > 0) return customWidth;
     const h = header.toUpperCase();
-    if (h === 'ACTIONS' || h === 'ACTION') return 110;
+    if (h === 'ACTIONS' || h === 'ACTION') return 100;
     if (h === 'NAME' || h === 'CUSTOMER' || h === 'CUSTOMER NAME') return 180;
+    if (h.includes('PHONE')) return 120;
+    if (h.includes('QTY') || h.includes('UNITS') || h.includes('QUANTITY')) return 100;
+    if (h.includes('ORDER VALUE') || h.includes('SALES VALUE') || h.includes('AMOUNT') || h.includes('COST')) return 120;
     if (h === 'PROD #' || h === 'BATCH #' || h === 'PO #' || h === 'INVOICE #') return 130;
     if (h === 'STATUS') return 120;
-    return 140;
+    return 130;
   };
 
   // Calculate cumulative left & right sticky offsets for pinned columns
@@ -635,10 +638,10 @@ export default function DataTable<T extends { id?: string }>({
       </div>
       )}
 
-      <div className="flex-1 overflow-x-auto w-full max-w-full relative min-w-0">
+      <div className="flex-1 overflow-x-auto w-full max-w-full relative min-w-0" style={{ WebkitOverflowScrolling: 'touch' }}>
         <table 
-          style={{ minWidth: `${reorderedColumns.reduce((sum, col) => sum + (col._pref.width || getColWidth(col.header, col._pref.width)), selectable ? 48 : 0)}px` }}
-          className={cn("table-fixed text-left text-sm text-gray-600 dark:text-gray-400", globalLayout === 'auto' ? 'w-auto' : 'w-full')}
+          style={{ minWidth: `${Math.max(reorderedColumns.reduce((sum, col) => sum + (col._pref.width || getColWidth(col.header, col._pref.width)), selectable ? 48 : 0), 800)}px` }}
+          className="table-fixed text-left text-sm text-gray-600 dark:text-gray-400 min-w-full"
         >
           <thead className="sticky top-0 z-30 bg-gray-50 text-xs uppercase font-semibold tracking-wider text-gray-500 dark:bg-gray-950 dark:text-gray-400 shadow-sm border-b border-gray-200 dark:border-gray-800">
             <tr>
