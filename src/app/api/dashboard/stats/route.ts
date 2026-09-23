@@ -115,7 +115,7 @@ export async function GET(req: NextRequest) {
         (SELECT COUNT(*) FROM "customers" WHERE "status" = 'ACTIVE') as "activeCustomers",
         (SELECT COALESCE(SUM("outstanding"), 0) FROM "sales_orders" WHERE "outstanding" > 0) as "outstandingCredit",
         (SELECT COALESCE(SUM("waxInitialQty" - "producedQty"), 0) FROM "batches") as "waxStock",
-        (SELECT COALESCE(SUM("currentStock"), 0) FROM "inventory") as "finishedGoodsStock",
+        (SELECT COALESCE(SUM("remainingQty"), 0) FROM "batches") as "finishedGoodsStock",
         (SELECT COALESCE(SUM("value"), 0) FROM "inventory") as "inventoryValue",
         (SELECT COALESCE(SUM("quantityProduced"), 0) FROM "productions" WHERE "date" >= ${todayStart} AND "date" <= ${todayEnd}) as "productionToday",
         (SELECT COALESCE(SUM("quantityProduced"), 0) FROM "productions" WHERE "date" >= ${rangeStart} AND "date" <= ${rangeEnd}) as "productionPeriod",
@@ -253,7 +253,7 @@ export async function GET(req: NextRequest) {
     // 6) Inventory health
     const inventoryHealth = [
       { name: 'Wax Stock', amount: Math.round(waxStock) },
-      { name: 'Finished Goods', amount: Math.round(finishedGoodsStock) },
+      { name: 'Candle Remaining', amount: Math.round(finishedGoodsStock) },
     ];
 
     // 7) Period financials

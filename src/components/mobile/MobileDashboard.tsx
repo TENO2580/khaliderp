@@ -200,8 +200,8 @@ export default function MobileDashboard() {
           color="amber"
         />
         <KPICard
-          title="Finished Goods Stock"
-          value={`${formatNumber(kpis?.finishedGoodsStock || 0)} PCS`}
+          title="Candle Remaining"
+          value={`${formatNumber(kpis?.finishedGoodsStock || 0)} KG`}
           icon={Package}
           color="blue"
         />
