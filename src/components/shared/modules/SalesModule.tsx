@@ -970,21 +970,38 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
 
               {paymentMethod === 'CREDIT' && (
                 <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Advance / Paid Amount (₹)</label>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="0.00"
-                      value={paidAmount}
-                      onChange={(e) => {
-                        if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) return;
-                        setPaidAmount(e.target.value === '' ? '' : Number(e.target.value));
-                      }}
-                      className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
-                    />
-                    <p className="text-[10px] text-gray-500 mt-1">Leave empty or 0 if fully on credit. Outstanding will be calculated automatically.</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Advance / Paid Amount (₹)</label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="0.00"
+                        value={paidAmount}
+                        onChange={(e) => {
+                          if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) return;
+                          setPaidAmount(e.target.value === '' ? '' : Number(e.target.value));
+                        }}
+                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Credit Amount (₹)</label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="0.00"
+                        value={editFormData.totalAmount - (paidAmount === '' ? 0 : Number(paidAmount))}
+                        onChange={(e) => {
+                          if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) return;
+                          const creditAmt = e.target.value === '' ? 0 : Number(e.target.value);
+                          setPaidAmount(editFormData.totalAmount - creditAmt);
+                        }}
+                        className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                      />
+                    </div>
                   </div>
+                  <p className="text-[10px] text-gray-500 mt-2">Enter either the Advance Paid or the Credit Amount. They will sync automatically.</p>
                 </div>
               )}
 
