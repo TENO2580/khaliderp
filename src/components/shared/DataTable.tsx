@@ -316,7 +316,7 @@ export default function DataTable<T extends { id?: string }>({
       lastLeftPinnedHeader: lastLeft,
       firstRightPinnedHeader: firstRight,
     };
-  }, [reorderedColumns]);
+  }, [reorderedColumns, isMobile]);
 
   // Client-side pagination state fallback
   const [internalPage, setInternalPage] = useState(1);
@@ -638,7 +638,7 @@ export default function DataTable<T extends { id?: string }>({
       </div>
       )}
 
-      <div className="flex-1 overflow-x-auto w-full max-w-full relative min-w-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div key={pathname} className="flex-1 overflow-x-auto w-full max-w-full relative min-w-0" style={{ WebkitOverflowScrolling: 'touch' }}>
         <table 
           style={{ minWidth: `${Math.max(reorderedColumns.reduce((sum, col) => sum + (col._pref.width || getColWidth(col.header, col._pref.width)), selectable ? 48 : 0), 800)}px` }}
           className="table-fixed text-left text-sm text-gray-600 dark:text-gray-400 min-w-full"
