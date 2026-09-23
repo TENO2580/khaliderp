@@ -646,7 +646,10 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
         if (!data.margin) return <span className="text-sm text-gray-900 dark:text-gray-100">-</span>;
         const parts = data.margin.split(' (');
         const amt = parts[1] ? parts[1].replace(')', '') : '-';
-        return <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{amt}</span>;
+        const numAmt = Number(amt.replace(/[^0-9.-]+/g, ''));
+        return <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+          {isNaN(numAmt) ? amt : formatCurrency(numAmt)}
+        </span>;
       },
     },
     {
@@ -1144,7 +1147,7 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
                   <input
                     type="text"
                     readOnly
-                    value={editFormData.margin || '-'}
+                    value={String(editFormData.margin || '-').replace(/â,¹/g, '₹')}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-gray-50 text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 cursor-not-allowed"
                   />
                 </div>
