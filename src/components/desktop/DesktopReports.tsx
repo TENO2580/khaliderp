@@ -42,7 +42,7 @@ export default function DesktopReports() {
     { id: 'inventory', name: 'Inventory Valuation', icon: Package },
   ];
 
-  const { data: reportData, error, isLoading } = useSWR(`/api/reports?type=${activeTab}`, fetcher);
+  const { data: reportData, error, isLoading } = useSWR(`/reports?type=${activeTab}`, fetcher);
   const rows = reportData?.rows || [];
   const summary = reportData?.summary || {};
 
