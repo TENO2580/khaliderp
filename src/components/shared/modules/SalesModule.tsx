@@ -201,7 +201,7 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
     const qty = Number(items[0]?.quantity) || 0;
     const unitSellingPrice = Number(items[0]?.unitPrice) || 0;
     const prodCostPerUnit = Number(editFormData.productionCostPerUnit) || 0;
-    const weightPerUnit = Number(editFormData.weightPerUnit) || 1;
+    const weightPerUnit = Number(editFormData.weightPerUnit) || 0;
     
     const totalWeightKg = qty * weightPerUnit;
     const totalSellingCost = qty * unitSellingPrice;
@@ -1048,7 +1048,7 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
                         setEditFormData({
                           ...editFormData,
                           productId: val,
-                          weightPerUnit: selectedProduct.weightPerUnit || 0,
+                          weightPerUnit: selectedProduct.weightKg || 0,
                           productionCostPerUnit: prodCostPerUnit,
                           mrp: selectedProduct.mrp || 0,
                           regionalPrice: selectedProduct.regionalPrice || 0,
