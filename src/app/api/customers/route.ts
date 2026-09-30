@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
   const [data, total] = await Promise.all([
     prisma.customer.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { customerId: 'desc' },
       skip,
       take: limit,
       select: {
@@ -98,8 +98,25 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const count = await prisma.customer.count();
-    const customerId = `CUST-${String(count + 1).padStart(4, '0')}`;
+    // Fetch all customer IDs to find the true maximum numeric value
+    const allCustomers = await prisma.customer.findMany({
+      select: { customerId: true }
+    });
+
+    let maxId = 0;
+    for (const cust of allCustomers) {
+      if (cust.customerId) {
+        // Only match standard CUST-XXXX format
+        const match = cust.customerId.match(/^CUST-(\d+)$/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxId) maxId = num;
+        }
+      }
+    }
+
+    const nextIdNum = maxId > 0 ? maxId + 1 : (await prisma.customer.count()) + 1;
+    const customerId = `CUST-${String(nextIdNum).padStart(4, '0')}`;
 
     if (body.lastPurchaseDate) {
       body.lastPurchaseDate = new Date(body.lastPurchaseDate).toISOString();
