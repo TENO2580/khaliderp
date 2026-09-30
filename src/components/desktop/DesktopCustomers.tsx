@@ -534,7 +534,7 @@ export default function DesktopCustomers() {
                   <input
                     type="number"
                     value={formData.creditLimit}
-                    onChange={(e) => setFormData({ ...formData, creditLimit: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
+                    onChange={(e) => setFormData({ ...formData, creditLimit: (e.target.value === '' ? '' : (e.target.value as any)) as any })}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                   />
                 </div>
@@ -589,7 +589,7 @@ export default function DesktopCustomers() {
                   <input
                     type="number"
                     value={formData.sellingPrice}
-                    onChange={(e) => setFormData({ ...formData, sellingPrice: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
+                    onChange={(e) => setFormData({ ...formData, sellingPrice: (e.target.value === '' ? '' : (e.target.value as any)) as any })}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                   />
                 </div>

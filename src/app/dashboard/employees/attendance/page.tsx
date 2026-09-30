@@ -112,7 +112,7 @@ export default function EmployeeAttendancePage() {
             </select>
             <select
               value={selectedMonth}
-              onChange={(e) => setSelectedMonth((e.target.value === '' ? '' : Number(e.target.value)) as any)}
+              onChange={(e) => setSelectedMonth((e.target.value === '' ? '' : (e.target.value as any)) as any)}
               className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
             >
               {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
@@ -123,7 +123,7 @@ export default function EmployeeAttendancePage() {
             </select>
             <select
               value={selectedYear}
-              onChange={(e) => setSelectedYear((e.target.value === '' ? '' : Number(e.target.value)) as any)}
+              onChange={(e) => setSelectedYear((e.target.value === '' ? '' : (e.target.value as any)) as any)}
               className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
             >
               {[2024, 2025, 2026, 2027].map((y) => (
@@ -218,7 +218,7 @@ export default function EmployeeAttendancePage() {
                       <input
                         type="number"
                         value={row.targetKg || ''}
-                        onChange={(e) => updateRow(row.id, 'targetKg', (e.target.value === '' ? '' : Number(e.target.value)) as any)}
+                        onChange={(e) => updateRow(row.id, 'targetKg', (e.target.value === '' ? '' : (e.target.value as any)) as any)}
                         className="w-16 rounded border border-gray-200 bg-transparent px-2 py-1 text-center text-sm focus:border-[#1e3a8a] focus:outline-none dark:border-gray-700"
                       />
                     ) : (
@@ -229,7 +229,7 @@ export default function EmployeeAttendancePage() {
                     <input
                       type="number"
                       value={row.isPresent ? (row.actualKg || '') : ''}
-                      onChange={(e) => updateRow(row.id, 'actualKg', (e.target.value === '' ? '' : Number(e.target.value)) as any)}
+                      onChange={(e) => updateRow(row.id, 'actualKg', (e.target.value === '' ? '' : (e.target.value as any)) as any)}
                       disabled={!row.isPresent}
                       className="w-16 rounded border border-gray-200 bg-transparent px-2 py-1 text-center text-sm disabled:opacity-50 focus:border-[#1e3a8a] focus:outline-none dark:border-gray-700"
                     />
@@ -240,7 +240,7 @@ export default function EmployeeAttendancePage() {
                       <input
                         type="number"
                         value={row.dailySalary || ''}
-                        onChange={(e) => updateRow(row.id, 'dailySalary', (e.target.value === '' ? '' : Number(e.target.value)) as any)}
+                        onChange={(e) => updateRow(row.id, 'dailySalary', (e.target.value === '' ? '' : (e.target.value as any)) as any)}
                         className="w-20 rounded border border-gray-200 bg-transparent px-2 py-1 text-center text-sm focus:border-[#1e3a8a] focus:outline-none dark:border-gray-700"
                       />
                     ) : (

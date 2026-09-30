@@ -980,7 +980,7 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
                         value={paidAmount}
                         onChange={(e) => {
                           if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) return;
-                          setPaidAmount(e.target.value === '' ? '' : Number(e.target.value));
+                          setPaidAmount(e.target.value === '' ? '' : (e.target.value as any));
                         }}
                         className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                       />
@@ -994,7 +994,7 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
                         value={editFormData.totalAmount - (paidAmount === '' ? 0 : Number(paidAmount))}
                         onChange={(e) => {
                           if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) return;
-                          const creditAmt = e.target.value === '' ? 0 : Number(e.target.value);
+                          const creditAmt = e.target.value === '' ? 0 : (e.target.value as any);
                           setPaidAmount(editFormData.totalAmount - creditAmt);
                         }}
                         className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
@@ -1115,7 +1115,7 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
                     value={editFormData.productionCostPerUnit ?? ''}
                     onChange={(e) => {
                       if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) return;
-                      setEditFormData({ ...editFormData, productionCostPerUnit: e.target.value === '' ? '' : Number(e.target.value) as any });
+                      setEditFormData({ ...editFormData, productionCostPerUnit: e.target.value === '' ? '' : e.target.value as any });
                     }}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                   />
@@ -1142,7 +1142,7 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
                     onChange={(e) => {
                       if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) return;
                       const newItems = [...(items || [{}])];
-                      newItems[0] = { ...newItems[0], unitPrice: e.target.value === '' ? '' : Number(e.target.value) };
+                      newItems[0] = { ...newItems[0], unitPrice: e.target.value === '' ? '' : (e.target.value as any) };
                       setItems(newItems);
                     }}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"

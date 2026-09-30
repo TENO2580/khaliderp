@@ -305,7 +305,7 @@ export default function DesktopEmployees() {
                   <input
                     type="number"
                     value={formData.salary}
-                    onChange={(e) => setFormData({ ...formData, salary: (e.target.value === '' ? '' : Number(e.target.value)) as any })}
+                    onChange={(e) => setFormData({ ...formData, salary: (e.target.value === '' ? '' : (e.target.value as any)) as any })}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white font-bold"
                   />
                 </div>

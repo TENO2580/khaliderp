@@ -468,7 +468,7 @@ export default function MobileBatches() {
                     step="0.01"
                     required
                     value={waxInitialQty}
-                    onChange={(e) => setWaxInitialQty(e.target.value === '' ? '' : (e.target.value === '' ? '' : Number(e.target.value)) as any)}
+                    onChange={(e) => setWaxInitialQty(e.target.value === '' ? '' : (e.target.value === '' ? '' : (e.target.value as any)) as any)}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                   />
                 </div>
@@ -479,7 +479,7 @@ export default function MobileBatches() {
                     step="0.01"
                     required
                     value={waxRate}
-                    onChange={(e) => setWaxRate(e.target.value === '' ? '' : (e.target.value === '' ? '' : Number(e.target.value)) as any)}
+                    onChange={(e) => setWaxRate(e.target.value === '' ? '' : (e.target.value === '' ? '' : (e.target.value as any)) as any)}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                   />
                 </div>
@@ -489,7 +489,7 @@ export default function MobileBatches() {
                     type="number"
                     step="0.01"
                     value={sellingPrice}
-                    onChange={(e) => setSellingPrice((e.target.value === '' ? '' : Number(e.target.value)) as any)}
+                    onChange={(e) => setSellingPrice((e.target.value === '' ? '' : (e.target.value as any)) as any)}
                     className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                   />
                 </div>

@@ -309,15 +309,15 @@ export default function MobilePricing() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Selling Price (₹) *</label>
-                  <input required type="number" step="any" value={newProduct.sellingPrice || ''} onChange={e => setNewProduct({ ...newProduct, sellingPrice: Number(e.target.value) })} className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950" />
+                  <input required type="number" step="any" value={newProduct.sellingPrice || ''} onChange={e => setNewProduct({ ...newProduct, sellingPrice: (e.target.value as any) })} className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Unit Weight (KG) *</label>
-                  <input required type="number" step="any" value={newProduct.weightKg || ''} onChange={e => setNewProduct({ ...newProduct, weightKg: Number(e.target.value) })} className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950" />
+                  <input required type="number" step="any" value={newProduct.weightKg || ''} onChange={e => setNewProduct({ ...newProduct, weightKg: (e.target.value as any) })} className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Quantity in Case *</label>
-                  <input required type="number" step="any" value={newProduct.qty || ''} onChange={e => setNewProduct({ ...newProduct, qty: Number(e.target.value) })} className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950" />
+                  <input required type="number" step="any" value={newProduct.qty || ''} onChange={e => setNewProduct({ ...newProduct, qty: (e.target.value as any) })} className="w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950" />
                 </div>
               </div>
               <div className="pt-4 flex justify-end gap-3">

@@ -271,7 +271,7 @@ export default function DesktopProduction() {
                       step="0.1"
                       value={formData.waxUsed}
                       onChange={(e) => {
-                        const val = e.target.value === '' ? '' : Number(e.target.value);
+                        const val = e.target.value === '' ? '' : (e.target.value as any);
                         setFormData({ ...formData, waxUsed: val as any, quantityProduced: val as any });
                       }}
                       className="mt-1 w-full rounded-xl border border-blue-500 p-2 text-sm bg-white dark:bg-gray-950 font-bold"
