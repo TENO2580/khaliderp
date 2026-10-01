@@ -20,9 +20,9 @@ export async function GET(req: NextRequest) {
           select: { id: true, orderNumber: true, orderDate: true, totalAmount: true, paidAmount: true, outstanding: true, status: true, paymentStatus: true, customer: { select: { name: true } } },
           take: 100,
         });
-        const totalRevenue = orders.reduce((s, o) => s + o.totalAmount, 0);
-        const totalPaid = orders.reduce((s, o) => s + o.paidAmount, 0);
-        const totalOutstanding = orders.reduce((s, o) => s + o.outstanding, 0);
+        const totalRevenue = orders.reduce((s, o) => s + Number(o.totalAmount || 0), 0);
+        const totalPaid = orders.reduce((s, o) => s + Number(o.paidAmount || 0), 0);
+        const totalOutstanding = orders.reduce((s, o) => s + Number(o.outstanding || 0), 0);
         const orderCount = orders.length;
         return jsonResponse({
           summary: { totalRevenue, totalPaid, totalOutstanding, orderCount },
@@ -31,9 +31,9 @@ export async function GET(req: NextRequest) {
             orderNumber: o.orderNumber,
             customer: o.customer?.name || 'N/A',
             date: o.orderDate,
-            amount: o.totalAmount,
-            paid: o.paidAmount,
-            outstanding: o.outstanding,
+            amount: Number(o.totalAmount || 0),
+            paid: Number(o.paidAmount || 0),
+            outstanding: Number(o.outstanding || 0),
             status: o.status,
             paymentStatus: o.paymentStatus,
           })),
@@ -63,9 +63,9 @@ export async function GET(req: NextRequest) {
             phone: c.phone,
             type: c.type,
             status: c.status,
-            outstanding: c.outstanding,
+            outstanding: Number(c.outstanding || 0),
             totalOrders: c.salesOrders.length,
-            totalRevenue: c.salesOrders.reduce((s, o) => s + o.totalAmount, 0),
+            totalRevenue: c.salesOrders.reduce((s, o) => s + Number(o.totalAmount || 0), 0),
           })),
         });
       }
@@ -76,9 +76,9 @@ export async function GET(req: NextRequest) {
           prisma.production.aggregate({ _sum: { totalCost: true, quantityProduced: true } }),
           prisma.expense.aggregate({ _sum: { amount: true } }),
         ]);
-        const revenue = salesAgg._sum.totalAmount || 0;
-        const productionCost = prodAgg._sum.totalCost || 0;
-        const expenses = expenseAgg._sum.amount || 0;
+        const revenue = Number(salesAgg._sum.totalAmount || 0) || 0;
+        const productionCost = Number(prodAgg._sum.totalCost || 0) || 0;
+        const expenses = Number(expenseAgg._sum.amount || 0) || 0;
         const grossProfit = revenue - productionCost;
         const netProfit = grossProfit - expenses;
         const grossMargin = revenue > 0 ? (grossProfit / revenue) * 100 : 0;
@@ -106,14 +106,14 @@ export async function GET(req: NextRequest) {
         const catIds = expensesByCategory.map((e) => e.categoryId);
         const categories = catIds.length > 0 ? await prisma.expenseCategory.findMany({ where: { id: { in: catIds } } }) : [];
         const catMap = Object.fromEntries(categories.map((c) => [c.id, c.name]));
-        const totalExpenses = expensesByCategory.reduce((s, e) => s + (e._sum.amount || 0), 0);
+        const totalExpenses = expensesByCategory.reduce((s, e) => s + Number(e._sum.amount || 0), 0);
         return jsonResponse({
           summary: { totalExpenses, categoryCount: expensesByCategory.length },
           rows: expensesByCategory.map((e) => ({
             category: catMap[e.categoryId] || 'Unknown',
             amount: e._sum.amount || 0,
             count: e._count,
-            percentage: totalExpenses > 0 ? ((e._sum.amount || 0) / totalExpenses) * 100 : 0,
+            percentage: totalExpenses > 0 ? (Number(e._sum.amount || 0) / totalExpenses) * 100 : 0,
           })),
         });
       }
@@ -165,8 +165,8 @@ export async function GET(req: NextRequest) {
           select: { id: true, productionNumber: true, date: true, shift: true, waxUsed: true, quantityProduced: true, totalCost: true, costPerKg: true, margin: true, batch: { select: { batchNumber: true } }, operator: { select: { name: true } } },
           take: 100,
         });
-        const totalQty = productions.reduce((s, p) => s + p.quantityProduced, 0);
-        const totalCost = productions.reduce((s, p) => s + p.totalCost, 0);
+        const totalQty = productions.reduce((s, p) => s + Number(p.quantityProduced || 0), 0);
+        const totalCost = productions.reduce((s, p) => s + Number(p.totalCost || 0), 0);
         const avgCostPerKg = totalQty > 0 ? totalCost / totalQty : 0;
         return jsonResponse({
           summary: { totalProductions: productions.length, totalQty, totalCost, avgCostPerKg },
@@ -177,8 +177,8 @@ export async function GET(req: NextRequest) {
             date: p.date,
             shift: p.shift,
             waxUsed: p.waxUsed,
-            quantityProduced: p.quantityProduced,
-            totalCost: p.totalCost,
+            quantityProduced: Number(p.quantityProduced || 0),
+            totalCost: Number(p.totalCost || 0),
             costPerKg: p.costPerKg,
             margin: p.margin,
             operator: p.operator?.name || 'N/A',
@@ -192,11 +192,11 @@ export async function GET(req: NextRequest) {
           select: { id: true, invoiceNumber: true, invoiceDate: true, totalAmount: true, totalGst: true, cgst: true, sgst: true, igst: true, customer: { select: { name: true } } },
           take: 100,
         });
-        const totalTaxable = invoices.reduce((s, i) => s + (i.totalAmount - i.totalGst), 0);
-        const totalCgst = invoices.reduce((s, i) => s + i.cgst, 0);
-        const totalSgst = invoices.reduce((s, i) => s + i.sgst, 0);
-        const totalIgst = invoices.reduce((s, i) => s + i.igst, 0);
-        const totalGst = invoices.reduce((s, i) => s + i.totalGst, 0);
+        const totalTaxable = invoices.reduce((s, i) => s + ((Number(i.totalAmount || 0) - Number(Number(i.totalGst || 0) || 0))), 0);
+        const totalCgst = invoices.reduce((s, i) => s + Number(i.cgst || 0), 0);
+        const totalSgst = invoices.reduce((s, i) => s + Number(i.sgst || 0), 0);
+        const totalIgst = invoices.reduce((s, i) => s + Number(i.igst || 0), 0);
+        const totalGst = invoices.reduce((s, i) => s + Number(i.totalGst || 0), 0);
         return jsonResponse({
           summary: { invoiceCount: invoices.length, totalTaxable, totalCgst, totalSgst, totalIgst, totalGst },
           rows: invoices.map((i) => ({
@@ -204,11 +204,11 @@ export async function GET(req: NextRequest) {
             invoiceNumber: i.invoiceNumber,
             customer: i.customer?.name || 'N/A',
             date: i.invoiceDate,
-            taxableAmount: i.totalAmount - i.totalGst,
-            cgst: i.cgst,
-            sgst: i.sgst,
-            igst: i.igst,
-            totalGst: i.totalGst,
+            taxableAmount: (Number(i.totalAmount || 0) - Number(Number(i.totalGst || 0) || 0)),
+            cgst: Number(i.cgst || 0),
+            sgst: Number(i.sgst || 0),
+            igst: Number(i.igst || 0),
+            totalGst: Number(i.totalGst || 0),
             totalAmount: i.totalAmount,
           })),
         });
@@ -220,7 +220,7 @@ export async function GET(req: NextRequest) {
           orderBy: { outstanding: 'desc' },
           select: { id: true, customerId: true, name: true, phone: true, outstanding: true, creditLimit: true, invoices: { where: { outstanding: { gt: 0 } }, orderBy: { dueDate: 'asc' }, select: { dueDate: true } } },
         });
-        const totalOutstanding = customers.reduce((s, c) => s + c.outstanding, 0);
+        const totalOutstanding = customers.reduce((s, c) => s + Number(c.outstanding || 0), 0);
         return jsonResponse({
           summary: { totalOutstanding, customersWithDues: customers.length },
           rows: customers.map((c) => ({
@@ -228,7 +228,7 @@ export async function GET(req: NextRequest) {
             customerId: c.customerId,
             name: c.name,
             phone: c.phone,
-            outstanding: c.outstanding,
+            outstanding: Number(c.outstanding || 0),
             creditLimit: c.creditLimit,
             invoiceCount: c.invoices.length,
             oldestDue: c.invoices.length > 0 ? c.invoices[0].dueDate : null,
