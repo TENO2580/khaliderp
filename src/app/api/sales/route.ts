@@ -229,6 +229,7 @@ export async function POST(req: NextRequest) {
           deliveryDate: deliveryDate ? new Date(deliveryDate) : undefined,
           status: status || 'PENDING',
           subtotal,
+          revenue: subtotal,
           totalGst,
           cgst: totalGst / 2,
           sgst: totalGst / 2,

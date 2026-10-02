@@ -105,8 +105,8 @@ export async function GET(req: NextRequest) {
     // Using Raw SQL for instant single-roundtrip performance
     const rawData: any = await prisma.$queryRaw`
       SELECT 
-        (SELECT COALESCE(SUM("totalAmount"), 0) FROM "sales_orders" WHERE "orderDate" >= ${todayStart} AND "orderDate" <= ${todayEnd}) as "todaysSales",
-        (SELECT COALESCE(SUM("totalAmount"), 0) FROM "sales_orders" WHERE "orderDate" >= ${rangeStart} AND "orderDate" <= ${rangeEnd}) as "periodSales",
+        (SELECT COALESCE(SUM("revenue"), 0) FROM "sales_orders" WHERE "orderDate" >= ${todayStart} AND "orderDate" <= ${todayEnd}) as "todaysSales",
+        (SELECT COALESCE(SUM("revenue"), 0) FROM "sales_orders" WHERE "orderDate" >= ${rangeStart} AND "orderDate" <= ${rangeEnd}) as "periodSales",
         (SELECT COALESCE(SUM("amount"), 0) FROM "expenses" WHERE "date" >= ${rangeStart} AND "date" <= ${rangeEnd}) as "periodExpenses",
         (SELECT COALESCE(SUM("amount"), 0) FROM "expenses" WHERE "date" >= ${todayStart} AND "date" <= ${todayEnd}) as "todaysExpenses",
         (SELECT COALESCE(SUM("totalCost"), 0) FROM "productions" WHERE "date" >= ${rangeStart} AND "date" <= ${rangeEnd}) as "periodProductionCost",
@@ -121,7 +121,7 @@ export async function GET(req: NextRequest) {
         (SELECT COALESCE(SUM("quantityProduced"), 0) FROM "productions" WHERE "date" >= ${todayStart} AND "date" <= ${todayEnd}) as "productionToday",
         (SELECT COALESCE(SUM("quantityProduced"), 0) FROM "productions" WHERE "date" >= ${rangeStart} AND "date" <= ${rangeEnd}) as "productionPeriod",
         (SELECT COUNT(*) FROM "attendance" WHERE "date" >= ${todayStart} AND "date" <= ${todayEnd} AND "status" IN ('PRESENT', 'LATE')) as "employeeAttendanceToday",
-        (SELECT COALESCE(SUM("totalAmount"), 0) FROM "sales_orders" WHERE "orderDate" >= ${prevRangeStart} AND "orderDate" <= ${prevRangeEnd}) as "prevPeriodSales",
+        (SELECT COALESCE(SUM("revenue"), 0) FROM "sales_orders" WHERE "orderDate" >= ${prevRangeStart} AND "orderDate" <= ${prevRangeEnd}) as "prevPeriodSales",
         (SELECT COALESCE(SUM("amount"), 0) FROM "expenses" WHERE "date" >= ${prevRangeStart} AND "date" <= ${prevRangeEnd}) as "prevPeriodExpenses",
         (SELECT COALESCE(SUM(("notes"::jsonb->>'profitAmt')::numeric), 0) FROM "sales_orders" WHERE "orderDate" >= ${todayStart} AND "orderDate" <= ${todayEnd} AND "notes" IS NOT NULL AND "notes" != '') as "todaysSalesMargin",
         (SELECT COALESCE(SUM(("notes"::jsonb->>'profitAmt')::numeric), 0) FROM "sales_orders" WHERE "orderDate" >= ${rangeStart} AND "orderDate" <= ${rangeEnd} AND "notes" IS NOT NULL AND "notes" != '') as "periodSalesMargin"
