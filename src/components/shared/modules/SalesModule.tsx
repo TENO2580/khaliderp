@@ -101,13 +101,13 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
       const res = await api.get(`/sales?page=1&limit=5000&search=${encodeURIComponent(search)}&startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`);
       const allOrders = res.data?.data?.data || [];
       
-      const headers = ['Order ID', 'Order Date', 'Delivery Date', 'Customer', 'Batch', 'Product', 'Quantity (Units)', 'Total Weight (KG)', 'Sales Value', 'Production Cost', 'Profit', 'Margin', 'Status'];
+      const headers = ['Order ID', 'Order Date', 'Delivery Date', 'Customer', 'Batch', 'Product', 'Quantity (Units)', 'Total Weight (KG)', 'Total Selling Amount', 'Production Cost', 'Profit', 'Margin', 'Status'];
       const rows = allOrders.map((o: any) => {
         const data = parseNotes(o.notes);
         const qty = o.items?.reduce((sum: number, i: any) => sum + (Number(i.quantity) || 0), 0) || 0;
         const totalWeightKg = data.totalWeightKg ? Number(data.totalWeightKg).toFixed(2) : '';
         const prodCost = data.productionCost ? Number(data.productionCost).toFixed(2) : '';
-        const sellingCost = o.totalAmount ? Number(o.totalAmount).toFixed(2) : '0.00';
+        const sellingCost = o.subtotal ? Number(o.subtotal).toFixed(2) : (o.totalAmount ? Number(o.totalAmount).toFixed(2) : '0.00');
         const margin = data.margin ? `"${data.margin}"` : '';
 
         return [
@@ -602,12 +602,12 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
       },
     },
     {
-      header: 'Total Selling Cost',
-      editableKey: 'totalAmount',
+      header: 'Total Selling Amount',
+      editableKey: 'subtotal',
       inlineEditable: true,
       inputType: 'number',
       cell: (o) => {
-        const total = Number(o.totalAmount || 0);
+        const total = Number(o.subtotal || o.totalAmount || 0);
         return <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(total)}</span>;
       },
     },
