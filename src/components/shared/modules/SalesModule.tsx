@@ -307,7 +307,7 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
             productId: editFormData.productId,
             type: editFormData.type,
             weightPerUnit: editFormData.weightPerUnit,
-            quantityUnits: qty,
+            quantityUnits: Number(items[0]?.quantity) || 0,
             totalWeightKg: editFormData.totalWeightKg,
             productionCostPerUnit: editFormData.productionCostPerUnit,
             productionCost: editFormData.productionCost,
