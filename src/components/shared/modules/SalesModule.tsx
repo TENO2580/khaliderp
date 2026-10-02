@@ -570,7 +570,7 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
       },
     },
     {
-      header: 'Selling Cost',
+      header: 'Unit Selling Price',
       editableKey: 'sellingCost',
       inlineEditable: true,
       inputType: 'number',
@@ -607,10 +607,7 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
       inlineEditable: true,
       inputType: 'number',
       cell: (o) => {
-        const data = parseNotes(o.notes);
-        const qtyKg = Number(data.totalWeightKg !== undefined ? data.totalWeightKg : (o.items?.reduce((sum: number, i: any) => sum + i.quantity, 0) || 0));
-        const sellingCost = Number(data.sellingCost !== undefined ? data.sellingCost : (o.items?.[0]?.unitPrice || 0));
-        const total = (qtyKg > 0 && sellingCost > 0) ? (qtyKg * sellingCost) : Number(o.totalAmount || 0);
+        const total = Number(o.totalAmount || 0);
         return <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(total)}</span>;
       },
     },
