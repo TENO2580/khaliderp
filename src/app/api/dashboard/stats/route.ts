@@ -108,6 +108,7 @@ export async function GET(req: NextRequest) {
         (SELECT COALESCE(SUM("totalAmount"), 0) FROM "sales_orders" WHERE "orderDate" >= ${todayStart} AND "orderDate" <= ${todayEnd}) as "todaysSales",
         (SELECT COALESCE(SUM("totalAmount"), 0) FROM "sales_orders" WHERE "orderDate" >= ${rangeStart} AND "orderDate" <= ${rangeEnd}) as "periodSales",
         (SELECT COALESCE(SUM("amount"), 0) FROM "expenses" WHERE "date" >= ${rangeStart} AND "date" <= ${rangeEnd}) as "periodExpenses",
+        (SELECT COALESCE(SUM("amount"), 0) FROM "expenses" WHERE "date" >= ${todayStart} AND "date" <= ${todayEnd}) as "todaysExpenses",
         (SELECT COALESCE(SUM("totalCost"), 0) FROM "productions" WHERE "date" >= ${rangeStart} AND "date" <= ${rangeEnd}) as "periodProductionCost",
         (SELECT COUNT(*) FROM "sales_orders" WHERE "status" IN ('PENDING', 'CONFIRMED', 'IN_PRODUCTION', 'READY')) as "ordersPending",
         (SELECT COUNT(*) FROM "sales_orders" WHERE "status" = 'DELIVERED' AND "orderDate" >= ${rangeStart} AND "orderDate" <= ${rangeEnd}) as "ordersDelivered",
@@ -121,13 +122,16 @@ export async function GET(req: NextRequest) {
         (SELECT COALESCE(SUM("quantityProduced"), 0) FROM "productions" WHERE "date" >= ${rangeStart} AND "date" <= ${rangeEnd}) as "productionPeriod",
         (SELECT COUNT(*) FROM "attendance" WHERE "date" >= ${todayStart} AND "date" <= ${todayEnd} AND "status" IN ('PRESENT', 'LATE')) as "employeeAttendanceToday",
         (SELECT COALESCE(SUM("totalAmount"), 0) FROM "sales_orders" WHERE "orderDate" >= ${prevRangeStart} AND "orderDate" <= ${prevRangeEnd}) as "prevPeriodSales",
-        (SELECT COALESCE(SUM("amount"), 0) FROM "expenses" WHERE "date" >= ${prevRangeStart} AND "date" <= ${prevRangeEnd}) as "prevPeriodExpenses"
+        (SELECT COALESCE(SUM("amount"), 0) FROM "expenses" WHERE "date" >= ${prevRangeStart} AND "date" <= ${prevRangeEnd}) as "prevPeriodExpenses",
+        (SELECT COALESCE(SUM(("notes"->>'profitAmt')::numeric), 0) FROM "sales_orders" WHERE "orderDate" >= ${todayStart} AND "orderDate" <= ${todayEnd} AND "notes"->>'profitAmt' IS NOT NULL) as "todaysSalesMargin",
+        (SELECT COALESCE(SUM(("notes"->>'profitAmt')::numeric), 0) FROM "sales_orders" WHERE "orderDate" >= ${rangeStart} AND "orderDate" <= ${rangeEnd} AND "notes"->>'profitAmt' IS NOT NULL) as "periodSalesMargin"
     `;
 
     const row = rawData[0];
     const todaysSales = Number(row.todaysSales || 0);
     const periodSales = Number(row.periodSales || 0);
     const periodExpenses = Number(row.periodExpenses || 0);
+    const todaysExpenses = Number(row.todaysExpenses || 0);
     const periodProductionCost = Number(row.periodProductionCost || 0);
     const waxStock = Number(row.waxStock || 0);
     const finishedGoodsStock = Number(row.finishedGoodsStock || 0);
@@ -142,10 +146,13 @@ export async function GET(req: NextRequest) {
     const totalCustomers = Number(row.totalCustomers || 0);
     const activeCustomers = Number(row.activeCustomers || 0);
     const employeeAttendanceToday = Number(row.employeeAttendanceToday || 0);
+    const todaysSalesMargin = Number(row.todaysSalesMargin || 0);
+    const periodSalesMargin = Number(row.periodSalesMargin || 0);
 
-    const periodProfit = periodSales - periodExpenses;
-    const grossMargin = periodSales > 0 ? Math.round((periodProfit / periodSales) * 100 * 10) / 10 : 0;
-    const todaysProfit = periodSales > 0 ? Math.round(todaysSales * (periodProfit / periodSales)) : 0;
+    // Profit = Actual sales margin (from order notes) - Expenses
+    const periodProfit = periodSalesMargin - periodExpenses;
+    const grossMargin = periodSalesMargin > 0 ? Math.round((periodProfit / periodSalesMargin) * 100 * 10) / 10 : 0;
+    const todaysProfit = Math.round(todaysSalesMargin - todaysExpenses);
 
     const salesChange = prevPeriodSales > 0 ? Math.round(((periodSales - prevPeriodSales) / prevPeriodSales) * 100 * 10) / 10 : 0;
     const expenseChange = prevPeriodExpenses > 0 ? Math.round(((periodExpenses - prevPeriodExpenses) / prevPeriodExpenses) * 100 * 10) / 10 : 0;
