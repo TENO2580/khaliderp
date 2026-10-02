@@ -107,8 +107,8 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
         const qty = o.items?.reduce((sum: number, i: any) => sum + (Number(i.quantity) || 0), 0) || 0;
         const totalWeightKg = data.totalWeightKg ? Number(data.totalWeightKg).toFixed(2) : '';
         const prodCost = data.productionCost ? Number(data.productionCost).toFixed(2) : '';
-        const sellingCost = data.sellingCost ? Number(data.sellingCost).toFixed(2) : '';
-        const margin = data.margin ? `${data.margin}%` : '';
+        const sellingCost = o.totalAmount ? Number(o.totalAmount).toFixed(2) : '0.00';
+        const margin = data.margin ? `"${data.margin}"` : '';
 
         return [
           o.orderNumber || '',
@@ -128,7 +128,7 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
       });
 
       const csvContent = [headers.join(','), ...rows.map((r: any[]) => r.join(','))].join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.setAttribute('href', url);
