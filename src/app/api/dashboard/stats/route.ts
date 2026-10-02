@@ -123,8 +123,8 @@ export async function GET(req: NextRequest) {
         (SELECT COUNT(*) FROM "attendance" WHERE "date" >= ${todayStart} AND "date" <= ${todayEnd} AND "status" IN ('PRESENT', 'LATE')) as "employeeAttendanceToday",
         (SELECT COALESCE(SUM("totalAmount"), 0) FROM "sales_orders" WHERE "orderDate" >= ${prevRangeStart} AND "orderDate" <= ${prevRangeEnd}) as "prevPeriodSales",
         (SELECT COALESCE(SUM("amount"), 0) FROM "expenses" WHERE "date" >= ${prevRangeStart} AND "date" <= ${prevRangeEnd}) as "prevPeriodExpenses",
-        (SELECT COALESCE(SUM(("notes"->>'profitAmt')::numeric), 0) FROM "sales_orders" WHERE "orderDate" >= ${todayStart} AND "orderDate" <= ${todayEnd} AND "notes"->>'profitAmt' IS NOT NULL) as "todaysSalesMargin",
-        (SELECT COALESCE(SUM(("notes"->>'profitAmt')::numeric), 0) FROM "sales_orders" WHERE "orderDate" >= ${rangeStart} AND "orderDate" <= ${rangeEnd} AND "notes"->>'profitAmt' IS NOT NULL) as "periodSalesMargin"
+        (SELECT COALESCE(SUM(("notes"::jsonb->>'profitAmt')::numeric), 0) FROM "sales_orders" WHERE "orderDate" >= ${todayStart} AND "orderDate" <= ${todayEnd} AND "notes" IS NOT NULL AND "notes" != '') as "todaysSalesMargin",
+        (SELECT COALESCE(SUM(("notes"::jsonb->>'profitAmt')::numeric), 0) FROM "sales_orders" WHERE "orderDate" >= ${rangeStart} AND "orderDate" <= ${rangeEnd} AND "notes" IS NOT NULL AND "notes" != '') as "periodSalesMargin"
     `;
 
     const row = rawData[0];
