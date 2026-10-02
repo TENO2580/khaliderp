@@ -1071,7 +1071,7 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
                 </div>
                 <div>
                   <div className="flex justify-between items-center">
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Unit Production Cost (\u20B9)</label>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Unit Production Cost (₹)</label>
                     {editFormData.productId && (
                       <button 
                         type="button" 
@@ -1103,7 +1103,7 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Total Production Cost (\u20B9)</label>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Total Production Cost (₹)</label>
                   <input
                     type="text"
                     readOnly
@@ -1113,7 +1113,7 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
                   <p className="text-[10px] text-gray-500 mt-1">Auto-calculated: {items?.[0]?.quantity || 1} Units × ₹{Number(editFormData.productionCostPerUnit || 0).toFixed(2)}/Unit</p>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Unit Selling Price (\u20B9)</label>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Unit Selling Price (₹)</label>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -1130,7 +1130,7 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Total Selling Amount (\u20B9)</label>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Total Selling Amount (₹)</label>
                   <input
                     type="text"
                     readOnly

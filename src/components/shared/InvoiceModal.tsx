@@ -161,7 +161,7 @@ export default function InvoiceModal({ isOpen, onClose, order, customData }: Inv
           <td style="${cellStyle}"></td>
           <td style="${cellStyle}"></td>
           <td style="${cellStyle} ${boldStyle} ${centerStyle}">Grand Total: -</td>
-          <td style="${cellStyle} ${boldStyle} ${centerStyle}">\u20B9${formatInvoiceNumber(grandTotal)}/-</td>
+          <td style="${cellStyle} ${boldStyle} ${centerStyle}">₹${formatInvoiceNumber(grandTotal)}/-</td>
           <td style="${cellStyleLast}"></td>
         </tr>`;
       } else {
@@ -182,7 +182,7 @@ export default function InvoiceModal({ isOpen, onClose, order, customData }: Inv
       grandTotalRowHtml = `<tr style="${boldStyle}">
         <td colspan="3" style="${cellStyle}"></td>
         <td style="${cellStyle} ${boldStyle} ${centerStyle}">Grand Total: -</td>
-        <td style="${cellStyle} ${boldStyle} ${centerStyle}">\u20B9${formatInvoiceNumber(grandTotal)}/-</td>
+        <td style="${cellStyle} ${boldStyle} ${centerStyle}">₹${formatInvoiceNumber(grandTotal)}/-</td>
         <td style="${cellStyleLast}"></td>
       </tr>`;
     }
@@ -242,8 +242,8 @@ export default function InvoiceModal({ isOpen, onClose, order, customData }: Inv
           <th style="padding: 6px; border-right: 1px solid black; width: 40px;">Sl</th>
           <th style="padding: 6px; border-right: 1px solid black; text-align: left;">Description</th>
           <th style="padding: 6px; border-right: 1px solid black; width: 60px;">Qty</th>
-          <th style="padding: 6px; border-right: 1px solid black; width: 90px;">Rate (\u20B9)</th>
-          <th style="padding: 6px; border-right: 1px solid black; width: 100px;">Amount (\u20B9)</th>
+          <th style="padding: 6px; border-right: 1px solid black; width: 90px;">Rate (₹)</th>
+          <th style="padding: 6px; border-right: 1px solid black; width: 100px;">Amount (₹)</th>
           <th style="padding: 6px; width: 90px;">Remarks</th>
         </tr>
       </thead>
