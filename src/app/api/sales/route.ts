@@ -155,10 +155,8 @@ export async function POST(req: NextRequest) {
         (b.productId === item.productId || b.productId === null) && b.remainingQty > 0
       );
 
-      // If frontend specified a batchId, strictly pull from that batch
-      if (item.batchId) {
-        productBatches = productBatches.filter(b => b.id === item.batchId);
-      }
+      // FIFO: Backend always allocates from fresh DB data
+      // (Frontend no longer sends batchId to avoid stale cache issues)
       
       const itemDiscount = Number(item.discount || 0);
       const discountPerUnit = itemDiscount / (requiredUnits || 1);

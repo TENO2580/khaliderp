@@ -288,32 +288,12 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
         });
         toast.success('Sales order updated successfully!');
       } else {
-        let itemsToSend: any[] = [];
-        const qty = Number(items[0].quantity) || 0;
-        const availableBatches = batches
-          .filter((b: any) => (b.productId === items[0].productId || b.productId === null) && b.remainingQty > 0)
-          .sort((a: any, b: any) => new Date(a.purchaseDate).getTime() - new Date(b.purchaseDate).getTime());
-
-        let remainingToFulfill = qty;
-
-        for (const batch of availableBatches) {
-          if (remainingToFulfill <= 0) break;
-          const allocated = Math.min(remainingToFulfill, batch.remainingQty);
-          itemsToSend.push({
-            ...items[0],
-            batchId: batch.id,
-            quantity: allocated,
-          });
-          remainingToFulfill -= allocated;
-        }
-
-        if (remainingToFulfill > 0) {
-          itemsToSend.push({
-            ...items[0],
-            batchId: undefined,
-            quantity: remainingToFulfill,
-          });
-        }
+        // Send items WITHOUT batchId — let the backend handle FIFO
+        // allocation with fresh database data to avoid stale cache issues
+        const itemsToSend = items.map((item: any) => ({
+          ...item,
+          batchId: undefined, // Backend will allocate via FIFO
+        }));
 
         await api.post('/sales', {
           customerId,
