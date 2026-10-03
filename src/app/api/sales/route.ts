@@ -248,8 +248,6 @@ export async function POST(req: NextRequest) {
         include: { customer: true, items: true },
       });
 
-  );
-        }
 
       // Update Customer lastPurchaseDate
       if (customerId) {
