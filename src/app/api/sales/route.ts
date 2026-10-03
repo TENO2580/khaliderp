@@ -229,7 +229,6 @@ export async function POST(req: NextRequest) {
           deliveryDate: deliveryDate ? new Date(deliveryDate) : undefined,
           status: status || 'PENDING',
           subtotal,
-          revenue: subtotal,
           totalGst,
           cgst: totalGst / 2,
           sgst: totalGst / 2,
@@ -248,6 +247,17 @@ export async function POST(req: NextRequest) {
         },
         include: { customer: true, items: true },
       });
+
+  );
+        }
+
+      // Update Customer lastPurchaseDate
+      if (customerId) {
+        await tx.customer.update({
+          where: { id: customerId },
+          data: { lastPurchaseDate: orderDate ? new Date(orderDate) : new Date() }
+        });
+      }
 
       // 2. Update Batches
       for (const update of batchUpdates) {
@@ -366,3 +376,4 @@ export async function DELETE(req: NextRequest) {
     return errorResponse(err.message, 500);
   }
 }
+

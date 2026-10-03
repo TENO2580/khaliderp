@@ -77,7 +77,7 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
     `/sales?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`,
     fetcher
   );
-  const { data: customersRes } = useSWR('/customers?limit=100', fetcher);
+  const { data: customersRes } = useSWR('/customers?limit=10000', fetcher);
   const { data: productsRes } = useSWR('/products?limit=100', fetcher);
   const { data: batchesRes } = useSWR('/production/batches', fetcher);
 
