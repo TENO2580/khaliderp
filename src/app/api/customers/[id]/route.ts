@@ -15,6 +15,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     delete body.customerId;
     delete body.createdAt;
     delete body.updatedAt;
+      ['sellingPrice', 'creditLimit', 'outstanding', 'latitude', 'longitude'].forEach(field => { 
+        if (body[field] !== undefined && body[field] !== null && body[field] !== '') body[field] = parseFloat(body[field]); 
+        else if (body[field] === '') body[field] = null; 
+      });
+
 
     if (body.lastPurchaseDate) {
       body.lastPurchaseDate = new Date(body.lastPurchaseDate).toISOString();

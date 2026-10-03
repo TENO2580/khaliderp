@@ -117,6 +117,11 @@ export async function POST(req: NextRequest) {
 
     const nextIdNum = maxId > 0 ? maxId + 1 : (await prisma.customer.count()) + 1;
     const customerId = `CUST-${String(nextIdNum).padStart(4, '0')}`;
+      ['sellingPrice', 'creditLimit', 'outstanding', 'latitude', 'longitude'].forEach(field => { 
+        if (body[field] !== undefined && body[field] !== null && body[field] !== '') body[field] = parseFloat(body[field]); 
+        else if (body[field] === '') body[field] = null; 
+      });
+
 
     if (body.lastPurchaseDate) {
       body.lastPurchaseDate = new Date(body.lastPurchaseDate).toISOString();
