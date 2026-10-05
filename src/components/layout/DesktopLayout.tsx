@@ -4,8 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
-// import Sidebar from './Sidebar';
-import MacDock from './MacDock';
+import Sidebar from './Sidebar';
 import TopNav from './TopNav';
 import GlobalSearch from '../shared/GlobalSearch';
 
@@ -57,19 +56,28 @@ export default function DesktopLayout({ children }: { children: React.ReactNode 
       <div className="pointer-events-none absolute top-20 right-0 h-[500px] w-[500px] rounded-full bg-blue-400/20 blur-[100px] dark:bg-blue-900/20" />
       <div className="pointer-events-none absolute -bottom-40 left-1/2 h-[500px] w-[800px] -translate-x-1/2 rounded-full bg-orange-400/10 blur-[120px] dark:bg-emerald-900/10" />
 
-
+      <Sidebar 
+        collapsed={sidebarCollapsed} 
+        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} 
+        mobileOpen={mobileSidebarOpen}
+        onMobileClose={() => setMobileSidebarOpen(false)}
+      />
       <TopNav 
-        sidebarCollapsed={true} // Forcing true so TopNav stretches full width if it checks this
+        sidebarCollapsed={sidebarCollapsed} 
         onSearchOpen={() => setSearchOpen(true)} 
         onMobileMenuClick={() => setMobileSidebarOpen(true)}
       />
 
       {/* Main Content */}
-      <main className="pt-16 pb-24 transition-all duration-300">
+      <main
+        className={cn(
+          'pt-16 transition-all duration-300',
+          'ml-0', // Default (Mobile)
+          sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[280px]' // Desktop
+        )}
+      >
         <div className="p-4 md:p-6">{children}</div>
       </main>
-
-      <MacDock />
 
       {/* Global Search Modal */}
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
