@@ -191,7 +191,7 @@ export default function EmployeeAttendancePage() {
               <th className="px-4 py-3 font-semibold text-center">Efficiency</th>
               <th className="px-4 py-3 font-semibold text-center">Daily Salary</th>
               <th className="px-4 py-3 font-semibold text-center">Cost/KG</th>
-              <th className="px-4 py-3 font-semibold">Notes</th>
+              <th className="px-4 py-3 font-semibold min-w-[200px]">Notes</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -253,7 +253,7 @@ export default function EmployeeAttendancePage() {
                       type="text"
                       value={row.notes}
                       onChange={(e) => updateRow(row.id, 'notes', e.target.value)}
-                      className="w-full rounded border border-gray-200 bg-transparent px-2 py-1 text-sm focus:border-[#1e3a8a] focus:outline-none dark:border-gray-700"
+                      className="w-full min-w-[200px] rounded border border-gray-200 bg-transparent px-2 py-1 text-sm focus:border-[#1e3a8a] focus:outline-none dark:border-gray-700"
                       placeholder=""
                     />
                   </td>
