@@ -505,6 +505,7 @@ export default function DataTable<T extends { id?: string }>({
     localStorage.setItem(key, value);
     if (key === 'app-table-density') {
       setGlobalDensity(value as any);
+      document.documentElement.setAttribute('data-table-density', value);
     } else if (key === 'app-table-layout') {
       setGlobalLayout(value as any);
     }

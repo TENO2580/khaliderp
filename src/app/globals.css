@@ -200,4 +200,17 @@ input[type="number"] {
     @apply font-sans;
     font-size: var(--app-base-font-size, 16px);
   }
+
+  /* Global Table Density Support */
+  html[data-table-density="compact"] table th,
+  html[data-table-density="compact"] table td {
+    padding: 0.5rem 0.5rem !important;
+    font-size: 0.75rem !important;
+  }
+  
+  html[data-table-density="spacious"] table th,
+  html[data-table-density="spacious"] table td {
+    padding: 1rem 1.5rem !important;
+    font-size: 0.875rem !important;
+  }
 }

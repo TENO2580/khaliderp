@@ -28,6 +28,7 @@ export const applyGlobalPreferences = (prefs: any) => {
   }
   if (prefs.tableDensity) {
     localStorage.setItem('app-table-density', prefs.tableDensity);
+    document.documentElement.setAttribute('data-table-density', prefs.tableDensity);
   }
   if (prefs.tableWidth) {
     localStorage.setItem('app-table-layout', prefs.tableWidth);
