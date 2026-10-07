@@ -78,6 +78,10 @@ export async function PUT(request: Request) {
     for (const row of records) {
       const dateObj = new Date(row.date);
       
+      const targetKg = row.targetKg === '' || row.targetKg == null ? 0 : Number(row.targetKg);
+      const actualKg = row.actualKg === '' || row.actualKg == null ? 0 : Number(row.actualKg);
+      const dailySalary = row.dailySalary === '' || row.dailySalary == null ? 0 : Number(row.dailySalary);
+
       await prisma.attendance.upsert({
         where: {
           employeeId_date: {
@@ -87,18 +91,18 @@ export async function PUT(request: Request) {
         },
         update: {
           status: row.isPresent ? 'PRESENT' : 'ABSENT',
-          targetKg: row.targetKg,
-          actualKg: row.actualKg,
-          dailySalary: row.dailySalary,
+          targetKg,
+          actualKg,
+          dailySalary,
           notes: row.notes,
         },
         create: {
           employeeId,
           date: dateObj,
           status: row.isPresent ? 'PRESENT' : 'ABSENT',
-          targetKg: row.targetKg,
-          actualKg: row.actualKg,
-          dailySalary: row.dailySalary,
+          targetKg,
+          actualKg,
+          dailySalary,
           notes: row.notes,
         }
       });
