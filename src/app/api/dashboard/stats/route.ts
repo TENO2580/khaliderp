@@ -105,8 +105,8 @@ export async function GET(req: NextRequest) {
     // Using Raw SQL for instant single-roundtrip performance
     const rawData: any = await prisma.$queryRaw`
       SELECT 
-        (SELECT COALESCE(SUM("subtotal"), 0) FROM "sales_orders" WHERE "orderDate" >= ${todayStart} AND "orderDate" <= ${todayEnd}) as "todaysSales",
-        (SELECT COALESCE(SUM("subtotal"), 0) FROM "sales_orders" WHERE "orderDate" >= ${rangeStart} AND "orderDate" <= ${rangeEnd}) as "periodSales",
+        (SELECT COALESCE(SUM("totalAmount"), 0) FROM "sales_orders" WHERE "orderDate" >= ${todayStart} AND "orderDate" <= ${todayEnd} AND "status" NOT IN ('CANCELLED', 'RETURNED')) as "todaysSales",
+        (SELECT COALESCE(SUM("totalAmount"), 0) FROM "sales_orders" WHERE "orderDate" >= ${rangeStart} AND "orderDate" <= ${rangeEnd} AND "status" NOT IN ('CANCELLED', 'RETURNED')) as "periodSales",
         (SELECT COALESCE(SUM("amount"), 0) FROM "expenses" WHERE "date" >= ${rangeStart} AND "date" <= ${rangeEnd}) as "periodExpenses",
         (SELECT COALESCE(SUM("amount"), 0) FROM "expenses" WHERE "date" >= ${todayStart} AND "date" <= ${todayEnd}) as "todaysExpenses",
         (SELECT COALESCE(SUM("totalCost"), 0) FROM "productions" WHERE "date" >= ${rangeStart} AND "date" <= ${rangeEnd}) as "periodProductionCost",
@@ -114,17 +114,17 @@ export async function GET(req: NextRequest) {
         (SELECT COUNT(*) FROM "sales_orders" WHERE "status" = 'DELIVERED' AND "orderDate" >= ${rangeStart} AND "orderDate" <= ${rangeEnd}) as "ordersDelivered",
         (SELECT COUNT(*) FROM "customers") as "totalCustomers",
         (SELECT COUNT(*) FROM "customers" WHERE "status" = 'ACTIVE') as "activeCustomers",
-        (SELECT COALESCE(SUM("outstanding"), 0) FROM "sales_orders" WHERE "outstanding" > 0) as "outstandingCredit",
+        (SELECT COALESCE(SUM("outstanding"), 0) FROM "sales_orders" WHERE "outstanding" > 0 AND "status" NOT IN ('CANCELLED', 'RETURNED')) as "outstandingCredit",
         (SELECT COALESCE(SUM("waxInitialQty" - "producedQty"), 0) FROM "batches") as "waxStock",
         (SELECT COALESCE(SUM("remainingQty"), 0) FROM "batches") as "finishedGoodsStock",
         (SELECT COALESCE(SUM(("waxStock" * "waxRate") + COALESCE("remainingQty" * (("waxInitialQty" - "waxStock") * "waxRate") / NULLIF("producedQty", 0), 0)), 0) FROM "batches") as "inventoryValue",
         (SELECT COALESCE(SUM("quantityProduced"), 0) FROM "productions" WHERE "date" >= ${todayStart} AND "date" <= ${todayEnd}) as "productionToday",
         (SELECT COALESCE(SUM("quantityProduced"), 0) FROM "productions" WHERE "date" >= ${rangeStart} AND "date" <= ${rangeEnd}) as "productionPeriod",
         (SELECT COUNT(*) FROM "attendance" WHERE "date" >= ${todayStart} AND "date" <= ${todayEnd} AND "status" IN ('PRESENT', 'LATE')) as "employeeAttendanceToday",
-        (SELECT COALESCE(SUM("subtotal"), 0) FROM "sales_orders" WHERE "orderDate" >= ${prevRangeStart} AND "orderDate" <= ${prevRangeEnd}) as "prevPeriodSales",
+        (SELECT COALESCE(SUM("totalAmount"), 0) FROM "sales_orders" WHERE "orderDate" >= ${prevRangeStart} AND "orderDate" <= ${prevRangeEnd} AND "status" NOT IN ('CANCELLED', 'RETURNED')) as "prevPeriodSales",
         (SELECT COALESCE(SUM("amount"), 0) FROM "expenses" WHERE "date" >= ${prevRangeStart} AND "date" <= ${prevRangeEnd}) as "prevPeriodExpenses",
-        (SELECT COALESCE(SUM(("notes"::jsonb->>'profitAmt')::numeric), 0) FROM "sales_orders" WHERE "orderDate" >= ${todayStart} AND "orderDate" <= ${todayEnd} AND "notes" IS NOT NULL AND "notes" != '') as "todaysSalesMargin",
-        (SELECT COALESCE(SUM(("notes"::jsonb->>'profitAmt')::numeric), 0) FROM "sales_orders" WHERE "orderDate" >= ${rangeStart} AND "orderDate" <= ${rangeEnd} AND "notes" IS NOT NULL AND "notes" != '') as "periodSalesMargin"
+        (SELECT COALESCE(SUM(("notes"::jsonb->>'profitAmt')::numeric), 0) FROM "sales_orders" WHERE "orderDate" >= ${todayStart} AND "orderDate" <= ${todayEnd} AND "notes" IS NOT NULL AND "notes" != '' AND "status" NOT IN ('CANCELLED', 'RETURNED')) as "todaysSalesMargin",
+        (SELECT COALESCE(SUM(("notes"::jsonb->>'profitAmt')::numeric), 0) FROM "sales_orders" WHERE "orderDate" >= ${rangeStart} AND "orderDate" <= ${rangeEnd} AND "notes" IS NOT NULL AND "notes" != '' AND "status" NOT IN ('CANCELLED', 'RETURNED')) as "periodSalesMargin"
     `;
 
     const row = rawData[0];
@@ -162,14 +162,14 @@ export async function GET(req: NextRequest) {
       prisma.$queryRaw`
         SELECT date_trunc('month', "orderDate") as "monthDate", SUM("totalAmount") as "totalAmount"
         FROM "sales_orders"
-        WHERE "orderDate" >= ${sixMonthsAgo}
+        WHERE "orderDate" >= ${sixMonthsAgo} AND "status" NOT IN ('CANCELLED', 'RETURNED')
         GROUP BY date_trunc('month', "orderDate")
         ORDER BY "monthDate" ASC
       `,
       prisma.salesOrder.groupBy({
         by: ['customerId'],
         _sum: { totalAmount: true },
-        where: { orderDate: { gte: rangeStart, lte: rangeEnd } },
+        where: { orderDate: { gte: rangeStart, lte: rangeEnd }, status: { notIn: ['CANCELLED', 'RETURNED'] } },
         orderBy: { _sum: { totalAmount: 'desc' } },
         take: 10,
       }),
@@ -187,7 +187,7 @@ export async function GET(req: NextRequest) {
       prisma.salesOrder.groupBy({
         by: ['orderDate'],
         _sum: { totalAmount: true },
-        where: { orderDate: { gte: rangeStart, lte: rangeEnd } },
+        where: { orderDate: { gte: rangeStart, lte: rangeEnd }, status: { notIn: ['CANCELLED', 'RETURNED'] } },
         orderBy: { orderDate: 'asc' },
       })
     ]);
