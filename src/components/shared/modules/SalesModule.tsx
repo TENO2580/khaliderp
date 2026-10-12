@@ -257,16 +257,20 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
     try {
       if (isEdit) {
         const calcOutstanding = paymentMethod === 'CREDIT' 
-          ? editFormData.totalAmount - (paidAmount === '' ? 0 : Number(paidAmount))
+          ? Math.max(0, editFormData.totalAmount - (paidAmount === '' ? 0 : Number(paidAmount)))
           : 0;
+        const finalPaid = paymentMethod === 'CREDIT' 
+          ? (paidAmount === '' ? 0 : Number(paidAmount)) 
+          : editFormData.totalAmount;
         await api.put(`/sales/${editId}`, {
           paymentMethod,
-          paidAmount: paymentMethod === 'CREDIT' ? (paidAmount === '' ? 0 : paidAmount) : editFormData.totalAmount,
+          paidAmount: finalPaid,
           orderDate: editFormData.orderDate,
           deliveryDate: editFormData.deliveryDate,
           status: editFormData.status,
           totalAmount: editFormData.totalAmount,
           outstanding: calcOutstanding,
+          creditAmount: calcOutstanding,
           quantity: items[0].quantity,
           notes: {
             productId: editFormData.productId,
@@ -283,7 +287,7 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
             mrp: editFormData.mrp,
             regionalPrice: editFormData.regionalPrice,
             batchUsed: editFormData.batchUsed,
-            creditNotes: editFormData.creditNotes,
+            creditNotes: calcOutstanding > 0 ? String(calcOutstanding) : '0',
           }
         });
         toast.success('Sales order updated successfully!');
@@ -295,10 +299,19 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
           batchId: undefined, // Backend will allocate via FIFO
         }));
 
+        const calcOutstanding = paymentMethod === 'CREDIT' 
+          ? Math.max(0, editFormData.totalAmount - (paidAmount === '' ? 0 : Number(paidAmount)))
+          : 0;
+        const finalPaid = paymentMethod === 'CREDIT' 
+          ? (paidAmount === '' ? 0 : Number(paidAmount)) 
+          : editFormData.totalAmount;
+
         await api.post('/sales', {
           customerId,
           paymentMethod,
-          paidAmount: paidAmount === '' ? 0 : paidAmount,
+          paidAmount: finalPaid,
+          outstanding: calcOutstanding,
+          creditAmount: calcOutstanding,
           items: itemsToSend,
           orderDate: editFormData.orderDate,
           deliveryDate: editFormData.deliveryDate,
@@ -318,7 +331,7 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
             mrp: editFormData.mrp,
             regionalPrice: editFormData.regionalPrice,
             batchUsed: editFormData.batchUsed,
-            creditNotes: editFormData.creditNotes,
+            creditNotes: calcOutstanding > 0 ? String(calcOutstanding) : '0',
           }
         });
         toast.success('Sales order created successfully!');
@@ -395,12 +408,12 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
         totalAmount: Number(order.totalAmount) || 0,
         status: String(order.status || 'PENDING'),
         outstanding: Number(order.outstanding) || 0,
-        creditNotes: String(data.creditNotes || ''),
+        creditNotes: String(data.creditNotes !== undefined && data.creditNotes !== null && data.creditNotes !== '' ? data.creditNotes : (order.outstanding ?? '')),
       });
       
       setCustomerId(order.customerId || '');
       setPaymentMethod(order.paymentMethod || 'CREDIT');
-      setPaidAmount(order.paidAmount || '');
+      setPaidAmount(order.paidAmount !== undefined && order.paidAmount !== null ? order.paidAmount : '');
       setItems([
         {
           productId: String(data.productId || order.items?.[0]?.productId || ''),
@@ -451,7 +464,14 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
         let hasNotesChange = false;
 
         for (const [key, value] of Object.entries(fields)) {
-          if (notesKeys.includes(key)) {
+          if (key === 'creditNotes' || key === 'outstanding') {
+            const creditVal = value === '' ? 0 : Number(value);
+            const numCredit = isNaN(creditVal) ? 0 : Math.max(0, creditVal);
+            updateBody.outstanding = numCredit;
+            updateBody.creditAmount = numCredit;
+            newNotes.creditNotes = numCredit > 0 ? String(numCredit) : '0';
+            hasNotesChange = true;
+          } else if (notesKeys.includes(key)) {
             newNotes[key] = value;
             hasNotesChange = true;
             if (key === 'totalAmount') {
@@ -477,6 +497,13 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
             updateBody.totalAmount = totalSellingCost;
             hasNotesChange = true;
           }
+        }
+
+        if (updateBody.outstanding !== undefined) {
+          const finalTotal = updateBody.totalAmount !== undefined 
+            ? updateBody.totalAmount 
+            : Number(order.totalAmount || 0);
+          updateBody.paidAmount = Math.max(0, finalTotal - updateBody.outstanding);
         }
 
         if (fields.sellingCost !== undefined) {
@@ -624,12 +651,14 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
       inputType: 'number',
       cell: (o) => {
         const data = parseNotes(o.notes);
-        if (data.creditNotes) {
-           return <span className="text-sm text-rose-600 font-medium">{data.creditNotes}</span>;
-        }
+        const creditAmt = Number(
+          data.creditNotes !== undefined && data.creditNotes !== null && data.creditNotes !== ''
+            ? data.creditNotes
+            : (o.outstanding ?? 0)
+        ) || 0;
         return (
-          <span className={o.outstanding > 0 ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'text-gray-500'}>
-            {formatCurrency(o.outstanding)}
+          <span className={creditAmt > 0 ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'text-gray-500'}>
+            {formatCurrency(creditAmt)}
           </span>
         );
       },
@@ -957,7 +986,13 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
                         value={paidAmount}
                         onChange={(e) => {
                           if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) return;
-                          setPaidAmount(e.target.value === '' ? '' : (e.target.value as any));
+                          const newPaid = e.target.value === '' ? '' : (e.target.value as any);
+                          setPaidAmount(newPaid);
+                          const remainingCredit = Math.max(0, editFormData.totalAmount - (newPaid === '' ? 0 : Number(newPaid)));
+                          setEditFormData((prev) => ({
+                            ...prev,
+                            creditNotes: remainingCredit > 0 ? String(remainingCredit) : '0',
+                          }));
                         }}
                         className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                       />
@@ -968,11 +1003,16 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
                         type="text"
                         inputMode="numeric"
                         placeholder="0.00"
-                        value={editFormData.totalAmount - (paidAmount === '' ? 0 : Number(paidAmount))}
+                        value={Math.max(0, editFormData.totalAmount - (paidAmount === '' ? 0 : Number(paidAmount)))}
                         onChange={(e) => {
                           if (e.target.value !== '' && !/^\d*\.?\d*$/.test(e.target.value)) return;
-                          const creditAmt = e.target.value === '' ? 0 : (e.target.value as any);
-                          setPaidAmount(editFormData.totalAmount - creditAmt);
+                          const creditAmt = e.target.value === '' ? 0 : Number(e.target.value);
+                          const newPaid = Math.max(0, editFormData.totalAmount - creditAmt);
+                          setPaidAmount(newPaid);
+                          setEditFormData((prev) => ({
+                            ...prev,
+                            creditNotes: creditAmt > 0 ? String(creditAmt) : '0',
+                          }));
                         }}
                         className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm dark:border-gray-800 dark:bg-gray-950 dark:text-white"
                       />

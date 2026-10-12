@@ -157,6 +157,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         }
       }
 
+      const finalOutstanding = outstanding !== undefined ? Number(outstanding) : undefined;
+      const finalPaidAmount = paidAmount !== undefined ? Number(paidAmount) : undefined;
+      const finalCreditAmount = body.creditAmount !== undefined 
+        ? Number(body.creditAmount) 
+        : (finalOutstanding !== undefined ? finalOutstanding : undefined);
+
       // Update the order itself
       const order = await tx.salesOrder.update({
         where: { id },
@@ -165,8 +171,14 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
           ...(parsedDeliveryDate !== undefined && { deliveryDate: parsedDeliveryDate }),
           ...(status && { status }),
           ...(totalAmount !== undefined && { totalAmount: Number(totalAmount) }),
-          ...(outstanding !== undefined && { outstanding: Number(outstanding) }),
-          ...(paidAmount !== undefined && { paidAmount: Number(paidAmount) }),
+          ...(finalOutstanding !== undefined && { 
+            outstanding: finalOutstanding,
+            creditAmount: finalCreditAmount,
+            paymentStatus: finalOutstanding === 0 
+              ? 'PAID' 
+              : (Number(finalPaidAmount !== undefined ? finalPaidAmount : existingOrder.paidAmount) > 0 ? 'PARTIAL' : 'UNPAID')
+          }),
+          ...(finalPaidAmount !== undefined && { paidAmount: finalPaidAmount }),
           ...(paymentMethod !== undefined && { paymentMethod }),
           ...(notes && { notes: JSON.stringify(notes) }),
         },
@@ -176,11 +188,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
       // (FIFO Allocation Engine removed - allocation now happens immediately in POST route)
 
-      // Auto-generate invoice if DELIVERED
-      if (status === 'DELIVERED') {
-        await tx.invoice.upsert({
-          where: { orderId: order.id },
-          update: {
+      // Keep invoice updated if it exists or create if DELIVERED
+      const existingInvoice = await tx.invoice.findUnique({ where: { orderId: order.id } });
+      if (existingInvoice) {
+        await tx.invoice.update({
+          where: { id: existingInvoice.id },
+          data: {
             subtotal: order.subtotal,
             cgst: order.cgst,
             sgst: order.sgst,
@@ -190,8 +203,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             totalAmount: order.totalAmount,
             outstanding: order.outstanding,
             paidAmount: order.paidAmount,
-          },
-          create: {
+            status: order.outstanding === 0 ? 'PAID' : (order.paidAmount > 0 ? 'PARTIAL' : existingInvoice.status)
+          }
+        });
+      } else if (status === 'DELIVERED') {
+        await tx.invoice.create({
+          data: {
             invoiceNumber: `INV-${order.orderNumber}`,
             orderId: order.id,
             customerId: order.customerId,

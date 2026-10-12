@@ -810,12 +810,16 @@ export default function DataTable<T extends { id?: string }>({
                             col.cell
                               ? (() => {
                                   const node = col.cell(row);
-                                  if (typeof node === 'string') return node;
-                                  if (React.isValidElement(node)) {
+                                  let textVal = '';
+                                  if (typeof node === 'string') textVal = node;
+                                  else if (React.isValidElement(node)) {
                                     const children = (node as any).props?.children;
-                                    return typeof children === 'string' ? children : String(children ?? '');
+                                    textVal = typeof children === 'string' ? children : String(children ?? '');
                                   }
-                                  return '';
+                                  if (col.inputType === 'number') {
+                                    return textVal.replace(/[^0-9.-]/g, '');
+                                  }
+                                  return textVal;
                                 })()
                               : col.accessorKey
                               ? String(row[col.accessorKey] ?? '')
