@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import prisma from '@/lib/db';
 import { jsonResponse, errorResponse } from '@/lib/middleware-server';
+import { logAuthActivity } from '@/lib/activity-logger';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'tripidio-jwt-secret-key-change-in-production-2026';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'tripidio-refresh-secret-key-change-in-production-2026';
@@ -52,6 +53,9 @@ export async function POST(req: NextRequest) {
       where: { id: user.id },
       data: { refreshToken, lastLoginAt: new Date() },
     });
+
+    // Log the login activity
+    logAuthActivity(prisma, user, 'LOGIN');
 
     return jsonResponse(
       {

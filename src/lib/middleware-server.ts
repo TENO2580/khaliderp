@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import prisma from './db';
+import { setCurrentUser } from './user-context';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'tripidio-jwt-secret-key-change-in-production-2026';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'tripidio-refresh-secret-key-change-in-production-2026';
@@ -52,6 +53,12 @@ export async function authenticateRequest(req: Request) {
     const now = Date.now();
     const cached = AUTH_CACHE.get(payload.userId);
     if (cached && cached.expiresAt > now) {
+      setCurrentUser({
+        id: cached.user.id,
+        name: cached.user.name,
+        email: cached.user.email,
+        role: cached.user.role,
+      });
       return { user: cached.user, error: null };
     }
     
@@ -70,6 +77,14 @@ export async function authenticateRequest(req: Request) {
 
     // Cache the user for 60 seconds
     AUTH_CACHE.set(payload.userId, { user, expiresAt: now + CACHE_TTL_MS });
+
+    // Set current user in execution context for activity logging
+    setCurrentUser({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    });
 
     return { user, error: null };
   } catch {

@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import jwt from 'jsonwebtoken';
 import prisma from '@/lib/db';
 import { jsonResponse, errorResponse } from '@/lib/middleware-server';
+import { logAuthActivity } from '@/lib/activity-logger';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'tripidio-jwt-secret-key-change-in-production-2026';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'tripidio-refresh-secret-key-change-in-production-2026';
@@ -61,6 +62,9 @@ export async function POST(req: NextRequest) {
       where: { id: updatedUser.id },
       data: { refreshToken },
     });
+
+    // Log the login activity
+    logAuthActivity(prisma, updatedUser, 'LOGIN', `${updatedUser.name} logged in via Google SSO`);
 
     return jsonResponse(
       {

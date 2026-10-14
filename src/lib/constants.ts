@@ -13,6 +13,7 @@ import {
   Truck,
   Globe,
   Lightbulb,
+  History,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -98,6 +99,12 @@ export const NAV_ITEMS: NavItem[] = [
     href: '/dashboard/reports',
     icon: BarChart3,
     permission: 'reports:read',
+  },
+  {
+    title: 'Activity',
+    href: '/dashboard/activities',
+    icon: History,
+    permission: 'dashboard:read',
   },
   {
     title: 'Intelligence',

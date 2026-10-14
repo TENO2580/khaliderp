@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { getCurrentUser } from './user-context';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: ReturnType<typeof createPrismaClient> | undefined;
@@ -14,23 +15,26 @@ const createPrismaClient = () => {
     query: {
       $allModels: {
         async create({ model, operation, args, query }) {
+          const user = getCurrentUser();
           const result = await query(args);
           import('./activity-logger').then(({ logActivity }) => {
-            logActivity(prisma as any, model, operation, args, result);
+            logActivity(prisma as any, model, operation, args, result, user);
           });
           return result;
         },
         async update({ model, operation, args, query }) {
+          const user = getCurrentUser();
           const result = await query(args);
           import('./activity-logger').then(({ logActivity }) => {
-            logActivity(prisma as any, model, operation, args, result);
+            logActivity(prisma as any, model, operation, args, result, user);
           });
           return result;
         },
         async delete({ model, operation, args, query }) {
+          const user = getCurrentUser();
           const result = await query(args);
           import('./activity-logger').then(({ logActivity }) => {
-            logActivity(prisma as any, model, operation, args, result);
+            logActivity(prisma as any, model, operation, args, result, user);
           });
           return result;
         },
