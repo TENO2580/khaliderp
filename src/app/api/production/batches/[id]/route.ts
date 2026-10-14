@@ -22,6 +22,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       return errorResponse('Negative values are not allowed', 400);
     }
 
+    const existingBatch = await prisma.batch.findUnique({ where: { id } });
+    if (!existingBatch) return errorResponse('Batch not found', 404);
+
+    const producedQty = body.producedQty !== undefined ? Number(body.producedQty) : existingBatch.producedQty;
+    const soldQty = body.soldQty !== undefined ? Number(body.soldQty) : existingBatch.soldQty;
+    const remainingQty = Math.max(0, Number((producedQty - soldQty).toFixed(2)));
+
     const batch = await prisma.batch.update({
       where: { id },
       data: {
@@ -32,10 +39,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         waxStock: body.waxStock,
         productionCost: (body.waxInitialQty !== undefined && body.waxRate !== undefined) ? (body.waxInitialQty * body.waxRate) : undefined,
         sellingPrice: body.sellingPrice,
-        producedQty: body.producedQty,
-        soldQty: body.soldQty,
-        remainingQty: body.remainingQty,
-        status: body.status,
+        producedQty,
+        soldQty,
+        remainingQty,
+        status: body.status || (remainingQty <= 0 ? 'FULLY_SOLD' : (soldQty > 0 ? 'PARTIALLY_SOLD' : existingBatch.status)),
       },
     });
 

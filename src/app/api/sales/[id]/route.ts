@@ -250,16 +250,22 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
       // Revert batch quantities if not already cancelled
       if (existingOrder.status !== 'CANCELLED') {
+        const orderNotes = typeof existingOrder.notes === 'string' ? JSON.parse(existingOrder.notes) : (existingOrder.notes || {});
+        const weightPerUnit = Number(orderNotes.weightPerUnit) > 0 ? Number(orderNotes.weightPerUnit) : 1;
+
         for (const item of existingOrder.items) {
           if (!item.batchId) continue;
           const batch = await tx.batch.findUnique({ where: { id: item.batchId } });
           if (batch) {
+             const revertKg = item.quantity * weightPerUnit;
+             const newSold = Math.max(0, batch.soldQty - revertKg);
+             const newRemaining = Math.max(0, batch.producedQty - newSold);
              await tx.batch.update({
                where: { id: batch.id },
                data: {
-                 remainingQty: batch.remainingQty + item.quantity,
-                 soldQty: Math.max(0, batch.soldQty - item.quantity),
-                 status: batch.status === 'FULLY_SOLD' ? 'PARTIALLY_SOLD' : batch.status
+                 remainingQty: newRemaining,
+                 soldQty: newSold,
+                 status: newRemaining <= 0 ? 'FULLY_SOLD' : (newSold > 0 ? 'PARTIALLY_SOLD' : 'COMPLETED')
                }
              });
           }

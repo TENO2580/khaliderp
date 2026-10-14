@@ -201,7 +201,10 @@ export default function DesktopBatches() {
     },
     {
       header: 'REMAINING',
-      cell: (b) => <span className="text-xs text-orange-600 font-medium">{Number(b.remainingQty).toFixed(2)} KG</span>,
+      cell: (b) => {
+        const remaining = Math.max(0, (Number(b.producedQty) || 0) - (Number(b.soldQty) || 0));
+        return <span className="text-xs text-orange-600 font-medium">{remaining.toFixed(2)} KG</span>;
+      },
     },
     {
       header: 'Wax Stock',
@@ -355,7 +358,7 @@ export default function DesktopBatches() {
         const initQty = Number(b.waxInitialQty) || 0;
         const prodQty = Number(b.producedQty) || 0;
         const soldQty = Number(b.soldQty) || 0;
-        const remainingQty = Number(b.remainingQty) || 0;
+        const remainingQty = Math.max(0, prodQty - soldQty);
         const waxStock = b.waxStock !== undefined && b.waxStock !== null && !isNaN(Number(b.waxStock))
           ? Number(b.waxStock)
           : (initQty - prodQty);

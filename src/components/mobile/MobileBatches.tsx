@@ -205,7 +205,10 @@ export default function MobileBatches() {
     },
     {
       header: 'REMAINING',
-      cell: (b) => <span className="text-xs text-orange-600 font-medium">{Number(b.remainingQty).toFixed(2)} KG</span>,
+      cell: (b) => {
+        const remaining = Math.max(0, (Number(b.producedQty) || 0) - (Number(b.soldQty) || 0));
+        return <span className="text-xs text-orange-600 font-medium">{remaining.toFixed(2)} KG</span>;
+      },
     },
     {
       header: 'Wax Stock',
@@ -359,7 +362,7 @@ export default function MobileBatches() {
         const initQty = Number(b.waxInitialQty) || 0;
         const prodQty = Number(b.producedQty) || 0;
         const soldQty = Number(b.soldQty) || 0;
-        const remainingQty = Number(b.remainingQty) || 0;
+        const remainingQty = Math.max(0, prodQty - soldQty);
         const waxStock = b.waxStock !== undefined && b.waxStock !== null && !isNaN(Number(b.waxStock))
           ? Number(b.waxStock)
           : (initQty - prodQty);
@@ -515,7 +518,7 @@ export default function MobileBatches() {
                   </div>
                   <div className="text-right">
                     <div className="text-xs text-gray-500">Remaining</div>
-                    <div className="font-semibold text-orange-600">{Number(b.remainingQty).toFixed(2)} KG</div>
+                    <div className="font-semibold text-orange-600">{Math.max(0, (Number(b.producedQty) || 0) - (Number(b.soldQty) || 0)).toFixed(2)} KG</div>
                   </div>
                 </div>
                 <div className="mt-3 flex items-center gap-2">

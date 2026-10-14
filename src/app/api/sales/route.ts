@@ -318,27 +318,42 @@ export async function DELETE(req: NextRequest) {
       // 1. Fetch all items for these orders to revert batch quantities
       const itemsToRevert = await tx.salesOrderItem.findMany({
         where: { orderId: { in: idsToDelete }, batchId: { not: null } },
-        select: { batchId: true, quantity: true }
+        select: { 
+          batchId: true, 
+          quantity: true,
+          order: { select: { notes: true } }
+        }
       });
 
-      // 2. Aggregate quantities to revert per batch
+      // 2. Aggregate quantities to revert per batch in KG
       const batchReversions: Record<string, number> = {};
       for (const item of itemsToRevert) {
         if (item.batchId) {
-          batchReversions[item.batchId] = (batchReversions[item.batchId] || 0) + item.quantity;
+          let weightPerUnit = 1;
+          try {
+            const notes = typeof item.order?.notes === 'string' ? JSON.parse(item.order.notes) : (item.order?.notes || {});
+            if (Number(notes.weightPerUnit) > 0) weightPerUnit = Number(notes.weightPerUnit);
+          } catch(e) {}
+          const revertKg = item.quantity * weightPerUnit;
+          batchReversions[item.batchId] = (batchReversions[item.batchId] || 0) + revertKg;
         }
       }
 
       // 3. Update batches
-      for (const [batchId, qty] of Object.entries(batchReversions)) {
-        await tx.batch.update({
-          where: { id: batchId },
-          data: {
-            soldQty: { decrement: qty },
-            remainingQty: { increment: qty },
-            status: 'PARTIALLY_SOLD'
-          }
-        });
+      for (const [batchId, revertKg] of Object.entries(batchReversions)) {
+        const batch = await tx.batch.findUnique({ where: { id: batchId } });
+        if (batch) {
+          const newSold = Math.max(0, batch.soldQty - revertKg);
+          const newRemaining = Math.max(0, batch.producedQty - newSold);
+          await tx.batch.update({
+            where: { id: batchId },
+            data: {
+              soldQty: newSold,
+              remainingQty: newRemaining,
+              status: newRemaining <= 0 ? 'FULLY_SOLD' : (newSold > 0 ? 'PARTIALLY_SOLD' : 'COMPLETED')
+            }
+          });
+        }
       }
 
       // 4. Delete associated invoices (if any)

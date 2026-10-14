@@ -76,8 +76,10 @@ export async function GET(req: NextRequest) {
       .map((item: any) => item.order.orderNumber);
     // Deduplicate order numbers
     const uniqueOrders = [...new Set(orderNumbers)] as string[];
+    const expectedRemaining = Math.max(0, Number(((Number(b.producedQty) || 0) - (Number(b.soldQty) || 0)).toFixed(2)));
     return {
       ...b,
+      remainingQty: expectedRemaining,
       salesOrderItems: undefined, // Remove raw relation data
       fifoOrders: uniqueOrders.length > 0 ? uniqueOrders.join(', ') : '-'
     };
