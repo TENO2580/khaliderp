@@ -116,7 +116,33 @@ export async function GET(req: NextRequest) {
         (SELECT COUNT(*) FROM "customers" WHERE "status" = 'ACTIVE') as "activeCustomers",
         (SELECT COALESCE(SUM("outstanding"), 0) FROM "sales_orders" WHERE "outstanding" > 0 AND "status" NOT IN ('CANCELLED', 'RETURNED')) as "outstandingCredit",
         (SELECT COALESCE(SUM("waxInitialQty" - "producedQty"), 0) FROM "batches") as "waxStock",
-        (SELECT COALESCE(SUM("remainingQty"), 0) FROM "batches") as "finishedGoodsStock",
+        (
+          SELECT GREATEST(
+            0,
+            COALESCE(
+              NULLIF((SELECT SUM("producedQty") FROM "batches"), 0),
+              (SELECT SUM("quantityProduced") FROM "productions"),
+              0
+            ) - (
+              SELECT COALESCE(
+                SUM(
+                  CASE 
+                    WHEN ("notes" IS NOT NULL AND "notes" != '' AND "notes"::text LIKE '%"totalWeightKg"%' AND ("notes"::jsonb ? 'totalWeightKg')) 
+                    THEN COALESCE(NULLIF(("notes"::jsonb->>'totalWeightKg'), '')::numeric, 0)
+                    ELSE (
+                      SELECT COALESCE(SUM(soi."quantity"), 0)
+                      FROM "sales_order_items" soi
+                      WHERE soi."orderId" = "sales_orders"."id"
+                    )
+                  END
+                ),
+                0
+              )
+              FROM "sales_orders"
+              WHERE "status" NOT IN ('CANCELLED', 'RETURNED')
+            )
+          )
+        ) as "finishedGoodsStock",
         (SELECT COALESCE(SUM(("waxStock" * "waxRate") + COALESCE("remainingQty" * (("waxInitialQty" - "waxStock") * "waxRate") / NULLIF("producedQty", 0), 0)), 0) FROM "batches") as "inventoryValue",
         (SELECT COALESCE(SUM("quantityProduced"), 0) FROM "productions" WHERE "date" >= ${todayStart} AND "date" <= ${todayEnd}) as "productionToday",
         (SELECT COALESCE(SUM("quantityProduced"), 0) FROM "productions" WHERE "date" >= ${rangeStart} AND "date" <= ${rangeEnd}) as "productionPeriod",
