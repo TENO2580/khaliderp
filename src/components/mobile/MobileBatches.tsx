@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { Edit3, Trash2, Plus, X, LayoutGrid, Table } from 'lucide-react';
+import { Edit3, Trash2, Plus, X, LayoutGrid, Table, Download } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import useSWR from 'swr';
@@ -288,6 +288,124 @@ export default function MobileBatches() {
     }
   };
 
+  const handleExport = async (mode: 'visible' | 'all' = 'all', visibleHeaders: string[] = []) => {
+    const toastId = toast.loading('Exporting batches...');
+    try {
+      const res = await api.get(
+        `/production/batches/list?page=1&limit=10000&search=${encodeURIComponent(search)}&startDate=${startDate}&endDate=${endDate}&status=${statusFilter}`
+      );
+      const exportData = res.data?.data?.data || res.data?.data || batches || [];
+
+      if (!exportData || exportData.length === 0) {
+        toast.dismiss(toastId);
+        toast.error('No batches found to export');
+        return;
+      }
+
+      const allHeaders = [
+        'Batch #',
+        'Product',
+        'Date',
+        'Wax Initial Qty (KG)',
+        'Wax Rate (₹)',
+        'Candle Selling Price (₹)',
+        'Produced (KG)',
+        'Sold (KG)',
+        'Remaining (KG)',
+        'Wax Stock (KG)',
+        'Completion %',
+        'Prod Cost (₹)',
+        'Status',
+        'Sales Orders',
+      ];
+
+      const headerMap: Record<string, string> = {
+        'Batch #': 'Batch #',
+        'Product': 'Product',
+        'Date': 'Date',
+        'Wax Initial Qty': 'Wax Initial Qty (KG)',
+        'Wax Initial Qty (KG)': 'Wax Initial Qty (KG)',
+        'Wax Rate': 'Wax Rate (₹)',
+        'Wax Rate (₹)': 'Wax Rate (₹)',
+        'Candle Selling Price': 'Candle Selling Price (₹)',
+        'Candle Selling Price (₹)': 'Candle Selling Price (₹)',
+        'Produced': 'Produced (KG)',
+        'Produced (KG)': 'Produced (KG)',
+        'SOLD': 'Sold (KG)',
+        'Sold (KG)': 'Sold (KG)',
+        'REMAINING': 'Remaining (KG)',
+        'Remaining (KG)': 'Remaining (KG)',
+        'Wax Stock': 'Wax Stock (KG)',
+        'Wax Stock (KG)': 'Wax Stock (KG)',
+        'Completion %': 'Completion %',
+        'Prod Cost': 'Prod Cost (₹)',
+        'Prod Cost (₹)': 'Prod Cost (₹)',
+        'Status': 'Status',
+        'Sales Orders': 'Sales Orders',
+        'Orders': 'Sales Orders',
+      };
+
+      let headersToExport = allHeaders;
+      if (mode === 'visible' && visibleHeaders && visibleHeaders.length > 0) {
+        const filtered = visibleHeaders
+          .filter(h => h.toUpperCase() !== 'ACTION' && h.toUpperCase() !== 'ACTIONS')
+          .map(h => headerMap[h] || h);
+        if (filtered.length > 0) {
+          headersToExport = filtered;
+        }
+      }
+
+      const rows = exportData.map((b: any) => {
+        const initQty = Number(b.waxInitialQty) || 0;
+        const prodQty = Number(b.producedQty) || 0;
+        const soldQty = Number(b.soldQty) || 0;
+        const remainingQty = Number(b.remainingQty) || 0;
+        const waxStock = b.waxStock !== undefined && b.waxStock !== null && !isNaN(Number(b.waxStock))
+          ? Number(b.waxStock)
+          : (initQty - prodQty);
+        const completionPct = prodQty > 0 ? `${((soldQty / prodQty) * 100).toFixed(0)}%` : '0%';
+        const prodCost = b.productionCost !== undefined && b.productionCost !== null
+          ? Number(b.productionCost)
+          : (initQty * (Number(b.waxRate) || 0));
+
+        const rowMap: Record<string, string | number> = {
+          'Batch #': `"${(b.batchNumber || '').replace(/"/g, '""')}"`,
+          'Product': `"${(b.product?.name || 'General Batch').replace(/"/g, '""')}"`,
+          'Date': b.purchaseDate ? new Date(b.purchaseDate).toLocaleDateString('en-IN') : '',
+          'Wax Initial Qty (KG)': initQty.toFixed(2),
+          'Wax Rate (₹)': (Number(b.waxRate) || 0).toFixed(2),
+          'Candle Selling Price (₹)': (Number(b.sellingPrice) || 0).toFixed(2),
+          'Produced (KG)': prodQty.toFixed(2),
+          'Sold (KG)': soldQty.toFixed(2),
+          'Remaining (KG)': remainingQty.toFixed(2),
+          'Wax Stock (KG)': waxStock.toFixed(2),
+          'Completion %': completionPct,
+          'Prod Cost (₹)': prodCost.toFixed(2),
+          'Status': b.status || '',
+          'Sales Orders': `"${(b.fifoOrders || '').replace(/"/g, '""')}"`,
+        };
+
+        return headersToExport.map(h => rowMap[h] !== undefined ? rowMap[h] : '').join(',');
+      });
+
+      const csvContent = [headersToExport.join(','), ...rows].join('\n');
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `batches_export_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.dismiss(toastId);
+      toast.success('Batch data exported successfully!');
+    } catch (error) {
+      toast.dismiss(toastId);
+      toast.error('Failed to export batches');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3 mb-2">
@@ -295,7 +413,14 @@ export default function MobileBatches() {
           <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate">Batch Tracking</h1>
           <p className="text-xs text-gray-500 line-clamp-1">Track production batches from wax to finished goods</p>
         </div>
-        <div className="flex shrink-0">
+        <div className="flex shrink-0 gap-2">
+          <button
+            onClick={() => handleExport('all')}
+            className="rounded-xl bg-white p-2 text-gray-600 shadow-sm border border-gray-200 active:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:active:bg-gray-800"
+            title="Export Batches CSV"
+          >
+            <Download className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          </button>
           <button
             onClick={toggleViewMode}
             className="rounded-xl bg-white p-2 text-gray-600 shadow-sm border border-gray-200 active:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:active:bg-gray-800"
@@ -329,6 +454,7 @@ export default function MobileBatches() {
             data={batches} 
             enableInlineEdit={true} 
             onBatchSave={handleBatchSave} 
+            onExportClick={handleExport}
             hideToolbar={true} 
             totalItems={totalItems}
             page={page}
