@@ -126,6 +126,26 @@ export async function POST(req: NextRequest) {
 
     const { customerId, items, paymentMethod, notes, discount = 0, transportCharge = 0, orderDate, deliveryDate, status, paidAmount } = body;
 
+    // Guard against accidental rapid duplicate submissions (within 4 seconds)
+    const recentDuplicate = await prisma.salesOrder.findFirst({
+      where: {
+        customerId,
+        createdBy: user.id,
+        createdAt: {
+          gte: new Date(Date.now() - 4000),
+        },
+      },
+      include: { customer: true, items: true },
+    });
+
+    if (recentDuplicate) {
+      return jsonResponse({
+        success: true,
+        data: recentDuplicate,
+        message: 'Order already submitted',
+      });
+    }
+
     let subtotal = 0;
     const orderItemsData: any[] = [];
     const batchUpdates: any[] = [];

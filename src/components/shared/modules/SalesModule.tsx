@@ -5,7 +5,7 @@ import DataTable, { Column } from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { SearchableSelect } from '@/components/shared/SearchableSelect';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
-import { Plus, FileText, CheckCircle2, DollarSign, X, Upload, History, FileSpreadsheet, Printer, Download, Table, LayoutGrid, Lock, Unlock } from 'lucide-react';
+import { Plus, FileText, CheckCircle2, DollarSign, X, Upload, History, FileSpreadsheet, Printer, Download, Table, LayoutGrid, Lock, Unlock, Loader2, Package } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import useSWR from 'swr';
@@ -44,6 +44,7 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState<any>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [editId, setEditId] = useState('');
   const [customerId, setCustomerId] = useState('');
@@ -243,6 +244,8 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     if (!customerId) {
       toast.error('Please select a customer');
       return;
@@ -254,6 +257,7 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
         return;
       }
     }
+    setIsSubmitting(true);
     try {
       if (isEdit) {
         const calcOutstanding = paymentMethod === 'CREDIT' 
@@ -342,6 +346,8 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
       const detail = err.response?.data?.errors?.detail || err.response?.data?.message || err.message || 'Error creating order';
       console.error('Create order error:', err.response?.data || err);
       toast.error(detail);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -928,15 +934,41 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
       {/* Create Order Modal */}
       {isCreateOpen && (
         <div className={cn("fixed inset-0 z-50 flex overflow-y-auto", isMobile ? "flex-col bg-gray-50 dark:bg-gray-950 pt-4 pb-20 px-4" : "items-center justify-center bg-black/40 p-4 backdrop-blur-sm")}>
-          <div className={cn("w-full bg-white dark:bg-gray-900", isMobile ? "flex-1 border-0 shadow-none" : "max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-gray-200 p-6 shadow-2xl dark:border-gray-800")}>
+          <div className={cn("w-full bg-white dark:bg-gray-900 relative", isMobile ? "flex-1 border-0 shadow-none" : "max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-gray-200 p-6 shadow-2xl dark:border-gray-800")}>
+            
+            {/* Saving Loading Screen Overlay */}
+            {isSubmitting && (
+              <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/90 dark:bg-gray-900/90 backdrop-blur-md rounded-3xl transition-all">
+                <div className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-white dark:bg-gray-800 shadow-2xl border border-gray-100 dark:border-gray-700 max-w-sm mx-4 text-center animate-in fade-in zoom-in-95 duration-200">
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-full border-4 border-blue-100 dark:border-blue-900/50 border-t-blue-600 animate-spin" />
+                    <Package className="w-7 h-7 text-blue-600 dark:text-blue-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                      {isEdit ? 'Saving Order Changes...' : 'Creating Sales Order...'}
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 leading-relaxed">
+                      Please wait while the system saves your order and allocates inventory.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-semibold">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Processing transaction...</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className={cn("flex justify-between items-center", isMobile ? "mb-6" : "mb-4")}>
               <h2 className={cn("font-bold text-gray-900 dark:text-white", isMobile ? "text-xl" : "text-lg")}>
                 {isEdit ? 'Edit Sales Order' : 'Create Sales Order'}
               </h2>
               <button
                 type="button"
-                onClick={() => setIsCreateOpen(false)}
-                className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300 transition-colors"
+                disabled={isSubmitting}
+                onClick={() => !isSubmitting && setIsCreateOpen(false)}
+                className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -1208,16 +1240,25 @@ export default function SalesModule({ isMobile }: { isMobile?: boolean }) {
               <div className="flex justify-end gap-3 pt-6 border-t border-gray-100 dark:border-gray-800">
                 <button
                   type="button"
+                  disabled={isSubmitting}
                   onClick={() => setIsCreateOpen(false)}
-                  className="rounded-xl px-5 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-100 transition-colors dark:text-gray-300 dark:hover:bg-gray-800"
+                  className="rounded-xl px-5 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-100 transition-colors dark:text-gray-300 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors"
+                  disabled={isSubmitting}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed min-w-[140px]"
                 >
-                  {isEdit ? 'Save Changes' : 'Create Order'}
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>{isEdit ? 'Saving Changes...' : 'Creating Order...'}</span>
+                    </>
+                  ) : (
+                    <span>{isEdit ? 'Save Changes' : 'Create Order'}</span>
+                  )}
                 </button>
               </div>
             </form>
